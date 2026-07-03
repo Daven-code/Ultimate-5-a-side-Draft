@@ -1,6 +1,11 @@
-
-// Ultimate 5-a-side Draft - rebuilt online/local app.js
-// v25 - fixes online Pick Player by using a single shared online game state and waiting for players.json.
+// Ultimate 5-a-side Draft
+// app.js v26
+// Fixes:
+// - Online/local split front screen
+// - Online room/lobby flow
+// - Online Pick Player issue
+// - Firebase state safety issue: Cannot read properties of undefined reading 'map'
+// - Safe team arrays, safe declinedNames, safe acceptedPlayerNames
 
 const DECLINES_ALLOWED = 3;
 const AUCTION_BUDGET = 100;
@@ -37,16 +42,73 @@ const online = {
 };
 
 const samplePlayers = [
-  { Player: "Lionel Messi", Game_Year: 2012, Rating_OVR: 94, Position: "CF", Main_Position: "FWD", Club: "FC Barcelona", Nation: "Argentina" },
-  { Player: "Cristiano Ronaldo", Game_Year: 2012, Rating_OVR: 92, Position: "LW", Main_Position: "FWD", Club: "Real Madrid", Nation: "Portugal" },
-  { Player: "Gianluigi Buffon", Game_Year: 2005, Rating_OVR: 97, Position: "GK", Main_Position: "GK", Club: "Juventus", Nation: "Italy" },
-  { Player: "Sergio Ramos", Game_Year: 2015, Rating_OVR: 87, Position: "CB", Main_Position: "DEF", Club: "Real Madrid", Nation: "Spain" },
-  { Player: "Xavi", Game_Year: 2012, Rating_OVR: 92, Position: "CM", Main_Position: "MID", Club: "FC Barcelona", Nation: "Spain" },
-  { Player: "Kevin De Bruyne", Game_Year: 2021, Rating_OVR: 91, Position: "CM", Main_Position: "MID", Club: "Manchester City", Nation: "Belgium" },
-  { Player: "Thierry Henry", Game_Year: 2005, Rating_OVR: 97, Position: "ST", Main_Position: "FWD", Club: "Arsenal", Nation: "France" }
+  {
+    Player: "Lionel Messi",
+    Game_Year: 2012,
+    Rating_OVR: 94,
+    Position: "CF",
+    Main_Position: "FWD",
+    Club: "FC Barcelona",
+    Nation: "Argentina"
+  },
+  {
+    Player: "Cristiano Ronaldo",
+    Game_Year: 2012,
+    Rating_OVR: 92,
+    Position: "LW",
+    Main_Position: "FWD",
+    Club: "Real Madrid",
+    Nation: "Portugal"
+  },
+  {
+    Player: "Gianluigi Buffon",
+    Game_Year: 2005,
+    Rating_OVR: 97,
+    Position: "GK",
+    Main_Position: "GK",
+    Club: "Juventus",
+    Nation: "Italy"
+  },
+  {
+    Player: "Sergio Ramos",
+    Game_Year: 2015,
+    Rating_OVR: 87,
+    Position: "CB",
+    Main_Position: "DEF",
+    Club: "Real Madrid",
+    Nation: "Spain"
+  },
+  {
+    Player: "Xavi",
+    Game_Year: 2012,
+    Rating_OVR: 92,
+    Position: "CM",
+    Main_Position: "MID",
+    Club: "FC Barcelona",
+    Nation: "Spain"
+  },
+  {
+    Player: "Kevin De Bruyne",
+    Game_Year: 2021,
+    Rating_OVR: 91,
+    Position: "CM",
+    Main_Position: "MID",
+    Club: "Manchester City",
+    Nation: "Belgium"
+  },
+  {
+    Player: "Thierry Henry",
+    Game_Year: 2005,
+    Rating_OVR: 97,
+    Position: "ST",
+    Main_Position: "FWD",
+    Club: "Arsenal",
+    Nation: "France"
+  }
 ];
 
 const $ = id => document.getElementById(id);
+
 const els = {
   setupPanel: $("setupPanel"),
   gamePanel: $("gamePanel"),
@@ -87,8 +149,9 @@ const els = {
 
 function safe(fn) {
   return async (...args) => {
-    try { await fn(...args); }
-    catch (err) {
+    try {
+      await fn(...args);
+    } catch (err) {
       console.error(err);
       setMessage(err?.message || String(err));
     }
@@ -96,32 +159,51 @@ function safe(fn) {
 }
 
 function setMessage(text) {
-  if (els.message) els.message.textContent = text || "";
+  if (els.message) {
+    els.message.textContent = text || "";
+  }
 }
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, ch => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '"': "&quot;"
   }[ch]));
 }
 
 function safeKey(value) {
-  return String(value || "").trim().toLowerCase().replace(/[.#$\/[\]]/g, "_");
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[.#$\/[\]]/g, "_");
 }
 
 function normalisePosition(pos, rawPosition = "") {
   const p = String(pos || rawPosition || "").toUpperCase();
+
   if (p.includes("GK")) return "GK";
-  if (["CB", "LB", "RB", "LWB", "RWB", "DEF"].some(x => p.includes(x))) return "DEF";
-  if (["CM", "CDM", "CAM", "LM", "RM", "MID"].some(x => p.includes(x))) return "MID";
+
+  if (["CB", "LB", "RB", "LWB", "RWB", "DEF"].some(x => p.includes(x))) {
+    return "DEF";
+  }
+
+  if (["CM", "CDM", "CAM", "LM", "RM", "MID"].some(x => p.includes(x))) {
+    return "MID";
+  }
+
   return "FWD";
 }
 
 function normalisePlayers(data) {
   const rows = Array.isArray(data) ? data : [];
+
   return rows.map((p, idx) => {
     const position = p.Position ?? p.position ?? p.POS ?? p.pos ?? "";
     const main = p.Main_Position ?? p.mainPosition ?? p.MainPosition ?? p.main_position ?? "";
+
     return {
       id: idx + 1,
       player: String(p.Player ?? p.player ?? p.Name ?? p.name ?? "").trim(),
@@ -137,24 +219,38 @@ function normalisePlayers(data) {
 
 async function loadPlayers() {
   if (playersPromise) return playersPromise;
+
   playersPromise = (async () => {
     try {
       const response = await fetch("players.json", { cache: "no-store" });
-      if (!response.ok) throw new Error(`Could not load players.json - HTTP ${response.status}`);
+
+      if (!response.ok) {
+        throw new Error(`Could not load players.json - HTTP ${response.status}`);
+      }
+
       players = normalisePlayers(await response.json());
-      if (!players.length) throw new Error("players.json loaded but no valid players were found.");
-      if (els.loadStatus) els.loadStatus.style.display = "none";
+
+      if (!players.length) {
+        throw new Error("players.json loaded but no valid players were found.");
+      }
+
+      if (els.loadStatus) {
+        els.loadStatus.style.display = "none";
+      }
     } catch (err) {
       console.warn(err);
       players = normalisePlayers(samplePlayers);
+
       if (els.loadStatus) {
         els.loadStatus.textContent = "Using fallback sample players. Check players.json if this appears online.";
         els.loadStatus.style.display = "block";
       }
     }
+
     console.log(`Loaded ${players.length} players`);
     return players;
   })();
+
   return playersPromise;
 }
 
@@ -165,11 +261,215 @@ async function ensurePlayersReady() {
 
 function injectStyles() {
   if ($("onlineLocalStyles")) return;
+
   const style = document.createElement("style");
   style.id = "onlineLocalStyles";
   style.textContent = `
-    .game-entry-panel{max-width:980px;margin:28px auto}.game-entry-heading{text-align:center;margin-bottom:18px}.game-entry-heading h2{margin:0 0 6px;color:#fff;font-size:clamp(1.8rem,4vw,2.8rem)}.game-entry-heading p{margin:0;color:rgba(255,255,255,.82);font-weight:800}.game-entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.entry-card{background:rgba(255,255,255,.95);border:1px solid rgba(255,255,255,.4);border-radius:24px;padding:22px;box-shadow:0 24px 70px rgba(15,23,42,.22)}.entry-card h3{margin:0 0 8px;color:#0f172a;font-size:1.35rem}.entry-card p{margin:0 0 14px;color:#475569;font-weight:750;line-height:1.4}.local-card{display:flex;flex-direction:column;justify-content:space-between;min-height:265px}.online-room-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:14px;display:grid;gap:10px}.online-room-actions{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.online-room-status{margin:2px 0 0;color:#475569;font-weight:800;font-size:.88rem;line-height:1.35}.online-room-link{margin:0;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:12px;padding:9px 10px;font-weight:900;overflow-wrap:anywhere}.lobby-card{max-width:820px;margin:42px auto;text-align:center}.lobby-code{display:inline-block;margin:10px 0;padding:10px 16px;background:#0f172a;color:#fff;border-radius:14px;font-size:1.4rem;letter-spacing:.12em;font-weight:950}.lobby-link{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:12px;overflow-wrap:anywhere;color:#1e3a8a;font-weight:850}.joined-list{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:14px 0}.joined-pill{background:#dcfce7;color:#166534;border-radius:999px;padding:7px 11px;font-weight:900}.lobby-setup{margin-top:18px;padding:16px;border:1px solid #e2e8f0;border-radius:20px;background:#f8fafc;text-align:left}.lobby-mode-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}.lobby-mode-card{border:2px solid #e2e8f0;background:#fff;border-radius:16px;padding:12px;text-align:left;cursor:pointer;font-weight:900;color:#0f172a}.lobby-mode-card span{display:block;margin-top:4px;color:#64748b;font-size:.82rem;font-weight:750;line-height:1.25}.lobby-mode-card.selected{border-color:#22c55e;background:#f0fdf4;box-shadow:0 10px 24px rgba(34,197,94,.12)}.lobby-checkbox{display:flex;gap:8px;align-items:center;color:#334155;font-weight:850;margin:10px 0 14px}.turn-lock-note{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:14px;padding:10px;font-weight:900;margin-top:10px}@media(max-width:720px){.game-entry-grid,.online-room-actions,.lobby-mode-cards{grid-template-columns:1fr}}
+    .game-entry-panel {
+      max-width: 980px;
+      margin: 28px auto;
+    }
+
+    .game-entry-heading {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .game-entry-heading h2 {
+      margin: 0 0 6px;
+      color: #fff;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+    }
+
+    .game-entry-heading p {
+      margin: 0;
+      color: rgba(255,255,255,.82);
+      font-weight: 800;
+    }
+
+    .game-entry-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .entry-card {
+      background: rgba(255,255,255,.95);
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 24px 70px rgba(15,23,42,.22);
+    }
+
+    .entry-card h3 {
+      margin: 0 0 8px;
+      color: #0f172a;
+      font-size: 1.35rem;
+    }
+
+    .entry-card p {
+      margin: 0 0 14px;
+      color: #475569;
+      font-weight: 750;
+      line-height: 1.4;
+    }
+
+    .local-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 265px;
+    }
+
+    .online-room-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .online-room-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .online-room-status {
+      margin: 2px 0 0;
+      color: #475569;
+      font-weight: 800;
+      font-size: .88rem;
+      line-height: 1.35;
+    }
+
+    .online-room-link {
+      margin: 0;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+      border-radius: 12px;
+      padding: 9px 10px;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .lobby-card {
+      max-width: 820px;
+      margin: 42px auto;
+      text-align: center;
+    }
+
+    .lobby-code {
+      display: inline-block;
+      margin: 10px 0;
+      padding: 10px 16px;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 14px;
+      font-size: 1.4rem;
+      letter-spacing: .12em;
+      font-weight: 950;
+    }
+
+    .lobby-link {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 14px;
+      padding: 12px;
+      overflow-wrap: anywhere;
+      color: #1e3a8a;
+      font-weight: 850;
+    }
+
+    .joined-list {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .joined-pill {
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-weight: 900;
+    }
+
+    .lobby-setup {
+      margin-top: 18px;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      background: #f8fafc;
+      text-align: left;
+    }
+
+    .lobby-mode-cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .lobby-mode-card {
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      border-radius: 16px;
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+      font-weight: 900;
+      color: #0f172a;
+    }
+
+    .lobby-mode-card span {
+      display: block;
+      margin-top: 4px;
+      color: #64748b;
+      font-size: .82rem;
+      font-weight: 750;
+      line-height: 1.25;
+    }
+
+    .lobby-mode-card.selected {
+      border-color: #22c55e;
+      background: #f0fdf4;
+      box-shadow: 0 10px 24px rgba(34,197,94,.12);
+    }
+
+    .lobby-checkbox {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      color: #334155;
+      font-weight: 850;
+      margin: 10px 0 14px;
+    }
+
+    .turn-lock-note {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      border-radius: 14px;
+      padding: 10px;
+      font-weight: 900;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 720px) {
+      .game-entry-grid,
+      .online-room-actions,
+      .lobby-mode-cards {
+        grid-template-columns: 1fr;
+      }
+    }
   `;
+
   document.head.appendChild(style);
 }
 
@@ -178,45 +478,59 @@ function show(el, visible) {
   el.classList.toggle("hidden", !visible);
 }
 
-function hideEntryPanel() { show($("gameEntryPanel"), false); }
+function hideEntryPanel() {
+  show($("gameEntryPanel"), false);
+}
 
 function injectEntryPanel() {
   injectStyles();
+
   if ($("gameEntryPanel")) return;
+
   const shell = document.querySelector(".app-shell") || document.body;
+
   const entry = document.createElement("section");
   entry.id = "gameEntryPanel";
   entry.className = "game-entry-panel";
+
   entry.innerHTML = `
     <div class="game-entry-heading">
       <h2>Choose how to play</h2>
       <p>Start a quick local game, or create/join an online room with friends.</p>
     </div>
+
     <div class="game-entry-grid">
       <article class="entry-card online-card">
         <h3>Online game</h3>
         <p>Create a room and share the link, or join using a room code.</p>
+
         <div class="online-room-box">
           <div class="online-room-actions">
             <input id="onlineRoomName" type="text" placeholder="Your name" />
             <button id="createOnlineRoomBtn" type="button" class="btn btn-secondary">Create online room</button>
           </div>
+
           <div class="online-room-actions">
             <input id="joinRoomCode" type="text" placeholder="Room code" />
             <button id="joinOnlineRoomBtn" type="button" class="btn btn-secondary">Join room</button>
           </div>
+
           <p id="onlineRoomStatus" class="online-room-status">Online games use joined player names automatically.</p>
           <p id="onlineRoomLink" class="online-room-link hidden"></p>
         </div>
       </article>
+
       <article class="entry-card local-card">
         <div>
           <h3>Local game</h3>
           <p>Play on this device using the normal local setup options.</p>
         </div>
+
         <button id="startLocalGameBtn" type="button" class="btn btn-primary">Set up local game</button>
       </article>
-    </div>`;
+    </div>
+  `;
+
   shell.insertBefore(entry, els.setupPanel || shell.firstChild);
 
   show(els.setupPanel, false);
@@ -224,7 +538,12 @@ function injectEntryPanel() {
   show(els.resultsPanel, false);
 
   $("createOnlineRoomBtn")?.addEventListener("click", safe(createOnlineRoom));
-  $("joinOnlineRoomBtn")?.addEventListener("click", safe(() => joinOnlineRoom($("joinRoomCode")?.value.trim().toUpperCase())));
+
+  $("joinOnlineRoomBtn")?.addEventListener("click", safe(() => {
+    const code = $("joinRoomCode")?.value.trim().toUpperCase();
+    return joinOnlineRoom(code);
+  }));
+
   $("startLocalGameBtn")?.addEventListener("click", () => {
     online.enabled = false;
     hideEntryPanel();
@@ -234,20 +553,29 @@ function injectEntryPanel() {
 
   const params = new URLSearchParams(location.search);
   const room = params.get("room");
+
   if (room) {
-    if ($("joinRoomCode")) $("joinRoomCode").value = room.toUpperCase();
+    if ($("joinRoomCode")) {
+      $("joinRoomCode").value = room.toUpperCase();
+    }
+
     setOnlineStatus(`Room code detected: ${room.toUpperCase()}. Type your player name, then click Join room.`);
   }
 }
 
 function setOnlineStatus(text) {
   const el = $("onlineRoomStatus");
-  if (el) el.textContent = text;
+
+  if (el) {
+    el.textContent = text;
+  }
 }
 
 function setOnlineLink(text) {
   const el = $("onlineRoomLink");
+
   if (!el) return;
+
   el.textContent = text || "";
   el.classList.toggle("hidden", !text);
 }
@@ -258,135 +586,231 @@ function firebaseConfigured() {
 
 function loadScriptOnce(src) {
   return new Promise((resolve, reject) => {
-    if ([...document.scripts].some(s => s.src === src)) return resolve();
+    if ([...document.scripts].some(s => s.src === src)) {
+      resolve();
+      return;
+    }
+
     const script = document.createElement("script");
     script.src = src;
     script.onload = resolve;
     script.onerror = () => reject(new Error(`Could not load ${src}`));
+
     document.head.appendChild(script);
   });
 }
 
 async function ensureFirebase() {
-  if (!firebaseConfigured()) throw new Error("Firebase is not configured.");
+  if (!firebaseConfigured()) {
+    throw new Error("Firebase is not configured.");
+  }
+
   if (online.loaded) return;
+
   await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
   await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js");
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(FIREBASE_CONFIG);
+  }
+
   online.loaded = true;
 }
 
-function randomRoomId() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+function randomRoomId() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
 
 async function createOnlineRoom() {
   const name = $("onlineRoomName")?.value.trim();
-  if (!name) throw new Error("Type your name first.");
+
+  if (!name) {
+    throw new Error("Type your name first.");
+  }
+
   await ensurePlayersReady();
   await ensureFirebase();
+
   online.enabled = true;
   online.isHost = true;
   online.myName = name;
   online.roomId = randomRoomId();
+  online.subscribed = false;
   online.ref = firebase.database().ref(`rooms/${online.roomId}`);
+
   const invite = `${location.origin}${location.pathname}?room=${online.roomId}`;
+
   await online.ref.set({
     createdAt: Date.now(),
-    participants: { [safeKey(name)]: name },
+    participants: {
+      [safeKey(name)]: name
+    },
     state: null,
     currentCandidate: null,
     ratingsRevealed: false,
     message: "Room created. Waiting for players."
   });
+
   subscribeToRoom();
+
   setOnlineStatus(`Room created: ${online.roomId}`);
   setOnlineLink(`Share this link: ${invite}`);
+
   showLobby("host", [name], invite);
 }
 
 async function joinOnlineRoom(code) {
   const name = $("onlineRoomName")?.value.trim();
-  if (!name) throw new Error("Type your player name first.");
-  if (!code) throw new Error("Enter a room code first.");
+
+  if (!name) {
+    throw new Error("Type your player name first.");
+  }
+
+  if (!code) {
+    throw new Error("Enter a room code first.");
+  }
+
   await ensurePlayersReady();
   await ensureFirebase();
+
   online.enabled = true;
   online.isHost = false;
   online.myName = name;
   online.roomId = code;
+  online.subscribed = false;
   online.ref = firebase.database().ref(`rooms/${online.roomId}`);
+
   await online.ref.child(`participants/${safeKey(name)}`).set(name);
+
   subscribeToRoom();
+
   showLobby("player", [name], "");
 }
 
 function subscribeToRoom() {
   if (!online.ref || online.subscribed) return;
+
   online.subscribed = true;
+
   online.ref.on("value", snapshot => {
     if (applyingRemote) return;
+
     const data = snapshot.val();
+
     if (!data) return;
+
     const participants = Object.values(data.participants || {});
+
     if (!data.state) {
-      showLobby(online.isHost ? "host" : "player", participants, `${location.origin}${location.pathname}?room=${online.roomId}`);
+      showLobby(
+        online.isHost ? "host" : "player",
+        participants,
+        `${location.origin}${location.pathname}?room=${online.roomId}`
+      );
+
       return;
     }
+
     applyRemoteData(data);
   });
 }
 
 function ensureLobby() {
   let lobby = $("onlineLobbyPanel");
+
   if (lobby) return lobby;
+
   const shell = document.querySelector(".app-shell") || document.body;
+
   lobby = document.createElement("section");
   lobby.id = "onlineLobbyPanel";
   lobby.className = "card lobby-card hidden";
+
   shell.insertBefore(lobby, els.gamePanel || shell.firstChild);
+
   return lobby;
 }
 
 function showLobby(mode, participants = [], invite = "") {
   injectStyles();
   hideEntryPanel();
+
   const lobby = ensureLobby();
-  const joined = participants.length ? participants : (online.myName ? [online.myName] : []);
+
+  const joined = participants.length
+    ? participants
+    : online.myName
+      ? [online.myName]
+      : [];
+
   if (mode === "host") {
     lobby.innerHTML = `
       <p class="eyebrow">Online room created</p>
       <h2>Waiting for players to join</h2>
       <p class="muted">Joined players appear below. When everyone is in, choose the game and start.</p>
+
       <div class="lobby-code">${escapeHtml(online.roomId)}</div>
       <p class="lobby-link">${escapeHtml(invite)}</p>
+
       <button id="copyInviteBtn" class="btn btn-secondary" type="button">Copy invite link</button>
-      <div class="joined-list">${joined.map(n => `<span class="joined-pill">${escapeHtml(n)}</span>`).join("")}</div>
+
+      <div class="joined-list">
+        ${joined.map(n => `<span class="joined-pill">${escapeHtml(n)}</span>`).join("")}
+      </div>
+
       <div class="lobby-setup">
         <p class="lobby-setup-title"><strong>Start online game</strong></p>
+
         <div id="lobbyModeCards" class="lobby-mode-cards">
-          <button type="button" class="lobby-mode-card ${selectedGameMode === "draft" ? "selected" : ""}" data-mode="draft">Ultimate Draft 5-a-side<span>Players control their own turns. Host can step in.</span></button>
-          <button type="button" class="lobby-mode-card ${selectedGameMode === "bid" ? "selected" : ""}" data-mode="bid">Bid for your Ultimate 5-a-side Team<span>Host-assisted. All devices update live.</span></button>
+          <button type="button" class="lobby-mode-card ${selectedGameMode === "draft" ? "selected" : ""}" data-mode="draft">
+            Ultimate Draft 5-a-side
+            <span>Players control their own turns. Host can step in.</span>
+          </button>
+
+          <button type="button" class="lobby-mode-card ${selectedGameMode === "bid" ? "selected" : ""}" data-mode="bid">
+            Bid for your Ultimate 5-a-side Team
+            <span>Host-assisted. All devices update live.</span>
+          </button>
         </div>
+
         <label id="lobbyExcludeDeclinesLabel" class="lobby-checkbox ${selectedGameMode === "bid" ? "hidden" : ""}">
-          <input id="lobbyExcludeDeclines" type="checkbox" checked /> Exclude declined players
+          <input id="lobbyExcludeDeclines" type="checkbox" checked />
+          Exclude declined players
         </label>
+
         <button id="startOnlineGameBtn" class="btn btn-primary" type="button">Start online game</button>
-      </div>`;
-    $("copyInviteBtn")?.addEventListener("click", () => navigator.clipboard?.writeText(invite));
+      </div>
+    `;
+
+    $("copyInviteBtn")?.addEventListener("click", () => {
+      navigator.clipboard?.writeText(invite);
+    });
+
     $("lobbyModeCards")?.addEventListener("click", event => {
       const card = event.target.closest(".lobby-mode-card");
+
       if (!card) return;
+
       selectedGameMode = card.dataset.mode;
+
       showLobby("host", joined, invite);
     });
+
     $("startOnlineGameBtn")?.addEventListener("click", safe(startOnlineGameFromLobby));
   } else {
     lobby.innerHTML = `
       <p class="eyebrow">Online room joined</p>
       <h2>Waiting for the host</h2>
       <p class="muted">You joined as <strong>${escapeHtml(online.myName)}</strong>. Keep this page open.</p>
+
       <div class="lobby-code">${escapeHtml(online.roomId)}</div>
-      <div class="joined-list">${joined.map(n => `<span class="joined-pill">${escapeHtml(n)}</span>`).join("")}</div>`;
+
+      <div class="joined-list">
+        ${joined.map(n => `<span class="joined-pill">${escapeHtml(n)}</span>`).join("")}
+      </div>
+    `;
   }
+
   show(els.setupPanel, false);
   show(els.gamePanel, false);
   show(els.resultsPanel, false);
@@ -395,44 +819,89 @@ function showLobby(mode, participants = [], invite = "") {
 
 function participantNamesFromObject(obj) {
   const unique = [];
+
   Object.values(obj || {}).forEach(name => {
     const clean = String(name || "").trim();
-    if (clean && !unique.some(existing => safeKey(existing) === safeKey(clean))) unique.push(clean);
+
+    if (clean && !unique.some(existing => safeKey(existing) === safeKey(clean))) {
+      unique.push(clean);
+    }
   });
+
   return unique;
 }
 
 async function startOnlineGameFromLobby() {
   if (!online.enabled || !online.isHost || !online.ref) return;
+
   await ensurePlayersReady();
+
   const snapshot = await online.ref.child("participants").once("value");
   const names = participantNamesFromObject(snapshot.val());
+
   const minUsers = selectedGameMode === "bid" ? 2 : 1;
-  if (names.length < minUsers) throw new Error(selectedGameMode === "bid" ? "Bid mode needs at least 2 players." : "At least 1 player is needed.");
+
+  if (names.length < minUsers) {
+    throw new Error(selectedGameMode === "bid"
+      ? "Bid mode needs at least 2 players."
+      : "At least 1 player is needed.");
+  }
+
   startNewGame(selectedGameMode, names.slice(0, 4), true);
+
   await saveOnlineState("Online game started.");
 }
 
 function serialiseState() {
   if (!state) return null;
+
   return {
     ...state,
-    acceptedPlayerNames: [...state.acceptedPlayerNames],
-    users: state.users.map(user => ({ ...user, declinedNames: [...user.declinedNames] }))
+    acceptedPlayerNames: state.acceptedPlayerNames instanceof Set
+      ? [...state.acceptedPlayerNames]
+      : [],
+    users: Array.isArray(state.users)
+      ? state.users.map(user => ({
+          ...user,
+          team: Array.isArray(user.team) ? user.team : [],
+          declinedNames: user.declinedNames instanceof Set
+            ? [...user.declinedNames]
+            : []
+        }))
+      : []
   };
 }
 
 function restoreState(raw) {
   if (!raw) return null;
+
+  const users = Array.isArray(raw.users)
+    ? raw.users.map((user, index) => ({
+        name: user?.name || `User ${index + 1}`,
+        team: Array.isArray(user?.team) ? user.team : [],
+        declines: Number(user?.declines || 0),
+        declinedNames: new Set(Array.isArray(user?.declinedNames) ? user.declinedNames : []),
+        budget: Number(user?.budget ?? AUCTION_BUDGET),
+        spent: Number(user?.spent || 0),
+        bidSkips: Number(user?.bidSkips || 0)
+      }))
+    : [];
+
+  const safeIndex = users.length
+    ? Math.min(Math.max(Number(raw.currentUserIndex || 0), 0), users.length - 1)
+    : 0;
+
   return {
     ...raw,
-    acceptedPlayerNames: new Set(raw.acceptedPlayerNames || []),
-    users: (raw.users || []).map(user => ({ ...user, declinedNames: new Set(user.declinedNames || []) }))
+    users,
+    currentUserIndex: safeIndex,
+    acceptedPlayerNames: new Set(Array.isArray(raw.acceptedPlayerNames) ? raw.acceptedPlayerNames : [])
   };
 }
 
 async function saveOnlineState(messageOverride = null) {
   if (!online.enabled || !online.ref || applyingRemote) return;
+
   await online.ref.update({
     updatedAt: Date.now(),
     state: serialiseState(),
@@ -444,80 +913,128 @@ async function saveOnlineState(messageOverride = null) {
 
 function applyRemoteData(data) {
   applyingRemote = true;
+
   state = restoreState(data.state);
   currentCandidate = data.currentCandidate || null;
   ratingsRevealed = !!data.ratingsRevealed;
+
   hideEntryPanel();
+
   show(ensureLobby(), false);
   show(els.setupPanel, false);
   show(els.gamePanel, true);
   show(els.resultsPanel, ratingsRevealed);
+
   updateGameControls();
   render();
-  if (currentCandidate) renderCandidate(currentCandidate);
-  else clearCandidate(data.message || "Waiting for the next action...");
+
+  if (currentCandidate) {
+    renderCandidate(currentCandidate);
+  } else {
+    clearCandidate(data.message || "Waiting for the next action...");
+  }
+
   renderTeams();
-  if (ratingsRevealed) renderResults();
+
+  if (ratingsRevealed) {
+    renderResults();
+  }
+
   setMessage(data.message || "");
+
   applyingRemote = false;
+
   applyOnlinePermissions();
 }
 
 function updateSetupForMode() {
   if (!els.userCount || !els.userNameFields) return;
-  document.querySelectorAll(".game-mode-card").forEach(card => card.classList.toggle("selected", card.dataset.mode === selectedGameMode));
+
+  document.querySelectorAll(".game-mode-card").forEach(card => {
+    card.classList.toggle("selected", card.dataset.mode === selectedGameMode);
+  });
+
   els.userCount.innerHTML = "";
+
   const minUsers = selectedGameMode === "bid" ? 2 : 1;
+
   for (let i = minUsers; i <= 4; i++) {
     const opt = document.createElement("option");
     opt.value = String(i);
     opt.textContent = `${i} user${i > 1 ? "s" : ""}`;
     els.userCount.appendChild(opt);
   }
+
   if (els.gameModeDescription) {
     els.gameModeDescription.textContent = selectedGameMode === "bid"
       ? "Each user starts with £100m. Bid for random players and complete a GK, DEF, MID, MID and FWD."
       : "Classic draft mode. Accept or decline random players to complete your team.";
   }
-  if (els.excludeDeclinesLabel) els.excludeDeclinesLabel.classList.toggle("hidden", selectedGameMode === "bid");
+
+  if (els.excludeDeclinesLabel) {
+    els.excludeDeclinesLabel.classList.toggle("hidden", selectedGameMode === "bid");
+  }
+
   renderUserNameInputs();
 }
 
 function renderUserNameInputs() {
   const count = Number(els.userCount?.value || 1);
+
   if (!els.userNameFields) return;
+
   els.userNameFields.innerHTML = Array.from({ length: count }, (_, i) => `
-    <div><label for="userName${i}">User ${i + 1} name</label><input id="userName${i}" type="text" value="User ${i + 1}" placeholder="User ${i + 1}" /></div>
+    <div>
+      <label for="userName${i}">User ${i + 1} name</label>
+      <input id="userName${i}" type="text" value="User ${i + 1}" placeholder="User ${i + 1}" />
+    </div>
   `).join("");
 }
 
 function getLocalUserNames() {
   const count = Number(els.userCount?.value || 1);
-  return Array.from({ length: count }, (_, i) => $(`userName${i}`)?.value.trim() || `User ${i + 1}`);
+
+  return Array.from({ length: count }, (_, i) => {
+    return $(`userName${i}`)?.value.trim() || `User ${i + 1}`;
+  });
 }
 
 async function startGame() {
   await ensurePlayersReady();
+
   online.enabled = false;
+
   startNewGame(selectedGameMode, getLocalUserNames(), false);
 }
 
 function startNewGame(gameMode, names, isOnlineGame) {
   ratingsRevealed = false;
   currentCandidate = null;
+
   state = {
     gameMode,
     userCount: names.length,
     currentUserIndex: 0,
-    excludeDeclines: gameMode === "draft" && (isOnlineGame ? !!$("lobbyExcludeDeclines")?.checked : !!els.excludeDeclines?.checked),
+    excludeDeclines: gameMode === "draft" && (
+      isOnlineGame
+        ? !!$("lobbyExcludeDeclines")?.checked
+        : !!els.excludeDeclines?.checked
+    ),
     users: names.map(name => ({
-      name, team: [], declines: 0, declinedNames: new Set(), budget: AUCTION_BUDGET, spent: 0, bidSkips: 0
+      name,
+      team: [],
+      declines: 0,
+      declinedNames: new Set(),
+      budget: AUCTION_BUDGET,
+      spent: 0,
+      bidSkips: 0
     })),
     acceptedPlayerNames: new Set(),
     history: [],
     bidOrder: [],
     bidRoundIndex: 0
   };
+
   if (gameMode === "draft") {
     state.users = shuffleArray(state.users);
     state.currentUserIndex = 0;
@@ -525,14 +1042,24 @@ function startNewGame(gameMode, names, isOnlineGame) {
     state.bidOrder = shuffleArray([...Array(names.length).keys()]);
     state.currentUserIndex = state.bidOrder[0];
   }
+
   hideEntryPanel();
+
   show(ensureLobby(), false);
   show(els.setupPanel, false);
   show(els.gamePanel, true);
   show(els.resultsPanel, false);
-  if (els.revealBtn) els.revealBtn.classList.add("hidden");
+
+  if (els.revealBtn) {
+    els.revealBtn.classList.add("hidden");
+  }
+
   updateGameControls();
-  clearCandidate(gameMode === "bid" ? "Click Randomise player to start the auction." : "Click Pick player to begin.");
+
+  clearCandidate(gameMode === "bid"
+    ? "Click Randomise player to start the auction."
+    : "Click Pick player to begin.");
+
   render();
 }
 
@@ -540,15 +1067,23 @@ function resetGame() {
   state = null;
   currentCandidate = null;
   ratingsRevealed = false;
+
   show(ensureLobby(), false);
   show(els.gamePanel, false);
   show(els.resultsPanel, false);
+
   setMessage("");
+
   if (online.enabled) {
     hideEntryPanel();
     show(els.setupPanel, false);
     saveOnlineState("Game reset.");
-    showLobby(online.isHost ? "host" : "player", online.myName ? [online.myName] : [], `${location.origin}${location.pathname}?room=${online.roomId}`);
+
+    showLobby(
+      online.isHost ? "host" : "player",
+      online.myName ? [online.myName] : [],
+      `${location.origin}${location.pathname}?room=${online.roomId}`
+    );
   } else {
     show(els.setupPanel, false);
     show($("gameEntryPanel"), true);
@@ -557,94 +1092,215 @@ function resetGame() {
 
 function shuffleArray(array) {
   const a = [...array];
+
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
+
   return a;
 }
 
-function currentUser() { return state?.users?.[state.currentUserIndex]; }
+function currentUser() {
+  return state?.users?.[state.currentUserIndex];
+}
 
 function getNeededPositions(user) {
-  const used = user.team.map(p => p.mainPosition);
-  return TEAM_SHAPE.filter((pos, idx) => used.filter(x => x === pos).length < TEAM_SHAPE.slice(0, idx + 1).filter(x => x === pos).length);
+  if (!user) return [];
+
+  if (!Array.isArray(user.team)) {
+    user.team = [];
+  }
+
+  const counts = {
+    GK: 0,
+    DEF: 0,
+    MID: 0,
+    FWD: 0
+  };
+
+  user.team.filter(Boolean).forEach(player => {
+    const pos = player.mainPosition || player.Main_Position || player.position || player.Position;
+    const normalised = normalisePosition(pos);
+
+    if (counts[normalised] !== undefined) {
+      counts[normalised] += 1;
+    }
+  });
+
+  const needed = [];
+
+  TEAM_SHAPE.forEach(pos => {
+    if (counts[pos] > 0) {
+      counts[pos] -= 1;
+    } else {
+      needed.push(pos);
+    }
+  });
+
+  return needed;
 }
 
 function isGameComplete() {
-  return !!state && state.users.every(u => getNeededPositions(u).length === 0);
+  return !!state && Array.isArray(state.users) && state.users.every(user => {
+    return getNeededPositions(user).length === 0;
+  });
 }
 
 function currentPlayerCanAct() {
   if (!online.enabled) return true;
+
   const user = currentUser();
+
   return online.isHost || (user && safeKey(user.name) === safeKey(online.myName));
 }
 
 async function pickRandomPlayer() {
   await ensurePlayersReady();
+
   if (!state || state.gameMode !== "draft") return;
-  if (isGameComplete()) return completeGame();
+
+  if (isGameComplete()) {
+    completeGame();
+    return;
+  }
+
   if (online.enabled && !currentPlayerCanAct()) {
     applyOnlinePermissions();
     return;
   }
+
   if (currentCandidate) {
     setMessage("Please accept or decline the current player before picking another.");
     return;
   }
+
   const user = currentUser();
+
+  if (!user) {
+    setMessage("No current user found.");
+    return;
+  }
+
   const needs = getNeededPositions(user);
-  if (!needs.length) { moveToNextUser(); return pickRandomPlayer(); }
-  const pool = players.filter(p => needs.includes(p.mainPosition) && !state.acceptedPlayerNames.has(p.player) && !(state.excludeDeclines && user.declinedNames.has(p.player)));
+
+  if (!needs.length) {
+    moveToNextUser();
+    await pickRandomPlayer();
+    return;
+  }
+
+  const pool = players.filter(p => {
+    if (!needs.includes(p.mainPosition)) return false;
+    if (state.acceptedPlayerNames.has(p.player)) return false;
+    if (state.excludeDeclines && user.declinedNames.has(p.player)) return false;
+    return true;
+  });
+
   if (!pool.length) {
     clearCandidate(`No available player found for ${user.name}. They need: ${needs.join(", ")}.`);
     await saveOnlineState();
     return;
   }
+
   currentCandidate = pool[Math.floor(Math.random() * pool.length)];
+
   renderCandidate(currentCandidate);
+
   setMessage(`${user.name} needs: ${needs.join(", ")}`);
+
   render();
+
   await saveOnlineState();
+
   applyOnlinePermissions();
 }
 
 async function acceptPlayer() {
   if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  if (online.enabled && !currentPlayerCanAct()) return applyOnlinePermissions();
+
+  if (online.enabled && !currentPlayerCanAct()) {
+    applyOnlinePermissions();
+    return;
+  }
+
   const user = currentUser();
+
+  if (!user) return;
+
+  if (!Array.isArray(user.team)) {
+    user.team = [];
+  }
+
   user.team.push(currentCandidate);
   state.acceptedPlayerNames.add(currentCandidate.player);
-  state.history.push({ user: user.name, decision: "ACCEPT", player: currentCandidate });
+
+  state.history.push({
+    user: user.name,
+    decision: "ACCEPT",
+    player: currentCandidate
+  });
+
   currentCandidate = null;
-  if (isGameComplete()) completeGame();
-  else moveToNextUser();
-  clearCandidate(isGameComplete() ? "Game complete. Reveal ratings to see the winner." : "Click Pick player to continue.");
+
+  if (isGameComplete()) {
+    completeGame();
+  } else {
+    moveToNextUser();
+    clearCandidate("Click Pick player to continue.");
+  }
+
   render();
+
   await saveOnlineState();
 }
 
 async function declinePlayer() {
   if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  if (online.enabled && !currentPlayerCanAct()) return applyOnlinePermissions();
+
+  if (online.enabled && !currentPlayerCanAct()) {
+    applyOnlinePermissions();
+    return;
+  }
+
   const user = currentUser();
+
+  if (!user) return;
+
   if (user.declines >= DECLINES_ALLOWED) {
     setMessage(`${user.name} has no declines left and must accept this player.`);
     return;
   }
+
   user.declines += 1;
+
+  if (!(user.declinedNames instanceof Set)) {
+    user.declinedNames = new Set();
+  }
+
   user.declinedNames.add(currentCandidate.player);
-  state.history.push({ user: user.name, decision: "DECLINE", player: currentCandidate });
+
+  state.history.push({
+    user: user.name,
+    decision: "DECLINE",
+    player: currentCandidate
+  });
+
   currentCandidate = null;
+
   clearCandidate("Click Pick player to try another player.");
+
   render();
+
   await saveOnlineState();
 }
 
 function moveToNextUser() {
+  if (!state || !Array.isArray(state.users)) return;
+
   for (let offset = 1; offset <= state.userCount; offset++) {
     const next = (state.currentUserIndex + offset) % state.userCount;
+
     if (getNeededPositions(state.users[next]).length) {
       state.currentUserIndex = next;
       return;
@@ -654,18 +1310,29 @@ function moveToNextUser() {
 
 function completeGame() {
   currentCandidate = null;
+
   clearCandidate("Game complete. Reveal ratings to see the winner.");
-  if (els.revealBtn) els.revealBtn.classList.remove("hidden");
+
+  if (els.revealBtn) {
+    els.revealBtn.classList.remove("hidden");
+  }
+
   if (els.pickBtn) els.pickBtn.disabled = true;
   if (els.acceptBtn) els.acceptBtn.disabled = true;
   if (els.declineBtn) els.declineBtn.disabled = true;
+
   saveOnlineState("Game complete. Reveal ratings to see the winner.");
 }
 
 function updateGameControls() {
   if (!state) return;
+
   const isBid = state.gameMode === "bid";
-  if (els.turnEyebrow) els.turnEyebrow.textContent = isBid ? "Current nominator" : "Current turn";
+
+  if (els.turnEyebrow) {
+    els.turnEyebrow.textContent = isBid ? "Current nominator" : "Current turn";
+  }
+
   show(els.draftControls, !isBid);
   show(els.bidControls, isBid);
   show(els.declinesPill, !isBid);
@@ -674,56 +1341,116 @@ function updateGameControls() {
 
 function applyOnlinePermissions() {
   if (!online.enabled || !state) return;
+
   const user = currentUser();
   const canAct = currentPlayerCanAct();
+
   let note = $("turnLockNote");
+
   if (!note && els.message) {
     note = document.createElement("div");
     note.id = "turnLockNote";
     note.className = "turn-lock-note";
     els.message.insertAdjacentElement("afterend", note);
   }
-  if (note) note.textContent = canAct
-    ? (online.isHost && user && safeKey(user.name) !== safeKey(online.myName) ? `Host control enabled. Current player is ${user.name}.` : `It is your turn, ${online.myName}.`)
-    : `Waiting for ${user?.name || "the current player"}. You joined as ${online.myName}.`;
+
+  if (note) {
+    note.textContent = canAct
+      ? online.isHost && user && safeKey(user.name) !== safeKey(online.myName)
+        ? `Host control enabled. Current player is ${user.name}.`
+        : `It is your turn, ${online.myName}.`
+      : `Waiting for ${user?.name || "the current player"}. You joined as ${online.myName}.`;
+  }
+
   if (state.gameMode === "draft") {
-    if (els.pickBtn) els.pickBtn.disabled = !canAct || !!currentCandidate || isGameComplete();
-    if (els.acceptBtn) els.acceptBtn.disabled = !canAct || !currentCandidate;
-    if (els.declineBtn) els.declineBtn.disabled = !canAct || !currentCandidate || currentUser().declines >= DECLINES_ALLOWED;
+    if (els.pickBtn) {
+      els.pickBtn.disabled = !canAct || !!currentCandidate || isGameComplete();
+    }
+
+    if (els.acceptBtn) {
+      els.acceptBtn.disabled = !canAct || !currentCandidate;
+    }
+
+    if (els.declineBtn) {
+      els.declineBtn.disabled = !canAct || !currentCandidate || currentUser().declines >= DECLINES_ALLOWED;
+    }
   }
 }
 
 function render() {
   if (!state) return;
+
   updateGameControls();
+
   const user = currentUser();
-  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
-  if (state.gameMode === "draft" && els.declinesLeft) els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
-  if (state.gameMode === "bid" && els.currentBudgetLeft) els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
+
+  if (els.currentUserLabel) {
+    els.currentUserLabel.textContent = user?.name || "";
+  }
+
+  if (state.gameMode === "draft" && els.declinesLeft) {
+    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
+  }
+
+  if (state.gameMode === "bid" && els.currentBudgetLeft) {
+    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
+  }
+
   renderTeams();
   applyOnlinePermissions();
 }
 
 function clearCandidate(text) {
   if (!els.candidateCard) return;
+
   els.candidateCard.classList.add("blank");
   els.candidateCard.innerHTML = `<p class="muted">${escapeHtml(text)}</p>`;
+
   if (els.acceptBtn) els.acceptBtn.disabled = true;
   if (els.declineBtn) els.declineBtn.disabled = true;
 }
 
 function renderCandidate(p) {
   if (!els.candidateCard) return;
+
   els.candidateCard.classList.remove("blank");
+
   els.candidateCard.innerHTML = `
     <p class="eyebrow">Random candidate</p>
     <h3 class="player-name">${escapeHtml(p.player)}</h3>
-    <div class="badge-row"><span class="badge dark">${p.mainPosition}</span><span class="badge">${escapeHtml(p.position)}</span><span class="badge">${p.year || ""}</span></div>
-    <div class="detail-grid"><div class="detail"><span>Club</span>${escapeHtml(p.club)}</div><div class="detail"><span>Nation</span>${escapeHtml(p.nation)}</div></div>`;
+
+    <div class="badge-row">
+      <span class="badge dark">${p.mainPosition}</span>
+      <span class="badge">${escapeHtml(p.position)}</span>
+      <span class="badge">${p.year || ""}</span>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail">
+        <span>Club</span>
+        ${escapeHtml(p.club)}
+      </div>
+      <div class="detail">
+        <span>Nation</span>
+        ${escapeHtml(p.nation)}
+      </div>
+    </div>
+  `;
 }
 
 function buildSlots(user) {
+  if (!user || !Array.isArray(user.team)) {
+    return [
+      { label: "GK", player: null },
+      { label: "DEF", player: null },
+      { label: "MID", player: null },
+      { label: "MID", player: null },
+      { label: "FWD", player: null }
+    ];
+  }
+
   const mids = user.team.filter(p => p.mainPosition === "MID");
+
   return [
     { label: "GK", player: user.team.find(p => p.mainPosition === "GK") },
     { label: "DEF", player: user.team.find(p => p.mainPosition === "DEF") },
@@ -735,76 +1462,195 @@ function buildSlots(user) {
 
 function shortenName(name, max = 22) {
   if (!name || name.length <= max) return name || "";
+
   const parts = name.split(" ");
-  if (parts.length > 1) return `${parts[0][0]}. ${parts.slice(1).join(" ")}`.slice(0, max);
+
+  if (parts.length > 1) {
+    return `${parts[0][0]}. ${parts.slice(1).join(" ")}`.slice(0, max);
+  }
+
   return name.slice(0, max - 1) + "…";
 }
 
 function shortenClub(club) {
-  const map = { "Manchester City": "Man City", "Manchester United": "Man United", "FC Barcelona": "Barcelona", "Paris Saint-Germain": "PSG", "Tottenham Hotspur": "Spurs", "Bayern München": "Bayern", "Bayern Munich": "Bayern" };
+  const map = {
+    "Manchester City": "Man City",
+    "Manchester United": "Man United",
+    "FC Barcelona": "Barcelona",
+    "Paris Saint-Germain": "PSG",
+    "Tottenham Hotspur": "Spurs",
+    "Bayern München": "Bayern",
+    "Bayern Munich": "Bayern"
+  };
+
   const out = map[club] || club || "";
+
   return out.length > 18 ? out.slice(0, 17) + "…" : out;
 }
 
 function renderPitchPlayer(slot, cls) {
-  if (!slot.player) return `<div class="pitch-player ${cls} empty-slot"><span class="pos">${slot.label}</span><span class="name">Empty</span></div>`;
+  if (!slot.player) {
+    return `
+      <div class="pitch-player ${cls} empty-slot">
+        <span class="pos">${slot.label}</span>
+        <span class="name">Empty</span>
+      </div>
+    `;
+  }
+
   const p = slot.player;
-  const rating = ratingsRevealed ? `<span class="rating">OVR ${p.rating}</span>` : "";
-  const price = p.price ? `<span class="price">£${p.price}m</span>` : "";
-  return `<div class="pitch-player ${cls}"><span class="pos">${slot.label}</span><span class="name">${escapeHtml(shortenName(p.player))}</span><span class="club">${escapeHtml(shortenClub(p.club))}</span><span class="year">${p.year || ""}</span>${rating}${price}</div>`;
+
+  const rating = ratingsRevealed
+    ? `<span class="rating">OVR ${p.rating}</span>`
+    : "";
+
+  const price = p.price
+    ? `<span class="price">£${p.price}m</span>`
+    : "";
+
+  return `
+    <div class="pitch-player ${cls}">
+      <span class="pos">${slot.label}</span>
+      <span class="name">${escapeHtml(shortenName(p.player))}</span>
+      <span class="club">${escapeHtml(shortenClub(p.club))}</span>
+      <span class="year">${p.year || ""}</span>
+      ${rating}
+      ${price}
+    </div>
+  `;
 }
 
 function renderPitch(slots) {
   const classMap = ["gk", "def", "mid1", "mid2", "fwd"];
-  return `<div class="pitch" aria-label="5-a-side pitch"><div class="penalty-box top"></div><div class="penalty-box bottom"></div>${slots.map((slot, i) => renderPitchPlayer(slot, classMap[i])).join("")}</div>`;
+
+  return `
+    <div class="pitch" aria-label="5-a-side pitch">
+      <div class="penalty-box top"></div>
+      <div class="penalty-box bottom"></div>
+      ${slots.map((slot, i) => renderPitchPlayer(slot, classMap[i])).join("")}
+    </div>
+  `;
 }
 
 function renderTeams() {
-  if (!els.teamsContainer || !state) return;
+  if (!els.teamsContainer || !state || !Array.isArray(state.users)) return;
+
   els.teamsContainer.innerHTML = state.users.map(user => {
+    if (!Array.isArray(user.team)) {
+      user.team = [];
+    }
+
     const total = user.team.reduce((sum, p) => sum + Number(p.rating || 0), 0);
     const needs = getNeededPositions(user);
-    return `<article class="team-card"><div class="team-top-row"><div><h3>${escapeHtml(user.name)}</h3><div class="team-meta">${needs.length ? `Needs ${needs.join(", ")}` : "Complete"}</div></div><div class="score">${ratingsRevealed ? total : "Hidden"}</div></div>${renderPitch(buildSlots(user))}${state.gameMode === "draft" ? `<div class="score">Declines used: ${user.declines}/${DECLINES_ALLOWED}</div>` : ""}</article>`;
+
+    return `
+      <article class="team-card">
+        <div class="team-top-row">
+          <div>
+            <h3>${escapeHtml(user.name)}</h3>
+            <div class="team-meta">${needs.length ? `Needs ${needs.join(", ")}` : "Complete"}</div>
+          </div>
+          <div class="score">${ratingsRevealed ? total : "Hidden"}</div>
+        </div>
+
+        ${renderPitch(buildSlots(user))}
+
+        ${state.gameMode === "draft"
+          ? `<div class="score">Declines used: ${user.declines}/${DECLINES_ALLOWED}</div>`
+          : ""}
+      </article>
+    `;
   }).join("");
 }
 
 function getFinalScores() {
-  return state.users.map(user => ({ user, total: user.team.reduce((sum, p) => sum + Number(p.rating || 0), 0) })).sort((a, b) => b.total - a.total);
+  if (!state || !Array.isArray(state.users)) return [];
+
+  return state.users
+    .map(user => ({
+      user,
+      total: Array.isArray(user.team)
+        ? user.team.reduce((sum, p) => sum + Number(p.rating || 0), 0)
+        : 0
+    }))
+    .sort((a, b) => b.total - a.total);
 }
 
 function renderResults() {
   if (!els.resultsContainer || !state) return;
+
   const scored = getFinalScores();
   const top = scored[0]?.total ?? 0;
-  els.resultsContainer.innerHTML = scored.map(row => `<article class="result-card ${row.total === top ? "winner" : ""}"><h3>${escapeHtml(row.user.name)}${row.total === top ? " 🏆" : ""}</h3><p class="score">${row.total}</p><p class="muted">${row.user.team.map(p => `${escapeHtml(p.player)} ${p.rating}`).join(" • ")}</p></article>`).join("");
+
+  els.resultsContainer.innerHTML = scored.map(row => `
+    <article class="result-card ${row.total === top ? "winner" : ""}">
+      <h3>${escapeHtml(row.user.name)}${row.total === top ? " 🏆" : ""}</h3>
+      <p class="score">${row.total}</p>
+      <p class="muted">
+        ${Array.isArray(row.user.team)
+          ? row.user.team.map(p => `${escapeHtml(p.player)} ${p.rating}`).join(" • ")
+          : ""}
+      </p>
+    </article>
+  `).join("");
 }
 
 async function revealScores() {
   ratingsRevealed = true;
+
   show(els.resultsPanel, true);
-  if (els.revealBtn) els.revealBtn.classList.add("hidden");
+
+  if (els.revealBtn) {
+    els.revealBtn.classList.add("hidden");
+  }
+
   render();
   renderResults();
+
   await saveOnlineState("Scores revealed.");
 }
 
-// Basic host-assisted bid mode retained so existing buttons do not break.
+// Basic host-assisted bid mode retained.
 async function bidRandomPlayer() {
   await ensurePlayersReady();
+
   if (!state || state.gameMode !== "bid") return;
+
   const user = currentUser();
+
+  if (!user) return;
+
   const needs = getNeededPositions(user);
-  const pool = players.filter(p => needs.includes(p.mainPosition) && !state.acceptedPlayerNames.has(p.player));
-  if (!pool.length) return setMessage(`No available player for ${user.name}.`);
+
+  const pool = players.filter(p => {
+    return needs.includes(p.mainPosition) && !state.acceptedPlayerNames.has(p.player);
+  });
+
+  if (!pool.length) {
+    setMessage(`No available player for ${user.name}.`);
+    return;
+  }
+
   currentCandidate = pool[Math.floor(Math.random() * pool.length)];
+
   renderCandidate(currentCandidate);
   renderBidInputs();
+
   await saveOnlineState();
 }
 
 function renderBidInputs() {
   if (!els.bidInputs || !state || !currentCandidate) return;
-  els.bidInputs.innerHTML = state.users.map((u, i) => `<div class="bid-row"><label for="bidUser${i}">${escapeHtml(u.name)}<span class="bid-help">Budget left: £${u.budget}m</span></label><input id="bidUser${i}" type="number" min="0" max="${u.budget}" step="1" value="0" /></div>`).join("");
+
+  els.bidInputs.innerHTML = state.users.map((u, i) => `
+    <div class="bid-row">
+      <label for="bidUser${i}">
+        ${escapeHtml(u.name)}
+        <span class="bid-help">Budget left: £${u.budget}m</span>
+      </label>
+      <input id="bidUser${i}" type="number" min="0" max="${u.budget}" step="1" value="0" />
+    </div>
+  `).join("");
 }
 
 function getBid(index) {
@@ -814,37 +1660,73 @@ function getBid(index) {
 
 async function awardHighestBid() {
   if (!state || state.gameMode !== "bid" || !currentCandidate) return;
+
   let best = null;
+
   state.users.forEach((u, i) => {
     const bid = getBid(i);
-    if (bid > 0 && bid <= u.budget && (!best || bid > best.bid)) best = { user: u, index: i, bid };
+
+    if (bid > 0 && bid <= u.budget && (!best || bid > best.bid)) {
+      best = { user: u, index: i, bid };
+    }
   });
-  if (!best) return setMessage("Enter at least one valid bid above £0m.");
-  best.user.team.push({ ...currentCandidate, price: best.bid });
+
+  if (!best) {
+    setMessage("Enter at least one valid bid above £0m.");
+    return;
+  }
+
+  if (!Array.isArray(best.user.team)) {
+    best.user.team = [];
+  }
+
+  best.user.team.push({
+    ...currentCandidate,
+    price: best.bid
+  });
+
   best.user.budget -= best.bid;
   best.user.spent += best.bid;
+
   state.acceptedPlayerNames.add(currentCandidate.player);
+
   currentCandidate = null;
-  if (isGameComplete()) completeGame(); else rotateBidNominator();
+
+  if (isGameComplete()) {
+    completeGame();
+  } else {
+    rotateBidNominator();
+  }
+
   clearCandidate("Click Randomise player to continue.");
+
   render();
+
   await saveOnlineState();
 }
 
 async function skipBidPlayer() {
   if (!state || state.gameMode !== "bid" || !currentCandidate) return;
+
   currentCandidate = null;
+
   rotateBidNominator();
+
   clearCandidate("Player skipped. Click Randomise player to continue.");
+
   render();
+
   await saveOnlineState();
 }
 
 function rotateBidNominator() {
   if (!state?.bidOrder?.length) return;
+
   for (let i = 0; i < state.userCount; i++) {
     state.bidRoundIndex = (state.bidRoundIndex + 1) % state.userCount;
+
     const ix = state.bidOrder[state.bidRoundIndex];
+
     if (getNeededPositions(state.users[ix]).length) {
       state.currentUserIndex = ix;
       return;
@@ -854,17 +1736,33 @@ function rotateBidNominator() {
 
 function createSummaryCanvas() {
   const canvas = document.createElement("canvas");
-  canvas.width = 1200; canvas.height = 700;
+  canvas.width = 1200;
+  canvas.height = 700;
+
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#0f172a"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#fff"; ctx.font = "900 42px Arial"; ctx.fillText("5-a-side Results", 50, 70);
+
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "900 42px Arial";
+  ctx.fillText("5-a-side Results", 50, 70);
+
   ctx.font = "700 28px Arial";
-  getFinalScores().forEach((row, i) => ctx.fillText(`${i + 1}. ${row.user.name} - ${row.total}`, 60, 140 + i * 50));
+
+  getFinalScores().forEach((row, i) => {
+    ctx.fillText(`${i + 1}. ${row.user.name} - ${row.total}`, 60, 140 + i * 50);
+  });
+
   return canvas;
 }
 
 async function saveSummaryImage() {
-  if (!state || !ratingsRevealed) return alert("Reveal the scores first.");
+  if (!state || !ratingsRevealed) {
+    alert("Reveal the scores first.");
+    return;
+  }
+
   const link = document.createElement("a");
   link.download = "5-a-side-results.png";
   link.href = createSummaryCanvas().toDataURL("image/png");
@@ -872,12 +1770,29 @@ async function saveSummaryImage() {
 }
 
 async function shareSummaryImage() {
-  if (!state || !ratingsRevealed) return alert("Reveal the scores first.");
+  if (!state || !ratingsRevealed) {
+    alert("Reveal the scores first.");
+    return;
+  }
+
   const canvas = createSummaryCanvas();
-  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 0.95));
-  const file = new File([blob], "5-a-side-results.png", { type: "image/png" });
-  if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: "5-a-side Results" });
-  else saveSummaryImage();
+
+  const blob = await new Promise(resolve => {
+    canvas.toBlob(resolve, "image/png", 0.95);
+  });
+
+  const file = new File([blob], "5-a-side-results.png", {
+    type: "image/png"
+  });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    await navigator.share({
+      files: [file],
+      title: "5-a-side Results"
+    });
+  } else {
+    saveSummaryImage();
+  }
 }
 
 function wireEvents() {
@@ -892,11 +1807,16 @@ function wireEvents() {
   els.skipBidBtn?.addEventListener("click", safe(skipBidPlayer));
   els.saveSummaryBtn?.addEventListener("click", safe(saveSummaryImage));
   els.shareSummaryBtn?.addEventListener("click", safe(shareSummaryImage));
+
   els.userCount?.addEventListener("change", renderUserNameInputs);
+
   els.gameModeCards?.addEventListener("click", event => {
     const card = event.target.closest(".game-mode-card");
+
     if (!card) return;
+
     selectedGameMode = card.dataset.mode;
+
     updateSetupForMode();
   });
 }
