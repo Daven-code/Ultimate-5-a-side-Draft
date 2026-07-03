@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v42
+// app.js v43
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -3790,6 +3790,247 @@ function render() {
 
   applyOnlinePermissions();
   syncRevealButtonV37();
+}
+
+
+
+// --- v43 restore local bid skip lives ---
+// Local bid mode only. Online blind bidding remains unchanged.
+// Rule: each eligible user has 3 zero-bid/skip lives. If they bid £0m or the player is skipped, they lose one life.
+// Once a user has used 3 skips, they must bid above £0m for eligible players.
+function localEligibleBidUsersV43(candidate = currentCandidate) {
+  if (!state || !candidate) return [];
+  v29SafeState();
+  return state.users.filter(user => {
+    return getNeededPositions(user).includes(candidate.mainPosition);
+  });
+}
+
+function localBidSkipsUsedV43(user) {
+  return Math.max(0, Number(user?.bidSkips || 0));
+}
+
+function localBidSkipsLeftV43(user) {
+  return Math.max(0, BID_SKIPS_ALLOWED - localBidSkipsUsedV43(user));
+}
+
+function localZeroBidUsersV43(eligibleUsers) {
+  return eligibleUsers.filter((user) => {
+    const index = state.users.findIndex(u => safeKey(u.name) === safeKey(user.name));
+    return getBid(index) <= 0;
+  });
+}
+
+function localUsersWithNoSkipsLeftV43(users) {
+  return users.filter(user => localBidSkipsUsedV43(user) >= BID_SKIPS_ALLOWED);
+}
+
+function localIncrementSkipsV43(users) {
+  users.forEach(user => {
+    user.bidSkips = Math.min(BID_SKIPS_ALLOWED, localBidSkipsUsedV43(user) + 1);
+  });
+}
+
+function setBidActionButtonsV42() {
+  if (!state || state.gameMode !== "bid") return;
+  if (online.enabled) return;
+
+  const hasCandidate = !!currentCandidate;
+  const complete = isGameComplete();
+  const eligibleUsers = localEligibleBidUsersV43();
+  const everyoneCanStillSkip = eligibleUsers.length > 0 && localUsersWithNoSkipsLeftV43(eligibleUsers).length === 0;
+
+  if (els.bidPickBtn) {
+    els.bidPickBtn.classList.remove("hidden");
+    els.bidPickBtn.disabled = hasCandidate || complete;
+  }
+
+  if (els.awardBidBtn) {
+    els.awardBidBtn.classList.remove("hidden");
+    els.awardBidBtn.disabled = !hasCandidate || complete;
+  }
+
+  if (els.skipBidBtn) {
+    els.skipBidBtn.classList.remove("hidden");
+    // If any eligible user has no skips left, the group cannot skip the player outright.
+    els.skipBidBtn.disabled = !hasCandidate || complete || !everyoneCanStillSkip;
+    els.skipBidBtn.title = hasCandidate && !everyoneCanStillSkip
+      ? "At least one eligible user has no skips left and must bid above £0m."
+      : "";
+  }
+}
+
+function renderBidInputs() {
+  if (!els.bidInputs || !state || state.gameMode !== "bid") return;
+
+  if (!currentCandidate) {
+    clearLocalBidInputsV42("Randomise a player to enter bids.");
+    setBidActionButtonsV42();
+    return;
+  }
+
+  const eligibleKeys = new Set(localEligibleBidUsersV43().map(user => safeKey(user.name)));
+
+  els.bidInputs.innerHTML = state.users.map((u, i) => {
+    const eligible = eligibleKeys.has(safeKey(u.name));
+    const skipsLeft = localBidSkipsLeftV43(u);
+    const mustBid = eligible && skipsLeft <= 0;
+    return `
+      <div class="bid-row">
+        <label for="bidUser${i}">
+          ${escapeHtml(u.name)}
+          <span class="bid-help">
+            Budget left: £${u.budget}m • Skips left: ${skipsLeft}/${BID_SKIPS_ALLOWED}${mustBid ? " • must bid above £0m" : ""}
+          </span>
+        </label>
+        <input id="bidUser${i}" type="number" min="0" max="${u.budget}" step="1" value="0" ${eligible ? "" : "disabled"} />
+        ${eligible ? "" : `<p class="muted" style="margin:6px 0 0;">Not eligible for ${escapeHtml(currentCandidate.mainPosition)}.</p>`}
+      </div>
+    `;
+  }).join("");
+
+  setBidActionButtonsV42();
+}
+
+async function awardHighestBid() {
+  // Keep online mode completely separate.
+  if (online.enabled) return;
+  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
+  v29SafeState();
+
+  const eligibleUsers = localEligibleBidUsersV43();
+  if (!eligibleUsers.length) {
+    setMessage("No eligible users can bid for this player. Skip or randomise again.");
+    setBidActionButtonsV42();
+    return;
+  }
+
+  const zeroBidUsers = localZeroBidUsersV43(eligibleUsers);
+  const zeroBiddersWithNoSkipsLeft = localUsersWithNoSkipsLeftV43(zeroBidUsers);
+
+  if (zeroBiddersWithNoSkipsLeft.length) {
+    setMessage(`${zeroBiddersWithNoSkipsLeft.map(u => u.name).join(" and ")} ${zeroBiddersWithNoSkipsLeft.length === 1 ? "has" : "have"} no skips left and must bid above £0m.`);
+    setBidActionButtonsV42();
+    return;
+  }
+
+  let best = null;
+
+  eligibleUsers.forEach((u) => {
+    const i = state.users.findIndex(user => safeKey(user.name) === safeKey(u.name));
+    const bid = getBid(i);
+    if (bid > 0 && bid <= u.budget && (!best || bid > best.bid)) {
+      best = { user: u, index: i, bid };
+    }
+  });
+
+  // If everyone eligible bid zero, everyone eligible loses a skip and the player is skipped.
+  if (!best) {
+    localIncrementSkipsV43(eligibleUsers);
+    const skippedName = currentCandidate.player;
+    currentCandidate = null;
+    rotateBidNominator();
+    clearCandidate("Everyone bid £0m. Player skipped. Click Randomise player to continue.");
+    clearLocalBidInputsV42("Randomise the next player to enter bids.");
+    setMessage(`${skippedName} was skipped. ${eligibleUsers.map(u => u.name).join(", ")} ${eligibleUsers.length === 1 ? "loses" : "lose"} one skip.`);
+    render();
+    setBidActionButtonsV42();
+    await saveOnlineState();
+    return;
+  }
+
+  // Any eligible user who bid £0m also loses a skip, even if another user wins the player.
+  localIncrementSkipsV43(zeroBidUsers);
+
+  const awardedPlayer = v29NormalisePlayer(currentCandidate);
+  if (!awardedPlayer) return;
+
+  best.user.team.push({
+    ...awardedPlayer,
+    price: best.bid
+  });
+
+  best.user.budget = Math.max(0, Number(best.user.budget || 0) - best.bid);
+  best.user.spent = Number(best.user.spent || 0) + best.bid;
+  state.acceptedPlayerNames.add(awardedPlayer.player);
+
+  const winnerName = best.user.name;
+  const playerName = awardedPlayer.player;
+  const zeroPenaltyText = zeroBidUsers.length
+    ? ` ${zeroBidUsers.map(u => u.name).join(", ")} ${zeroBidUsers.length === 1 ? "loses" : "lose"} one skip for bidding £0m.`
+    : "";
+
+  currentCandidate = null;
+
+  if (isGameComplete()) {
+    completeGame();
+    clearLocalBidInputsV42("Bidding complete. Reveal ratings to see the winner.");
+  } else {
+    rotateBidNominator();
+    clearCandidate("Click Randomise player to continue.");
+    clearLocalBidInputsV42("Randomise the next player to enter bids.");
+    setMessage(`${winnerName} won ${playerName} for £${best.bid}m.${zeroPenaltyText}`);
+  }
+
+  render();
+  setBidActionButtonsV42();
+  await saveOnlineState();
+}
+
+async function skipBidPlayer() {
+  // Keep online mode completely separate.
+  if (online.enabled) return;
+  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
+  v29SafeState();
+
+  const eligibleUsers = localEligibleBidUsersV43();
+  const usersWithNoSkipsLeft = localUsersWithNoSkipsLeftV43(eligibleUsers);
+
+  if (usersWithNoSkipsLeft.length) {
+    setMessage(`${usersWithNoSkipsLeft.map(u => u.name).join(" and ")} ${usersWithNoSkipsLeft.length === 1 ? "has" : "have"} no skips left and must bid above £0m.`);
+    setBidActionButtonsV42();
+    return;
+  }
+
+  localIncrementSkipsV43(eligibleUsers);
+
+  const skippedName = currentCandidate.player;
+  currentCandidate = null;
+
+  rotateBidNominator();
+  clearCandidate("Player skipped. Click Randomise player to continue.");
+  clearLocalBidInputsV42("Randomise the next player to enter bids.");
+  setMessage(`${skippedName} was skipped. ${eligibleUsers.map(u => u.name).join(", ")} ${eligibleUsers.length === 1 ? "loses" : "lose"} one skip.`);
+
+  render();
+  setBidActionButtonsV42();
+  await saveOnlineState();
+}
+
+function renderTeams() {
+  if (!els.teamsContainer || !state || !Array.isArray(state.users)) return;
+  v29SafeState();
+  els.teamsContainer.innerHTML = state.users.map((user, index) => {
+    const safeUser = v29SafeUser(user, index);
+    state.users[index] = safeUser;
+    const total = safeUser.team.reduce((sum, p) => sum + Number(p.rating || 0), 0);
+    const needs = getNeededPositions(safeUser);
+    return `
+      <article class="team-card">
+        <div class="team-top-row">
+          <div>
+            <h3>${escapeHtml(safeUser.name)}</h3>
+            <div class="team-meta">${needs.length ? `Needs ${needs.join(", ")}` : "Complete"}</div>
+          </div>
+          <div class="score">${ratingsRevealed ? total : "Hidden"}</div>
+        </div>
+        ${renderPitch(buildSlots(safeUser))}
+        ${state.gameMode === "draft"
+          ? `<div class="score">Declines used: ${safeUser.declines}/${DECLINES_ALLOWED}</div>`
+          : `<div class="score">Skips used: ${localBidSkipsUsedV43(safeUser)}/${BID_SKIPS_ALLOWED}</div>`}
+      </article>
+    `;
+  }).join("");
 }
 
 function init() {
