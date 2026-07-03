@@ -21,6 +21,7 @@ let state = null;
 let currentCandidate = null;
 let ratingsRevealed = false;
 let applyingRemote = false;
+let playersLoadPromise = null;
 
 const online = {
   enabled: false,
@@ -80,17 +81,29 @@ const els = {
 };
 
 async function loadPlayers() {
-  try {
-    const response = await fetch("players.json", { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    players = normalisePlayers(await response.json());
-  } catch {
-    players = normalisePlayers(samplePlayers);
-    if (els.loadStatus) {
-      els.loadStatus.textContent = "Using fallback sample players. Keep players.json in the project folder.";
-      els.loadStatus.style.display = "block";
+  if (playersLoadPromise) return playersLoadPromise;
+  playersLoadPromise = (async () => {
+    try {
+      const response = await fetch("players.json", { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      players = normalisePlayers(await response.json());
+    } catch {
+      players = normalisePlayers(samplePlayers);
+      if (els.loadStatus) {
+        els.loadStatus.textContent = "Using fallback sample players. Keep players.json in the project folder.";
+        els.loadStatus.style.display = "block";
+      }
     }
+    return players;
+  })();
+  return playersLoadPromise;
+}
+
+async function ensurePlayersReady() {
+  if (!players || players.length === 0) {
+    await loadPlayers();
   }
+  return players && players.length > 0;
 }
 
 function normalisePlayers(data) {
@@ -399,6 +412,7 @@ function participantNamesFromSnapshot(snapshot) {
 
 async function startOnlineGameFromLobby() {
   if (!online.enabled || !online.isHost || !online.ref) return;
+  await ensurePlayersReady();
   const snapshot = await online.ref.child("participants").once("value");
   const names = participantNamesFromSnapshot(snapshot);
   const minUsers = selectedGameMode === "bid" ? 2 : 1;
@@ -437,7 +451,6 @@ async function startOnlineGameFromLobby() {
     state.bidOrder = shuffleArray([...Array(activeNames.length).keys()]);
     state.currentUserIndex = state.bidOrder[0];
   }
-  hideEntryPanel();
   hideEntryPanel();
   ensureLobby().classList.add("hidden");
   els.setupPanel.classList.add("hidden");
@@ -500,7 +513,6 @@ function applyRemoteData(data) {
   currentCandidate = data.currentCandidate || null;
   ratingsRevealed = !!data.ratingsRevealed;
   hideEntryPanel();
-  hideEntryPanel();
   ensureLobby().classList.add("hidden");
   els.setupPanel.classList.add("hidden");
   els.gamePanel.classList.remove("hidden");
@@ -511,6 +523,7 @@ function applyRemoteData(data) {
   render();
   if (currentCandidate) renderCandidate(currentCandidate);
   else clearCandidate(data.message || "Waiting for the next action...");
+  renderTeams();
   if (ratingsRevealed) renderResults();
   els.message.textContent = data.message || "";
   applyingRemote = false;
@@ -594,7 +607,8 @@ function getUserNames(userCount) {
   });
 }
 
-function startGame() {
+async function startGame() {
+  await ensurePlayersReady();
   const gameMode = selectedGameMode;
   const userCount = Number(els.userCount.value);
   const names = getUserNames(userCount);
@@ -680,8 +694,13 @@ function getNeededPositions(user) {
   return needs;
 }
 
-function pickRandomPlayer() {
+async function pickRandomPlayer() {
   if (!state || state.gameMode !== "draft" || isGameComplete()) return;
+  const playersReady = await ensurePlayersReady();
+  if (!playersReady) {
+    els.message.textContent = "Players have not loaded yet. Please wait a moment and try again.";
+    return;
+  }
   if (online.enabled && !currentPlayerCanAct()) return applyOnlinePermissions();
   if (currentCandidate) {
     els.message.textContent = "Please accept or decline the current player before picking another.";
@@ -697,7 +716,8 @@ function pickRandomPlayer() {
     return true;
   });
   if (pool.length === 0) {
-    clearCandidate("No available player for the positions this user still needs.");
+    clearCandidate(`No available player found for ${user.name}. They need: ${needs.join(", ")}.`);
+    await saveOnlineState();
     return;
   }
   currentCandidate = pool[Math.floor(Math.random() * pool.length)];
@@ -708,11 +728,11 @@ function pickRandomPlayer() {
   els.message.textContent = user.declines >= DECLINES_ALLOWED
     ? `${user.name} has used all 3 declines and must accept this player.`
     : `${user.name} needs: ${needs.join(", ")}`;
-  saveOnlineState();
+  await saveOnlineState();
   applyOnlinePermissions();
 }
 
-function acceptPlayer() {
+async function acceptPlayer() {
   if (!currentCandidate || !state || state.gameMode !== "draft") return;
   if (online.enabled && !currentPlayerCanAct()) return applyOnlinePermissions();
   const user = currentUser();
@@ -720,12 +740,12 @@ function acceptPlayer() {
   state.acceptedPlayerNames.add(currentCandidate.player);
   state.history.push({ user: user.name, decision: "ACCEPT", player: currentCandidate });
   currentCandidate = null;
-  if (isGameComplete()) completeGame(); else { moveToNextUser(); pickRandomPlayer(); }
+  if (isGameComplete()) completeGame(); else { moveToNextUser(); await pickRandomPlayer(); }
   render();
-  saveOnlineState();
+  await saveOnlineState();
 }
 
-function declinePlayer() {
+async function declinePlayer() {
   if (!currentCandidate || !state || state.gameMode !== "draft") return;
   if (online.enabled && !currentPlayerCanAct()) return applyOnlinePermissions();
   const user = currentUser();
@@ -738,9 +758,9 @@ function declinePlayer() {
   user.declinedNames.add(currentCandidate.player);
   state.history.push({ user: user.name, decision: "DECLINE", player: currentCandidate });
   currentCandidate = null;
-  pickRandomPlayer();
+  await pickRandomPlayer();
   render();
-  saveOnlineState();
+  await saveOnlineState();
 }
 
 function bidRandomPlayer() {
