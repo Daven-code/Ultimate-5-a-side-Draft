@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v30
+// app.js v32
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -2196,6 +2196,129 @@ async function declinePlayer() {
 
   // Smooth flow: automatically pick another player for the same user's turn.
   await pickRandomPlayer();
+}
+
+
+
+// --- v32 explicit local + online draft flow overrides ---
+// This fixes the v31 recursion bug. No delegation/cached function references are used.
+function onlineDrawCandidateForCurrentTurnV32(messagePrefix = null) {
+  if (!online.enabled || !state || state.gameMode !== "draft") return false;
+  v29SafeState();
+
+  if (isGameComplete()) {
+    completeGame();
+    return false;
+  }
+
+  const user = currentUser();
+  if (!user) {
+    setMessage("No current user found.");
+    return false;
+  }
+
+  const needs = getNeededPositions(user);
+  if (!needs.length) {
+    moveToNextUser();
+    return onlineDrawCandidateForCurrentTurnV32(messagePrefix);
+  }
+
+  const pool = players.filter(p => {
+    if (!needs.includes(p.mainPosition)) return false;
+    if (state.acceptedPlayerNames.has(p.player)) return false;
+    if (state.excludeDeclines && user.declinedNames.has(p.player)) return false;
+    return true;
+  });
+
+  if (!pool.length) {
+    currentCandidate = null;
+    clearCandidate(`No available player found for ${user.name}. They need: ${needs.join(", ")}.`);
+    return false;
+  }
+
+  currentCandidate = pool[Math.floor(Math.random() * pool.length)];
+  renderCandidate(currentCandidate);
+  setMessage(messagePrefix || `${user.name} needs: ${needs.join(", ")}`);
+  render();
+  applyOnlinePermissions();
+  return true;
+}
+
+async function acceptPlayer() {
+  if (!state || !currentCandidate || state.gameMode !== "draft") return;
+  v29SafeState();
+
+  if (online.enabled && !currentPlayerCanAct()) {
+    applyOnlinePermissions();
+    return;
+  }
+
+  const user = currentUser();
+  if (!user) return;
+
+  const picked = v29NormalisePlayer(currentCandidate);
+  if (!picked) return;
+
+  user.team.push(picked);
+  state.acceptedPlayerNames.add(picked.player);
+  state.history.push({ user: user.name, decision: "ACCEPT", player: picked });
+  currentCandidate = null;
+
+  if (isGameComplete()) {
+    completeGame();
+    render();
+    await saveOnlineState("Game complete. Reveal ratings to see the winner.");
+    return;
+  }
+
+  moveToNextUser();
+
+  if (online.enabled) {
+    onlineDrawCandidateForCurrentTurnV32();
+    await saveOnlineState();
+  } else {
+    // Preserve the working v30 local behaviour: automatically pick the next player.
+    render();
+    setDraftActionButtons();
+    await saveOnlineState();
+    await pickRandomPlayer();
+  }
+}
+
+async function declinePlayer() {
+  if (!state || !currentCandidate || state.gameMode !== "draft") return;
+  v29SafeState();
+
+  if (online.enabled && !currentPlayerCanAct()) {
+    applyOnlinePermissions();
+    return;
+  }
+
+  const user = currentUser();
+  if (!user) return;
+
+  if (user.declines >= DECLINES_ALLOWED) {
+    setMessage(`${user.name} has no declines left and must accept this player.`);
+    if (online.enabled) applyOnlinePermissions();
+    else setDraftActionButtons();
+    return;
+  }
+
+  user.declines += 1;
+  user.declinedNames.add(currentCandidate.player);
+  state.history.push({ user: user.name, decision: "DECLINE", player: currentCandidate });
+  currentCandidate = null;
+
+  if (online.enabled) {
+    onlineDrawCandidateForCurrentTurnV32();
+    await saveOnlineState();
+  } else {
+    // Preserve the working v30 local behaviour: automatically pick another player for the same user.
+    render();
+    setDraftActionButtons();
+    await saveOnlineState();
+    await pickRandomPlayer();
+  }
 }
 
 function init() {
