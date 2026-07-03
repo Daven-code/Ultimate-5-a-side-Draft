@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v40
+// app.js v41
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -3590,274 +3590,255 @@ async function submitOnlineBlindBidV38() {
 
 
 
-// --- v40 clearer online blind bidding UI ---
-function injectOnlineBidStylesV40() {
-  if ($("onlineBidStylesV40")) return;
+// --- v41 simplified online blind bidding layout + room code banner ---
+// Based on v39, not v40. Keeps blind-bid behaviour but returns to a simpler, clearer layout.
+function ensureOnlineRoomBannerV41() {
+  if (!online.enabled || !online.roomId || !els.gamePanel) return;
+  let banner = $("onlineRoomBannerV41");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "onlineRoomBannerV41";
+    banner.className = "online-room-banner-v41";
+    els.gamePanel.parentNode.insertBefore(banner, els.gamePanel);
+  }
+  const invite = `${location.origin}${location.pathname}?room=${online.roomId}`;
+  banner.innerHTML = `
+    <div class="online-room-banner-inner-v41">
+      <div>
+        <span class="online-room-label-v41">Online room</span>
+        <strong class="online-room-code-v41">${escapeHtml(online.roomId)}</strong>
+        <span class="online-room-help-v41">Use this code/link if someone needs to re-join.</span>
+      </div>
+      <div class="online-room-actions-v41">
+        <button id="copyRoomCodeBtnV41" type="button" class="btn btn-secondary">Copy code</button>
+        <button id="copyRoomLinkBtnV41" type="button" class="btn btn-secondary">Copy link</button>
+      </div>
+    </div>
+  `;
+  $("copyRoomCodeBtnV41")?.addEventListener("click", () => navigator.clipboard?.writeText(online.roomId));
+  $("copyRoomLinkBtnV41")?.addEventListener("click", () => navigator.clipboard?.writeText(invite));
+}
+
+function hideOnlineRoomBannerV41() {
+  const banner = $("onlineRoomBannerV41");
+  if (banner) banner.remove();
+}
+
+function injectOnlineBidBasicStylesV41() {
+  if ($("onlineBidBasicStylesV41")) return;
   const style = document.createElement("style");
-  style.id = "onlineBidStylesV40";
+  style.id = "onlineBidBasicStylesV41";
   style.textContent = `
-    .online-bid-layout-v40 {
-      display: grid;
-      gap: 18px;
+    .online-room-banner-v41 {
+      max-width: 1180px;
+      margin: 0 auto 16px;
+      padding: 0 4px;
     }
-
-    .blind-bid-hero-v40 {
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr);
-      gap: 18px;
-      padding: 18px;
-      border-radius: 24px;
-      background: linear-gradient(135deg, rgba(34,197,94,.14), rgba(59,130,246,.14));
-      border: 1px solid rgba(226,232,240,.9);
-      box-shadow: 0 18px 42px rgba(15,23,42,.10);
-    }
-
-    .blind-bid-hero-v40 h3 {
-      margin: 4px 0 8px;
-      font-size: clamp(1.45rem, 3vw, 2.15rem);
-      color: #0f172a;
-    }
-
-    .blind-bid-mini-steps-v40 {
-      display: grid;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .blind-bid-step-v40 {
-      display: grid;
-      grid-template-columns: 32px minmax(0, 1fr);
-      gap: 10px;
-      align-items: center;
-      background: rgba(255,255,255,.82);
-      border: 1px solid rgba(226,232,240,.95);
-      border-radius: 14px;
-      padding: 9px 10px;
-      color: #334155;
-      font-weight: 850;
-    }
-
-    .blind-bid-step-number-v40 {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #16a34a;
-      color: white;
-      display: inline-grid;
-      place-items: center;
-      font-weight: 950;
-    }
-
-    .blind-bid-player-card-v40 {
-      background: #0f172a;
-      color: white;
-      border-radius: 22px;
-      padding: 18px;
-      display: grid;
-      gap: 10px;
-      align-content: center;
-      min-height: 180px;
-      box-shadow: 0 18px 42px rgba(15,23,42,.22);
-    }
-
-    .blind-bid-player-card-v40 .player-name-v40 {
-      font-size: clamp(1.5rem, 3vw, 2.1rem);
-      font-weight: 950;
-      line-height: 1.05;
-    }
-
-    .blind-bid-pill-row-v40 {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .blind-bid-pill-v40 {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 999px;
-      padding: 7px 10px;
-      font-weight: 900;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.16);
-      color: #e2e8f0;
-      font-size: .86rem;
-    }
-
-    .blind-bid-action-card-v40 {
-      background: rgba(255,255,255,.96);
-      border: 1px solid #dbeafe;
-      border-radius: 24px;
-      padding: 18px;
-      box-shadow: 0 18px 44px rgba(37,99,235,.09);
-    }
-
-    .blind-bid-action-header-v40 {
+    .online-room-banner-inner-v41 {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 12px;
-      align-items: flex-start;
-      margin-bottom: 14px;
+      background: rgba(255,255,255,.95);
+      border: 1px solid rgba(226,232,240,.95);
+      border-radius: 18px;
+      padding: 12px 14px;
+      box-shadow: 0 12px 30px rgba(15,23,42,.10);
     }
-
-    .blind-bid-budget-v40 {
+    .online-room-label-v41 {
+      display: block;
+      color: #64748b;
+      font-size: .78rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 2px;
+    }
+    .online-room-code-v41 {
+      display: inline-block;
+      font-size: 1.25rem;
+      letter-spacing: .08em;
+      color: #0f172a;
+      margin-right: 10px;
+    }
+    .online-room-help-v41 {
+      color: #475569;
+      font-weight: 800;
+      font-size: .9rem;
+    }
+    .online-room-actions-v41 {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .online-bid-simple-v41 {
+      display: grid;
+      gap: 14px;
+    }
+    .online-bid-simple-panel-v41 {
+      background: rgba(255,255,255,.96);
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 12px 32px rgba(15,23,42,.08);
+    }
+    .online-bid-simple-title-v41 {
+      margin: 0 0 4px;
+      color: #0f172a;
+      font-size: 1.2rem;
+      font-weight: 950;
+    }
+    .online-bid-player-line-v41 {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .online-bid-player-name-v41 {
+      font-size: 1.55rem;
+      font-weight: 950;
+      color: #0f172a;
+      line-height: 1.1;
+    }
+    .online-bid-pill-v41 {
       display: inline-flex;
       align-items: center;
       border-radius: 999px;
-      background: #dcfce7;
-      color: #166534;
-      padding: 8px 12px;
-      font-weight: 950;
-      white-space: nowrap;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      padding: 6px 10px;
+      font-weight: 900;
+      font-size: .86rem;
     }
-
-    .blind-bid-input-row-v40 {
+    .online-bid-action-row-v41 {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
+      gap: 10px;
       align-items: end;
+      margin-top: 10px;
     }
-
-    .blind-bid-input-wrap-v40 label {
+    .online-bid-action-row-v41 label {
       display: block;
-      color: #334155;
       font-weight: 950;
+      color: #334155;
       margin-bottom: 6px;
     }
-
-    .blind-bid-input-wrap-v40 input {
+    .online-bid-action-row-v41 input {
       width: 100%;
-      font-size: 1.6rem;
-      font-weight: 950;
-      border: 2px solid #bfdbfe;
-      border-radius: 16px;
-      padding: 12px 14px;
-      background: #eff6ff;
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 1.2rem;
+      font-weight: 900;
       color: #0f172a;
+      background: #fff;
     }
-
-    .blind-bid-input-wrap-v40 input:focus {
-      outline: 3px solid rgba(37,99,235,.18);
+    .online-bid-action-row-v41 input:focus {
       border-color: #2563eb;
-      background: white;
+      outline: 3px solid rgba(37,99,235,.16);
     }
-
-    .blind-bid-submit-v40 {
-      min-height: 56px;
-      padding-left: 22px !important;
-      padding-right: 22px !important;
+    .online-bid-submit-v41 {
+      min-height: 48px;
+      white-space: nowrap;
       font-weight: 950 !important;
     }
-
-    .blind-bid-helper-v40 {
+    .online-bid-status-list-v41 {
+      display: grid;
+      gap: 8px;
       margin-top: 10px;
-      color: #64748b;
-      font-weight: 800;
-      line-height: 1.35;
     }
-
-    .blind-bid-status-grid-v40 {
+    .online-bid-status-row-v41 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
-    }
-
-    .blind-bid-status-card-v40 {
-      border-radius: 18px;
-      padding: 12px;
-      border: 1px solid #e2e8f0;
+      align-items: center;
       background: #f8fafc;
-      display: grid;
-      gap: 5px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 9px 10px;
     }
-
-    .blind-bid-status-card-v40.submitted {
+    .online-bid-status-row-v41.submitted {
       background: #f0fdf4;
       border-color: #bbf7d0;
     }
-
-    .blind-bid-status-card-v40.waiting {
+    .online-bid-status-row-v41.waiting {
       background: #fff7ed;
       border-color: #fed7aa;
     }
-
-    .blind-bid-status-card-v40.not-eligible {
+    .online-bid-status-row-v41.not-eligible {
       background: #f1f5f9;
       color: #64748b;
     }
-
-    .blind-bid-status-name-v40 {
+    .online-bid-status-name-v41 {
       font-weight: 950;
       color: #0f172a;
     }
-
-    .blind-bid-status-line-v40 {
-      font-size: .86rem;
-      font-weight: 850;
-      color: #475569;
+    .online-bid-status-meta-v41 {
+      font-size: .82rem;
+      color: #64748b;
+      font-weight: 800;
     }
-
-    .blind-bid-progress-v40 {
-      height: 12px;
-      background: #e2e8f0;
+    .online-bid-status-badge-v41 {
+      font-weight: 950;
+      white-space: nowrap;
+      color: #334155;
+    }
+    .online-bid-progress-v41 {
+      height: 10px;
       border-radius: 999px;
+      background: #e2e8f0;
       overflow: hidden;
       margin-top: 8px;
     }
-
-    .blind-bid-progress-bar-v40 {
+    .online-bid-progress-fill-v41 {
       height: 100%;
-      background: linear-gradient(90deg, #22c55e, #2563eb);
-      border-radius: 999px;
-      transition: width .25s ease;
+      background: #22c55e;
+      width: 0%;
+      transition: width .2s ease;
     }
-
-    .blind-bid-reveal-card-v40 {
-      background: linear-gradient(135deg, #fef3c7, #eff6ff);
-      border: 1px solid #f59e0b;
-      border-radius: 24px;
-      padding: 18px;
-      box-shadow: 0 18px 44px rgba(245,158,11,.14);
-    }
-
-    .blind-bid-reveal-grid-v40 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .blind-bid-reveal-bid-v40 {
-      background: rgba(255,255,255,.86);
-      border: 1px solid rgba(226,232,240,.95);
-      border-radius: 16px;
-      padding: 12px;
-    }
-
-    .blind-bid-reveal-bid-v40.winner {
-      border-color: #f59e0b;
+    .online-bid-reveal-v41 {
       background: #fffbeb;
+      border-color: #f59e0b;
     }
-
-    .blind-bid-reveal-name-v40 {
-      font-weight: 950;
-      color: #0f172a;
+    .online-bid-reveal-grid-v41 {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
     }
-
-    .blind-bid-reveal-amount-v40 {
-      font-size: 1.45rem;
+    .online-bid-reveal-row-v41 {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,.8);
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 9px 10px;
+    }
+    .online-bid-reveal-row-v41.winner {
+      border-color: #f59e0b;
+      background: #fef3c7;
+    }
+    .online-bid-reveal-amount-v41 {
+      font-size: 1.1rem;
       font-weight: 950;
       color: #1d4ed8;
-      margin-top: 3px;
     }
-
-    @media (max-width: 780px) {
-      .blind-bid-hero-v40,
-      .blind-bid-input-row-v40 {
+    @media (max-width: 720px) {
+      .online-room-banner-inner-v41,
+      .online-bid-action-row-v41 {
         grid-template-columns: 1fr;
+        display: grid;
       }
-      .blind-bid-submit-v40 {
+      .online-room-actions-v41,
+      .online-bid-submit-v41 {
+        width: 100%;
+      }
+      .online-room-actions-v41 .btn,
+      .online-bid-submit-v41 {
         width: 100%;
       }
     }
@@ -3865,15 +3846,15 @@ function injectOnlineBidStylesV40() {
   document.head.appendChild(style);
 }
 
-function bidPlayerSummaryV40(player) {
+function playerInfoLineV41(player) {
   if (!player) return "";
-  const chunks = [player.mainPosition, player.position, player.club, player.year].filter(Boolean);
-  return chunks.map(escapeHtml).join(" • ");
+  return [player.mainPosition, player.position, player.club, player.year].filter(Boolean).map(escapeHtml).join(" • ");
 }
 
 function renderOnlineBidControlsV38() {
   if (!online.enabled || !state || state.gameMode !== "bid") return;
-  injectOnlineBidStylesV40();
+  injectOnlineBidBasicStylesV41();
+  ensureOnlineRoomBannerV41();
   initialiseBlindBidStateV38();
 
   show(els.draftControls, false);
@@ -3897,63 +3878,63 @@ function renderOnlineBidControlsV38() {
 
   if (els.bidOrderDisplay) {
     els.bidOrderDisplay.innerHTML = `
-      <div class="blind-bid-progress-v40" aria-label="Bid submission progress">
-        <div class="blind-bid-progress-bar-v40" style="width:${progress}%"></div>
-      </div>
-      <p class="muted" style="margin-top:8px;font-weight:900;">${submittedCount}/${totalCount} eligible bids submitted</p>
+      <strong>Blind bidding</strong>
+      <div class="online-bid-progress-v41"><div class="online-bid-progress-fill-v41" style="width:${progress}%"></div></div>
+      <p class="muted" style="margin-top:6px;">${submittedCount}/${totalCount} eligible bids submitted</p>
     `;
   }
 
   if (!els.bidInputs) return;
 
   if (!currentCandidate && isGameComplete()) {
-    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
+    els.bidInputs.innerHTML = `<div class="online-bid-simple-panel-v41"><p class="muted">Bidding complete. Reveal ratings to see the winner.</p></div>`;
     syncRevealButtonV37?.();
     return;
   }
 
   if (!currentCandidate && !outcome) {
-    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
+    els.bidInputs.innerHTML = `<div class="online-bid-simple-panel-v41"><p class="muted">Waiting for the next player...</p></div>`;
     return;
   }
 
-  const statusCards = state.users.map(user => {
+  const statusRows = state.users.map(user => {
     const key = safeKey(user.name);
     const isEligible = eligibleKeys.has(key);
     const submitted = !!state.blindBids?.[key]?.submitted;
-    const budget = Number(user.budget || 0);
     const css = !isEligible ? "not-eligible" : submitted ? "submitted" : "waiting";
-    const status = !isEligible ? "Not eligible" : submitted ? "Submitted ✅" : "Waiting";
+    const status = !isEligible ? "Not eligible" : submitted ? "Submitted" : "Waiting";
     return `
-      <div class="blind-bid-status-card-v40 ${css}">
-        <div class="blind-bid-status-name-v40">${escapeHtml(user.name)}</div>
-        <div class="blind-bid-status-line-v40">${status}</div>
-        <div class="blind-bid-status-line-v40">Budget: £${budget}m</div>
+      <div class="online-bid-status-row-v41 ${css}">
+        <div>
+          <div class="online-bid-status-name-v41">${escapeHtml(user.name)}</div>
+          <div class="online-bid-status-meta-v41">Budget: £${Number(user.budget || 0)}m</div>
+        </div>
+        <div class="online-bid-status-badge-v41">${status}</div>
       </div>
     `;
   }).join("");
 
   if (outcome) {
     clearBlindBidDraftV39();
-    const bidRevealRows = outcome.bids.map(row => `
-      <div class="blind-bid-reveal-bid-v40 ${safeKey(row.name) === safeKey(outcome.winnerName || "") ? "winner" : ""}">
-        <div class="blind-bid-reveal-name-v40">${escapeHtml(row.name)}${safeKey(row.name) === safeKey(outcome.winnerName || "") ? " 🏆" : ""}</div>
-        <div class="blind-bid-reveal-amount-v40">£${Number(row.bid || 0)}m</div>
+    const bidRows = outcome.bids.map(row => `
+      <div class="online-bid-reveal-row-v41 ${safeKey(row.name) === safeKey(outcome.winnerName || "") ? "winner" : ""}">
+        <div class="online-bid-status-name-v41">${escapeHtml(row.name)}${safeKey(row.name) === safeKey(outcome.winnerName || "") ? " 🏆" : ""}</div>
+        <div class="online-bid-reveal-amount-v41">£${Number(row.bid || 0)}m</div>
       </div>
     `).join("");
 
     els.bidInputs.innerHTML = `
-      <div class="online-bid-layout-v40">
-        <div class="blind-bid-reveal-card-v40">
+      <div class="online-bid-simple-v41">
+        <div class="online-bid-simple-panel-v41 online-bid-reveal-v41">
           <p class="eyebrow">Bids revealed</p>
-          <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
+          <h3 class="online-bid-simple-title-v41">${escapeHtml(outcome.player?.player || "Player")}</h3>
           <p class="message">
             ${outcome.winnerName
               ? `${escapeHtml(outcome.winnerName)} wins for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
               : `No valid bids above £0m. The player was skipped.`}
           </p>
-          <div class="blind-bid-reveal-grid-v40">${bidRevealRows}</div>
-          <p class="muted" style="margin-top:12px;font-weight:900;">Next player loading...</p>
+          <div class="online-bid-reveal-grid-v41">${bidRows}</div>
+          <p class="muted" style="margin-top:10px;">Next player loading...</p>
         </div>
       </div>
     `;
@@ -3964,31 +3945,25 @@ function renderOnlineBidControlsV38() {
   const myBudget = Number(me?.budget || 0);
   const draftValue = getBlindBidDraftV39("0");
 
-  const actionCard = canSubmit ? `
-    <div class="blind-bid-action-card-v40">
-      <div class="blind-bid-action-header-v40">
+  const actionPanel = canSubmit ? `
+    <div class="online-bid-simple-panel-v41">
+      <h3 class="online-bid-simple-title-v41">Your bid</h3>
+      <p class="muted">Enter your private bid. Other users will only see that you have submitted.</p>
+      <div class="online-bid-action-row-v41">
         <div>
-          <p class="eyebrow">Your action</p>
-          <h3 style="margin:4px 0 0;">Submit your blind bid</h3>
-        </div>
-        <div class="blind-bid-budget-v40">Budget: £${myBudget}m</div>
-      </div>
-      <div class="blind-bid-input-row-v40">
-        <div class="blind-bid-input-wrap-v40">
-          <label for="onlineBlindBidInput">Your private bid</label>
+          <label for="onlineBlindBidInput">Private bid amount</label>
           <input id="onlineBlindBidInput" type="number" min="0" max="${myBudget}" step="1" value="${escapeHtml(draftValue)}" />
+          <p class="muted" style="margin-top:6px;">Your budget: £${myBudget}m</p>
         </div>
-        <button id="submitBlindBidBtn" class="btn btn-primary blind-bid-submit-v40" type="button">Submit bid</button>
+        <button id="submitBlindBidBtn" class="btn btn-primary online-bid-submit-v41" type="button">Submit bid</button>
       </div>
-      <p class="blind-bid-helper-v40">Other players will only see that you have submitted — they won’t see your amount until everyone has submitted.</p>
     </div>
   ` : `
-    <div class="blind-bid-action-card-v40">
-      <p class="eyebrow">Your action</p>
-      <h3 style="margin:4px 0 8px;">${myBid?.submitted ? "Bid submitted" : eligibleKeys.has(myKey) ? "Waiting" : "You are not bidding this round"}</h3>
+    <div class="online-bid-simple-panel-v41">
+      <h3 class="online-bid-simple-title-v41">${myBid?.submitted ? "Bid submitted" : eligibleKeys.has(myKey) ? "Please wait" : "You are not bidding this round"}</h3>
       <p class="muted">
         ${myBid?.submitted
-          ? "Your bid is locked in. Waiting for the other eligible players."
+          ? "Your bid is locked in. Waiting for the other eligible users."
           : eligibleKeys.has(myKey)
             ? "Bidding is locked while results are being calculated."
             : "Your team does not need this player’s position, or you have no budget left."}
@@ -3997,39 +3972,23 @@ function renderOnlineBidControlsV38() {
   `;
 
   els.bidInputs.innerHTML = `
-    <div class="online-bid-layout-v40">
-      <div class="blind-bid-hero-v40">
-        <div>
-          <p class="eyebrow">Online blind bidding</p>
-          <h3>Bid privately. Reveal together.</h3>
-          <p class="muted">All eligible users bid at the same time. Once everyone has submitted, the bids are revealed and the highest bid wins.</p>
-          <div class="blind-bid-mini-steps-v40">
-            <div class="blind-bid-step-v40"><span class="blind-bid-step-number-v40">1</span><span>Check the player and your remaining budget.</span></div>
-            <div class="blind-bid-step-v40"><span class="blind-bid-step-number-v40">2</span><span>Enter your private bid and submit it.</span></div>
-            <div class="blind-bid-step-v40"><span class="blind-bid-step-number-v40">3</span><span>Wait for everyone else — bids reveal together.</span></div>
+    <div class="online-bid-simple-v41">
+      <div class="online-bid-simple-panel-v41">
+        <div class="online-bid-player-line-v41">
+          <div>
+            <p class="eyebrow">Player up for bid</p>
+            <div class="online-bid-player-name-v41">${escapeHtml(currentCandidate.player)}</div>
+            <p class="muted" style="margin-top:6px;">${playerInfoLineV41(currentCandidate)}</p>
           </div>
-        </div>
-        <div class="blind-bid-player-card-v40">
-          <div class="blind-bid-pill-row-v40">
-            <span class="blind-bid-pill-v40">${escapeHtml(currentCandidate.mainPosition || "")}</span>
-            <span class="blind-bid-pill-v40">Hidden rating</span>
-          </div>
-          <div class="player-name-v40">${escapeHtml(currentCandidate.player)}</div>
-          <div class="blind-bid-pill-row-v40">
-            <span class="blind-bid-pill-v40">${bidPlayerSummaryV40(currentCandidate)}</span>
-          </div>
+          <span class="online-bid-pill-v41">${escapeHtml(currentCandidate.mainPosition || "")}</span>
         </div>
       </div>
-      ${actionCard}
-      <div class="blind-bid-action-card-v40">
-        <div class="blind-bid-action-header-v40">
-          <div>
-            <p class="eyebrow">Submission status</p>
-            <h3 style="margin:4px 0 0;">${submittedCount}/${totalCount} submitted</h3>
-          </div>
-        </div>
-        <div class="blind-bid-progress-v40"><div class="blind-bid-progress-bar-v40" style="width:${progress}%"></div></div>
-        <div class="blind-bid-status-grid-v40" style="margin-top:14px;">${statusCards}</div>
+      ${actionPanel}
+      <div class="online-bid-simple-panel-v41">
+        <h3 class="online-bid-simple-title-v41">Submission status</h3>
+        <p class="muted">${submittedCount}/${totalCount} eligible users have submitted.</p>
+        <div class="online-bid-progress-v41"><div class="online-bid-progress-fill-v41" style="width:${progress}%"></div></div>
+        <div class="online-bid-status-list-v41">${statusRows}</div>
       </div>
     </div>
   `;
@@ -4041,6 +4000,117 @@ function renderOnlineBidControlsV38() {
   }
 
   $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
+}
+
+function render() {
+  if (!state) return;
+  v29SafeState();
+  updateGameControls();
+  if (online.enabled) ensureOnlineRoomBannerV41();
+  else hideOnlineRoomBannerV41();
+  const user = currentUser();
+  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
+  if (state.gameMode === "draft" && els.declinesLeft) {
+    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
+  }
+  if (state.gameMode === "bid" && els.currentBudgetLeft) {
+    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
+  }
+  renderTeams();
+  if (online.enabled && state.gameMode === "bid") renderOnlineBidControlsV38();
+  else setDraftActionButtons();
+  applyOnlinePermissions();
+  syncRevealButtonV37();
+}
+
+function showFinishedResultsPageV33() {
+  if (!state) return;
+  injectFinishedStylesV33();
+  injectResultsLayoutStylesV36();
+  if (online.enabled) ensureOnlineRoomBannerV41();
+  ratingsRevealed = true;
+  currentCandidate = null;
+  removeTurnLockNoteV33();
+  setMessage("");
+
+  show($("gameEntryPanel"), false);
+  show(ensureLobby(), false);
+  show(els.setupPanel, false);
+  show(els.gamePanel, false);
+  show(els.resultsPanel, true);
+
+  if (els.resultsPanel) els.resultsPanel.classList.add("finished-results-page");
+  if (els.revealBtn) els.revealBtn.classList.add("hidden");
+  if (els.pickBtn) els.pickBtn.disabled = true;
+  if (els.acceptBtn) els.acceptBtn.disabled = true;
+  if (els.declineBtn) els.declineBtn.disabled = true;
+  if (els.bidPickBtn) els.bidPickBtn.disabled = true;
+  if (els.awardBidBtn) els.awardBidBtn.disabled = true;
+  if (els.skipBidBtn) els.skipBidBtn.disabled = true;
+
+  renderResults();
+  setTimeout(() => els.resultsPanel?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+}
+
+function resetGame() {
+  try {
+    if (online.ref && online.subscribed && typeof online.ref.off === "function") online.ref.off();
+  } catch (err) { console.warn("Could not detach Firebase listener during reset", err); }
+
+  hideOnlineRoomBannerV41();
+
+  state = null;
+  currentCandidate = null;
+  ratingsRevealed = false;
+  applyingRemote = false;
+
+  online.enabled = false;
+  online.isHost = false;
+  online.roomId = null;
+  online.ref = null;
+  online.myName = "";
+  online.subscribed = false;
+
+  const turnNote = $("turnLockNote");
+  if (turnNote) turnNote.remove();
+
+  if (els.message) els.message.textContent = "";
+  if (els.candidateCard) clearCandidate("Click “Pick player” to begin.");
+  if (els.teamsContainer) els.teamsContainer.innerHTML = "";
+  if (els.resultsContainer) els.resultsContainer.innerHTML = "";
+  if (els.resultsPanel) els.resultsPanel.classList.remove("finished-results-page");
+
+  show(ensureLobby(), false);
+  show(els.setupPanel, false);
+  show(els.gamePanel, false);
+  show(els.resultsPanel, false);
+
+  injectEntryPanel();
+  show($("gameEntryPanel"), true);
+
+  const onlineName = $("onlineRoomName");
+  const roomCode = $("joinRoomCode");
+  const onlineStatus = $("onlineRoomStatus");
+  const onlineLink = $("onlineRoomLink");
+  if (onlineName) onlineName.value = "";
+  if (roomCode) roomCode.value = "";
+  if (onlineStatus) onlineStatus.textContent = "Online games use joined player names automatically.";
+  if (onlineLink) { onlineLink.textContent = ""; onlineLink.classList.add("hidden"); }
+
+  if (els.revealBtn) els.revealBtn.classList.add("hidden");
+  if (els.pickBtn) els.pickBtn.disabled = false;
+  if (els.acceptBtn) els.acceptBtn.disabled = true;
+  if (els.declineBtn) els.declineBtn.disabled = true;
+  if (els.bidPickBtn) els.bidPickBtn.disabled = false;
+  if (els.awardBidBtn) els.awardBidBtn.disabled = true;
+  if (els.skipBidBtn) els.skipBidBtn.disabled = true;
+
+  try {
+    if (window.history && window.location.search) window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}`);
+  } catch (err) { console.warn("Could not clear room URL during reset", err); }
+
+  selectedGameMode = "draft";
+  updateSetupForMode();
 }
 
 function init() {
