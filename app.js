@@ -21,6 +21,240 @@ let state = null;
 let currentCandidate = null;
 let ratingsRevealed = false;
 
+
+// ============================== 
+// Online room support - Firebase Realtime Database
+// ==============================
+// 1) Create a Firebase project, then create a Realtime Database.
+// 2) Replace the placeholder values below with your Firebase web app config.
+// 3) For testing only, use temporary database rules. Lock this down before wider sharing.
+const FIREBASE_CONFIG = {
+  apiKey: "PASTE_FIREBASE_API_KEY_HERE",
+  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://PASTE_DATABASE_NAME.europe-west1.firebasedatabase.app",
+  projectId: "PASTE_PROJECT_ID",
+  storageBucket: "PASTE_PROJECT_ID.appspot.com",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId: "PASTE_APP_ID"
+};
+
+const online = {
+  enabled: false,
+  isHost: false,
+  roomId: null,
+  ref: null,
+  applyingRemote: false,
+  loaded: false
+};
+
+function firebaseConfigured() {
+  return FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.includes("PASTE_") && FIREBASE_CONFIG.databaseURL && !FIREBASE_CONFIG.databaseURL.includes("PASTE_");
+}
+
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    if ([...document.scripts].some(script => script.src === src)) return resolve();
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureFirebase() {
+  if (!firebaseConfigured()) throw new Error("Firebase has not been configured yet. Paste your Firebase config into app.js first.");
+  if (online.loaded) return;
+  await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
+  await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js");
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  online.loaded = true;
+}
+
+
+function injectOnlineStyles() {
+  if (document.getElementById("onlineRoomStyles")) return;
+  const style = document.createElement("style");
+  style.id = "onlineRoomStyles";
+  style.textContent = `
+    .online-room-panel { margin-bottom: 18px; }
+    .online-room-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 18px; padding: 14px; display: grid; gap: 10px; }
+    .online-room-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+    .online-room-status { margin: 2px 0 0; color: #475569; font-weight: 800; font-size: .88rem; line-height: 1.35; }
+    .online-room-link { margin: 0; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; border-radius: 12px; padding: 9px 10px; font-weight: 900; overflow-wrap: anywhere; }
+    @media (max-width: 620px) { .online-room-actions { grid-template-columns: 1fr; } }
+  `;
+  document.head.appendChild(style);
+}
+
+function injectOnlinePanel() {
+  injectOnlineStyles();
+  const setupCard = document.querySelector(".setup-panel-card") || els.setupPanel;
+  if (!setupCard || document.getElementById("onlineRoomPanel")) return;
+  const panel = document.createElement("div");
+  panel.id = "onlineRoomPanel";
+  panel.className = "online-room-panel";
+  panel.innerHTML = `
+    <label>Online room</label>
+    <div class="online-room-box">
+      <div class="online-room-actions">
+        <input id="onlineRoomName" type="text" placeholder="Your name" />
+        <button id="createOnlineRoomBtn" type="button" class="btn btn-secondary">Create online room</button>
+      </div>
+      <div class="online-room-actions">
+        <input id="joinRoomCode" type="text" placeholder="Room code" />
+        <button id="joinOnlineRoomBtn" type="button" class="btn btn-secondary">Join room</button>
+      </div>
+      <p id="onlineRoomStatus" class="online-room-status">Online rooms need Firebase configured in app.js. Local play still works normally.</p>
+      <p id="onlineRoomLink" class="online-room-link"></p>
+    </div>`;
+  setupCard.insertBefore(panel, setupCard.firstChild);
+
+  document.getElementById("createOnlineRoomBtn").addEventListener("click", createOnlineRoom);
+  document.getElementById("joinOnlineRoomBtn").addEventListener("click", () => joinOnlineRoom(document.getElementById("joinRoomCode").value.trim().toUpperCase()));
+
+  const params = new URLSearchParams(location.search);
+  const room = params.get("room");
+  if (room) {
+    document.getElementById("joinRoomCode").value = room.toUpperCase();
+    setOnlineStatus(`Room code detected: ${room.toUpperCase()}. Add your name, then click Join room.`);
+  }
+}
+
+function setOnlineStatus(text) {
+  const el = document.getElementById("onlineRoomStatus");
+  if (el) el.textContent = text;
+}
+
+function setOnlineLink(text) {
+  const el = document.getElementById("onlineRoomLink");
+  if (el) el.textContent = text;
+}
+
+function roomId() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+async function createOnlineRoom() {
+  try {
+    await ensureFirebase();
+    online.enabled = true;
+    online.isHost = true;
+    online.roomId = roomId();
+    online.ref = firebase.database().ref(`rooms/${online.roomId}`);
+    const invite = `${location.origin}${location.pathname}?room=${online.roomId}`;
+    await online.ref.set({
+      createdAt: Date.now(),
+      hostName: document.getElementById("onlineRoomName")?.value?.trim() || "Host",
+      state: null,
+      currentCandidate: null,
+      ratingsRevealed: false,
+      message: "Room created. Host can now set up and start the game."
+    });
+    subscribeToRoom();
+    setOnlineStatus(`Online room created. You are the host. Room code: ${online.roomId}`);
+    setOnlineLink(`Share this link: ${invite}`);
+  } catch (err) {
+    setOnlineStatus(err.message);
+  }
+}
+
+async function joinOnlineRoom(code) {
+  try {
+    if (!code) throw new Error("Enter a room code first.");
+    await ensureFirebase();
+    online.enabled = true;
+    online.isHost = false;
+    online.roomId = code;
+    online.ref = firebase.database().ref(`rooms/${online.roomId}`);
+    subscribeToRoom();
+    setOnlineStatus(`Joined room ${online.roomId}. The host controls the game and your screen will update live.`);
+    setOnlineLink("");
+  } catch (err) {
+    setOnlineStatus(err.message);
+  }
+}
+
+function subscribeToRoom() {
+  if (!online.ref) return;
+  online.ref.off();
+  online.ref.on("value", snapshot => {
+    const data = snapshot.val();
+    if (!data || online.applyingRemote || online.isHost) return;
+    applyRemoteData(data);
+  });
+}
+
+function serialiseState() {
+  if (!state) return null;
+  return {
+    ...state,
+    acceptedPlayerNames: [...state.acceptedPlayerNames],
+    users: state.users.map(user => ({
+      ...user,
+      declinedNames: [...user.declinedNames]
+    }))
+  };
+}
+
+function restoreState(raw) {
+  if (!raw) return null;
+  return {
+    ...raw,
+    acceptedPlayerNames: new Set(raw.acceptedPlayerNames || []),
+    users: (raw.users || []).map(user => ({
+      ...user,
+      declinedNames: new Set(user.declinedNames || [])
+    }))
+  };
+}
+
+async function saveOnlineState(messageOverride = null) {
+  if (!online.enabled || !online.isHost || !online.ref || online.applyingRemote) return;
+  await online.ref.update({
+    updatedAt: Date.now(),
+    state: serialiseState(),
+    currentCandidate,
+    ratingsRevealed,
+    message: messageOverride ?? els.message.textContent ?? ""
+  });
+}
+
+function applyRemoteData(data) {
+  online.applyingRemote = true;
+  state = restoreState(data.state);
+  currentCandidate = data.currentCandidate || null;
+  ratingsRevealed = !!data.ratingsRevealed;
+
+  if (!state) {
+    setOnlineStatus(data.message || `Connected to room ${online.roomId}. Waiting for the host to start.`);
+    online.applyingRemote = false;
+    return;
+  }
+
+  els.setupPanel.classList.add("hidden");
+  els.gamePanel.classList.remove("hidden");
+  if (ratingsRevealed) els.resultsPanel.classList.remove("hidden");
+  else els.resultsPanel.classList.add("hidden");
+
+  updateGameControls();
+  render();
+  if (currentCandidate) renderCandidate(currentCandidate);
+  else clearCandidate(data.message || "Waiting for the host...");
+  if (ratingsRevealed) renderResults();
+  els.message.textContent = data.message || "";
+  applyOnlineControlLock();
+  online.applyingRemote = false;
+}
+
+function applyOnlineControlLock() {
+  if (!online.enabled || online.isHost) return;
+  [els.pickBtn, els.acceptBtn, els.declineBtn, els.bidPickBtn, els.awardBidBtn, els.skipBidBtn, els.revealBtn].forEach(btn => {
+    if (btn) btn.disabled = true;
+  });
+}
+
+
 const els = {
   setupPanel: document.getElementById("setupPanel"),
   gamePanel: document.getElementById("gamePanel"),
@@ -157,6 +391,7 @@ function startGame() {
   updateGameControls();
   clearCandidate(gameMode === "bid" ? "Click “Randomise player” to start the auction." : "Click “Pick player” to begin.");
   render();
+  saveOnlineState("Game started.");
 }
 
 function resetGame() {
@@ -223,6 +458,7 @@ function pickRandomPlayer() {
   els.message.textContent = user.declines >= DECLINES_ALLOWED
     ? `${user.name} has used all 3 declines and must accept this player.`
     : `${user.name} needs: ${needs.join(", ")}`;
+  saveOnlineState();
 }
 
 function acceptPlayer() {
@@ -236,6 +472,7 @@ function acceptPlayer() {
   currentCandidate = null;
   if (isGameComplete()) completeGame(); else { moveToNextUser(); pickRandomPlayer(); }
   render();
+  saveOnlineState();
 }
 
 function declinePlayer() {
@@ -252,6 +489,7 @@ function declinePlayer() {
   currentCandidate = null;
   pickRandomPlayer();
   render();
+  saveOnlineState();
 }
 
 function bidRandomPlayer() {
@@ -272,6 +510,7 @@ function bidRandomPlayer() {
   els.awardBidBtn.disabled = false;
   els.skipBidBtn.disabled = false;
   els.message.textContent = `${nominator.name} nominated a ${currentCandidate.mainPosition}. Enter bids in £m.`;
+  saveOnlineState();
 }
 
 function renderBidInputs() {
@@ -321,6 +560,7 @@ function awardHighestBid() {
   els.awardBidBtn.disabled = true; els.skipBidBtn.disabled = true; els.bidInputs.innerHTML = "";
   if (isGameComplete()) completeGame(); else { rotateBidNominator(); bidRandomPlayer(); }
   render();
+  saveOnlineState();
 }
 
 function skipBidPlayer() {
@@ -332,6 +572,7 @@ function skipBidPlayer() {
   rotateBidNominator();
   if (isGameComplete()) completeGame(); else bidRandomPlayer();
   render();
+  saveOnlineState();
 }
 
 function ensureCurrentNominatorCanNominate() { for (let i = 0; i < state.userCount; i++) { const ix = state.bidOrder[state.bidRoundIndex % state.userCount]; if (getNeededPositions(state.users[ix]).length > 0) { state.currentUserIndex = ix; return; } state.bidRoundIndex += 1; } }
@@ -349,7 +590,7 @@ function completeGame() {
   els.skipBidBtn.disabled = true;
 }
 
-function revealScores() { ratingsRevealed = true; render(); renderResults(); els.resultsPanel.classList.remove("hidden"); els.revealBtn.classList.add("hidden"); }
+function revealScores() { ratingsRevealed = true; render(); renderResults(); els.resultsPanel.classList.remove("hidden"); els.revealBtn.classList.add("hidden"); saveOnlineState("Scores revealed."); }
 
 function render() {
   if (!state) return;
@@ -359,6 +600,7 @@ function render() {
   if (state.gameMode === "bid") { els.currentBudgetLeft.textContent = `£${user.budget}m`; renderBidOrder(); }
   else { els.declinesLeft.textContent = DECLINES_ALLOWED - user.declines; }
   renderTeams();
+  applyOnlineControlLock();
 }
 
 function renderBidOrder() { if (!state || state.gameMode !== "bid") return; const currentIndex = state.currentUserIndex; els.bidOrderDisplay.innerHTML = state.bidOrder.map((userIndex, orderIndex) => `<span class="order-chip ${userIndex === currentIndex ? "current" : ""}">${orderIndex + 1}. ${escapeHtml(state.users[userIndex].name)}</span>`).join(""); }
@@ -459,5 +701,6 @@ els.saveSummaryBtn.addEventListener("click", saveSummaryImage);
 els.userCount.addEventListener("change", renderUserNameInputs);
 els.gameModeCards.addEventListener("click", event => { const card = event.target.closest(".game-mode-card"); if (!card) return; selectedGameMode = card.dataset.mode; updateSetupForMode(); });
 
+injectOnlinePanel();
 updateSetupForMode();
 loadPlayers();
