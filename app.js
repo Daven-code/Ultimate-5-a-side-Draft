@@ -146,7 +146,7 @@ function injectOnlinePanel() {
     <label>Online room</label>
     <div class="online-room-box">
       <div class="online-room-actions">
-        <input id="onlineRoomName" type="text" placeholder="Your name, e.g. Daven" />
+        <input id="onlineRoomName" type="text" placeholder="Your name" />
         <button id="createOnlineRoomBtn" type="button" class="btn btn-secondary">Create online room</button>
       </div>
       <div class="online-room-actions">
@@ -276,7 +276,7 @@ async function ensureFirebase() {
 async function createOnlineRoom() {
   try {
     const name = document.getElementById("onlineRoomName")?.value?.trim();
-    if (!name) throw new Error("Type your name first, e.g. Daven.");
+    if (!name) throw new Error("Type your name first.");
     await ensureFirebase();
     online.enabled = true;
     online.isHost = true;
