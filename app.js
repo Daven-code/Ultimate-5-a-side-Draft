@@ -186,7 +186,7 @@ function showLobby(mode, data = {}) {
   lobby.innerHTML = mode === "host" ? `
     <p class="eyebrow">Online room created</p>
     <h2>Waiting for players to join</h2>
-    <p class="muted">Share this link. Joined players appear below. When everyone is in, choose the game and start directly from here.</p>
+    <p class="muted">Share this link. Joined players appear below. When everyone is in, choose the game and start directly from here. Names are taken from the joined players automatically.</p>
     <div class="lobby-code">${online.roomId}</div>
     <p class="lobby-link">${invite}</p>
     <button id="copyInviteBtn" class="btn btn-secondary" type="button">Copy invite link</button>
@@ -194,7 +194,7 @@ function showLobby(mode, data = {}) {
     <div class="lobby-setup">
       <p class="lobby-setup-title">Start online game</p>
       <div id="lobbyModeCards" class="lobby-mode-cards">
-        <button type="button" class="lobby-mode-card ${selectedGameMode === "draft" ? "selected" : ""}" data-mode="draft">Ultimate Draft 5-a-side<span>Each player controls their own turn from their device.</span></button>
+        <button type="button" class="lobby-mode-card ${selectedGameMode === "draft" ? "selected" : ""}" data-mode="draft">Ultimate Draft 5-a-side<span>Each player controls their own turn. Host can also step in if needed.</span></button>
         <button type="button" class="lobby-mode-card ${selectedGameMode === "bid" ? "selected" : ""}" data-mode="bid">Bid for your Ultimate 5-a-side Team<span>Host-assisted for now; all devices still update live.</span></button>
       </div>
       <label id="lobbyExcludeDeclinesLabel" class="lobby-checkbox ${selectedGameMode === "bid" ? "hidden" : ""}">
@@ -453,6 +453,7 @@ function applyRemoteData(data) {
   ensureLobby().classList.add("hidden");
   els.setupPanel.classList.add("hidden");
   els.gamePanel.classList.remove("hidden");
+  els.gamePanel.style.display = "";
   if (ratingsRevealed) els.resultsPanel.classList.remove("hidden");
   else els.resultsPanel.classList.add("hidden");
   updateGameControls();
@@ -469,13 +470,20 @@ function currentPlayerCanAct() {
   if (!online.enabled) return true;
   if (!state) return false;
   const user = currentUser();
-  return user && safeKey(user.name) === safeKey(online.myName);
+  // In online rooms, the named current player can act from their own device.
+  // The host can also act as a fallback to keep the game moving if needed.
+  return online.isHost || (user && safeKey(user.name) === safeKey(online.myName));
 }
 
 function applyOnlinePermissions() {
   if (!online.enabled || !state) return;
   const canAct = currentPlayerCanAct();
-  const noteText = canAct ? `It is your turn, ${online.myName}.` : `Waiting for ${currentUser()?.name || "the current player"}. You joined as ${online.myName}.`;
+  const currentName = currentUser()?.name || "the current player";
+  const noteText = canAct
+    ? online.isHost && safeKey(currentName) !== safeKey(online.myName)
+      ? `Host control enabled. Current player is ${currentName}.`
+      : `It is your turn, ${online.myName}.`
+    : `Waiting for ${currentName}. You joined as ${online.myName}.`;
   let note = document.getElementById("turnLockNote");
   if (!note && els.message) {
     note = document.createElement("div");
