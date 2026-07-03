@@ -1,33 +1,9 @@
+
 const DECLINES_ALLOWED = 3;
 const AUCTION_BUDGET = 100;
 const BID_SKIPS_ALLOWED = 3;
-let selectedGameMode = "draft";
 
-const samplePlayers = [
-  { Player: "Lionel Messi", Game_Year: 2012, Rating_OVR: 94, Position: "CF", Main_Position: "FWD", Club: "FC Barcelona", Nation: "Argentina" },
-  { Player: "Cristiano Ronaldo", Game_Year: 2012, Rating_OVR: 92, Position: "LW", Main_Position: "FWD", Club: "Real Madrid", Nation: "Portugal" },
-  { Player: "Gianluigi Buffon", Game_Year: 2005, Rating_OVR: 97, Position: "GK", Main_Position: "GK", Club: "Juventus", Nation: "Italy" },
-  { Player: "Iker Casillas", Game_Year: 2009, Rating_OVR: 91, Position: "GK", Main_Position: "GK", Club: "Real Madrid C.F.", Nation: "Spain" },
-  { Player: "Sergio Ramos", Game_Year: 2015, Rating_OVR: 87, Position: "CB", Main_Position: "DEF", Club: "Real Madrid", Nation: "Spain" },
-  { Player: "Virgil van Dijk", Game_Year: 2020, Rating_OVR: 90, Position: "CB", Main_Position: "DEF", Club: "Liverpool", Nation: "Netherlands" },
-  { Player: "Xavi", Game_Year: 2012, Rating_OVR: 92, Position: "CM", Main_Position: "MID", Club: "FC Barcelona", Nation: "Spain" },
-  { Player: "Andrés Iniesta", Game_Year: 2013, Rating_OVR: 90, Position: "CAM", Main_Position: "MID", Club: "FC Barcelona", Nation: "Spain" },
-  { Player: "Kevin De Bruyne", Game_Year: 2021, Rating_OVR: 91, Position: "CM", Main_Position: "MID", Club: "Manchester City", Nation: "Belgium" },
-  { Player: "Thierry Henry", Game_Year: 2005, Rating_OVR: 97, Position: "ST", Main_Position: "FWD", Club: "Arsenal", Nation: "France" }
-];
-
-let players = [];
-let state = null;
-let currentCandidate = null;
-let ratingsRevealed = false;
-
-
-// ============================== 
-// Online room support - Firebase Realtime Database
-// ==============================
-// 1) Create a Firebase project, then create a Realtime Database.
-// 2) Replace the placeholder values below with your Firebase web app config.
-// 3) For testing only, use temporary database rules. Lock this down before wider sharing.
+// Firebase is used only for online rooms. Local play still works without it.
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAcqef5WtEuICYihdza6l_gcad7UUjIjS0",
   authDomain: "ultimate-5-a-side-draft.firebaseapp.com",
@@ -39,222 +15,31 @@ const FIREBASE_CONFIG = {
   measurementId: "G-22516PSZD7"
 };
 
+let selectedGameMode = "draft";
+let players = [];
+let state = null;
+let currentCandidate = null;
+let ratingsRevealed = false;
+let applyingRemote = false;
+
 const online = {
   enabled: false,
   isHost: false,
   roomId: null,
   ref: null,
-  applyingRemote: false,
+  myName: "",
   loaded: false
 };
 
-function firebaseConfigured() {
-  return FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.includes("PASTE_") && FIREBASE_CONFIG.databaseURL && !FIREBASE_CONFIG.databaseURL.includes("PASTE_");
-}
-
-function loadScriptOnce(src) {
-  return new Promise((resolve, reject) => {
-    if ([...document.scripts].some(script => script.src === src)) return resolve();
-    const script = document.createElement("script");
-    script.src = src;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
-
-async function ensureFirebase() {
-  if (!firebaseConfigured()) throw new Error("Firebase has not been configured yet. Paste your Firebase config into app.js first.");
-  if (online.loaded) return;
-  await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-  await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js");
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  online.loaded = true;
-}
-
-
-function injectOnlineStyles() {
-  if (document.getElementById("onlineRoomStyles")) return;
-  const style = document.createElement("style");
-  style.id = "onlineRoomStyles";
-  style.textContent = `
-    .online-room-panel { margin-bottom: 18px; }
-    .online-room-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 18px; padding: 14px; display: grid; gap: 10px; }
-    .online-room-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
-    .online-room-status { margin: 2px 0 0; color: #475569; font-weight: 800; font-size: .88rem; line-height: 1.35; }
-    .online-room-link { margin: 0; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; border-radius: 12px; padding: 9px 10px; font-weight: 900; overflow-wrap: anywhere; }
-    @media (max-width: 620px) { .online-room-actions { grid-template-columns: 1fr; } }
-  `;
-  document.head.appendChild(style);
-}
-
-function injectOnlinePanel() {
-  injectOnlineStyles();
-  const setupCard = document.querySelector(".setup-panel-card") || els.setupPanel;
-  if (!setupCard || document.getElementById("onlineRoomPanel")) return;
-  const panel = document.createElement("div");
-  panel.id = "onlineRoomPanel";
-  panel.className = "online-room-panel";
-  panel.innerHTML = `
-    <label>Online room</label>
-    <div class="online-room-box">
-      <div class="online-room-actions">
-        <input id="onlineRoomName" type="text" placeholder="Your name" />
-        <button id="createOnlineRoomBtn" type="button" class="btn btn-secondary">Create online room</button>
-      </div>
-      <div class="online-room-actions">
-        <input id="joinRoomCode" type="text" placeholder="Room code" />
-        <button id="joinOnlineRoomBtn" type="button" class="btn btn-secondary">Join room</button>
-      </div>
-      <p id="onlineRoomStatus" class="online-room-status">Online rooms need Firebase configured in app.js. Local play still works normally.</p>
-      <p id="onlineRoomLink" class="online-room-link"></p>
-    </div>`;
-  setupCard.insertBefore(panel, setupCard.firstChild);
-
-  document.getElementById("createOnlineRoomBtn").addEventListener("click", createOnlineRoom);
-  document.getElementById("joinOnlineRoomBtn").addEventListener("click", () => joinOnlineRoom(document.getElementById("joinRoomCode").value.trim().toUpperCase()));
-
-  const params = new URLSearchParams(location.search);
-  const room = params.get("room");
-  if (room) {
-    document.getElementById("joinRoomCode").value = room.toUpperCase();
-    setOnlineStatus(`Room code detected: ${room.toUpperCase()}. Add your name, then click Join room.`);
-  }
-}
-
-function setOnlineStatus(text) {
-  const el = document.getElementById("onlineRoomStatus");
-  if (el) el.textContent = text;
-}
-
-function setOnlineLink(text) {
-  const el = document.getElementById("onlineRoomLink");
-  if (el) el.textContent = text;
-}
-
-function roomId() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
-
-async function createOnlineRoom() {
-  try {
-    await ensureFirebase();
-    online.enabled = true;
-    online.isHost = true;
-    online.roomId = roomId();
-    online.ref = firebase.database().ref(`rooms/${online.roomId}`);
-    const invite = `${location.origin}${location.pathname}?room=${online.roomId}`;
-    await online.ref.set({
-      createdAt: Date.now(),
-      hostName: document.getElementById("onlineRoomName")?.value?.trim() || "Host",
-      state: null,
-      currentCandidate: null,
-      ratingsRevealed: false,
-      message: "Room created. Host can now set up and start the game."
-    });
-    subscribeToRoom();
-    setOnlineStatus(`Online room created. You are the host. Room code: ${online.roomId}`);
-    setOnlineLink(`Share this link: ${invite}`);
-  } catch (err) {
-    setOnlineStatus(err.message);
-  }
-}
-
-async function joinOnlineRoom(code) {
-  try {
-    if (!code) throw new Error("Enter a room code first.");
-    await ensureFirebase();
-    online.enabled = true;
-    online.isHost = false;
-    online.roomId = code;
-    online.ref = firebase.database().ref(`rooms/${online.roomId}`);
-    subscribeToRoom();
-    setOnlineStatus(`Joined room ${online.roomId}. The host controls the game and your screen will update live.`);
-    setOnlineLink("");
-  } catch (err) {
-    setOnlineStatus(err.message);
-  }
-}
-
-function subscribeToRoom() {
-  if (!online.ref) return;
-  online.ref.off();
-  online.ref.on("value", snapshot => {
-    const data = snapshot.val();
-    if (!data || online.applyingRemote || online.isHost) return;
-    applyRemoteData(data);
-  });
-}
-
-function serialiseState() {
-  if (!state) return null;
-  return {
-    ...state,
-    acceptedPlayerNames: [...state.acceptedPlayerNames],
-    users: state.users.map(user => ({
-      ...user,
-      declinedNames: [...user.declinedNames]
-    }))
-  };
-}
-
-function restoreState(raw) {
-  if (!raw) return null;
-  return {
-    ...raw,
-    acceptedPlayerNames: new Set(raw.acceptedPlayerNames || []),
-    users: (raw.users || []).map(user => ({
-      ...user,
-      declinedNames: new Set(user.declinedNames || [])
-    }))
-  };
-}
-
-async function saveOnlineState(messageOverride = null) {
-  if (!online.enabled || !online.isHost || !online.ref || online.applyingRemote) return;
-  await online.ref.update({
-    updatedAt: Date.now(),
-    state: serialiseState(),
-    currentCandidate,
-    ratingsRevealed,
-    message: messageOverride ?? els.message.textContent ?? ""
-  });
-}
-
-function applyRemoteData(data) {
-  online.applyingRemote = true;
-  state = restoreState(data.state);
-  currentCandidate = data.currentCandidate || null;
-  ratingsRevealed = !!data.ratingsRevealed;
-
-  if (!state) {
-    setOnlineStatus(data.message || `Connected to room ${online.roomId}. Waiting for the host to start.`);
-    online.applyingRemote = false;
-    return;
-  }
-
-  els.setupPanel.classList.add("hidden");
-  els.gamePanel.classList.remove("hidden");
-  if (ratingsRevealed) els.resultsPanel.classList.remove("hidden");
-  else els.resultsPanel.classList.add("hidden");
-
-  updateGameControls();
-  render();
-  if (currentCandidate) renderCandidate(currentCandidate);
-  else clearCandidate(data.message || "Waiting for the host...");
-  if (ratingsRevealed) renderResults();
-  els.message.textContent = data.message || "";
-  applyOnlineControlLock();
-  online.applyingRemote = false;
-}
-
-function applyOnlineControlLock() {
-  if (!online.enabled || online.isHost) return;
-  [els.pickBtn, els.acceptBtn, els.declineBtn, els.bidPickBtn, els.awardBidBtn, els.skipBidBtn, els.revealBtn].forEach(btn => {
-    if (btn) btn.disabled = true;
-  });
-}
-
+const samplePlayers = [
+  { Player: "Lionel Messi", Game_Year: 2012, Rating_OVR: 94, Position: "CF", Main_Position: "FWD", Club: "FC Barcelona", Nation: "Argentina" },
+  { Player: "Cristiano Ronaldo", Game_Year: 2012, Rating_OVR: 92, Position: "LW", Main_Position: "FWD", Club: "Real Madrid", Nation: "Portugal" },
+  { Player: "Gianluigi Buffon", Game_Year: 2005, Rating_OVR: 97, Position: "GK", Main_Position: "GK", Club: "Juventus", Nation: "Italy" },
+  { Player: "Sergio Ramos", Game_Year: 2015, Rating_OVR: 87, Position: "CB", Main_Position: "DEF", Club: "Real Madrid", Nation: "Spain" },
+  { Player: "Xavi", Game_Year: 2012, Rating_OVR: 92, Position: "CM", Main_Position: "MID", Club: "FC Barcelona", Nation: "Spain" },
+  { Player: "Kevin De Bruyne", Game_Year: 2021, Rating_OVR: 91, Position: "CM", Main_Position: "MID", Club: "Manchester City", Nation: "Belgium" },
+  { Player: "Thierry Henry", Game_Year: 2005, Rating_OVR: 97, Position: "ST", Main_Position: "FWD", Club: "Arsenal", Nation: "France" }
+];
 
 const els = {
   setupPanel: document.getElementById("setupPanel"),
@@ -299,10 +84,10 @@ async function loadPlayers() {
     const response = await fetch("players.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     players = normalisePlayers(await response.json());
-  } catch (err) {
+  } catch {
     players = normalisePlayers(samplePlayers);
     if (els.loadStatus) {
-      els.loadStatus.textContent = "Using fallback sample players. Run via Live Server/GitHub Pages and keep players.json in the folder.";
+      els.loadStatus.textContent = "Using fallback sample players. Keep players.json in the project folder.";
       els.loadStatus.style.display = "block";
     }
   }
@@ -319,6 +104,400 @@ function normalisePlayers(data) {
     club: p.Club ?? p.club ?? "",
     nation: p.Nation ?? p.nation ?? ""
   })).filter(p => p.player && p.mainPosition && p.rating);
+}
+
+function injectOnlineStyles() {
+  if (document.getElementById("onlineStyles")) return;
+  const style = document.createElement("style");
+  style.id = "onlineStyles";
+  style.textContent = `
+    .online-room-panel { margin-bottom: 18px; }
+    .online-room-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 18px; padding: 14px; display: grid; gap: 10px; }
+    .online-room-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+    .online-room-status { margin: 2px 0 0; color: #475569; font-weight: 800; font-size: .88rem; line-height: 1.35; }
+    .online-room-link { margin: 0; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; border-radius: 12px; padding: 9px 10px; font-weight: 900; overflow-wrap: anywhere; }
+    .lobby-card { max-width: 760px; margin: 42px auto; text-align: center; }
+    .lobby-code { display: inline-block; margin: 10px 0; padding: 10px 16px; background: #0f172a; color: #fff; border-radius: 14px; font-size: 1.4rem; letter-spacing: .12em; font-weight: 950; }
+    .lobby-link { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 14px; padding: 12px; overflow-wrap: anywhere; color: #1e3a8a; font-weight: 850; }
+    .joined-list { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .joined-pill { background: #dcfce7; color: #166534; border-radius: 999px; padding: 7px 11px; font-weight: 900; }
+    .lobby-setup { margin-top: 18px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 20px; background: #f8fafc; text-align: left; }
+    .lobby-setup-title { margin: 0 0 10px; font-weight: 950; color: #0f172a; }
+    .lobby-mode-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .lobby-mode-card { border: 2px solid #e2e8f0; background: #fff; border-radius: 16px; padding: 12px; text-align: left; cursor: pointer; font-weight: 900; color: #0f172a; }
+    .lobby-mode-card span { display: block; margin-top: 4px; color: #64748b; font-size: .82rem; font-weight: 750; line-height: 1.25; }
+    .lobby-mode-card.selected { border-color: #22c55e; background: #f0fdf4; box-shadow: 0 10px 24px rgba(34,197,94,.12); }
+    .lobby-checkbox { display: flex; gap: 8px; align-items: center; color: #334155; font-weight: 850; margin: 10px 0 14px; }
+    .lobby-start-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .turn-lock-note { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 14px; padding: 10px; font-weight: 900; margin-top: 10px; }
+    @media (max-width: 620px) { .online-room-actions, .lobby-mode-cards { grid-template-columns: 1fr; } }
+  `;
+  document.head.appendChild(style);
+}
+
+function injectOnlinePanel() {
+  injectOnlineStyles();
+  const setupCard = document.querySelector(".setup-panel-card") || els.setupPanel;
+  if (!setupCard || document.getElementById("onlineRoomPanel")) return;
+  const panel = document.createElement("div");
+  panel.id = "onlineRoomPanel";
+  panel.className = "online-room-panel";
+  panel.innerHTML = `
+    <label>Online room</label>
+    <div class="online-room-box">
+      <div class="online-room-actions">
+        <input id="onlineRoomName" type="text" placeholder="Your name, e.g. Daven" />
+        <button id="createOnlineRoomBtn" type="button" class="btn btn-secondary">Create online room</button>
+      </div>
+      <div class="online-room-actions">
+        <input id="joinRoomCode" type="text" placeholder="Room code" />
+        <button id="joinOnlineRoomBtn" type="button" class="btn btn-secondary">Join room</button>
+      </div>
+      <p id="onlineRoomStatus" class="online-room-status">Create a room, then share the link. Each person joins using their own name.</p>
+      <p id="onlineRoomLink" class="online-room-link hidden"></p>
+    </div>`;
+  setupCard.insertBefore(panel, setupCard.firstChild);
+  document.getElementById("createOnlineRoomBtn").addEventListener("click", createOnlineRoom);
+  document.getElementById("joinOnlineRoomBtn").addEventListener("click", () => joinOnlineRoom(document.getElementById("joinRoomCode").value.trim().toUpperCase()));
+
+  const params = new URLSearchParams(location.search);
+  const room = params.get("room");
+  if (room) {
+    document.getElementById("joinRoomCode").value = room.toUpperCase();
+    setOnlineStatus(`Room code detected: ${room.toUpperCase()}. Type your player name, then click Join room.`);
+  }
+}
+
+function ensureLobby() {
+  let lobby = document.getElementById("onlineLobbyPanel");
+  if (lobby) return lobby;
+  const shell = document.querySelector(".app-shell") || document.body;
+  lobby = document.createElement("section");
+  lobby.id = "onlineLobbyPanel";
+  lobby.className = "card lobby-card hidden";
+  shell.insertBefore(lobby, els.gamePanel);
+  return lobby;
+}
+
+function showLobby(mode, data = {}) {
+  const lobby = ensureLobby();
+  const invite = data.invite || `${location.origin}${location.pathname}?room=${online.roomId}`;
+  const joined = data.participants || [];
+  lobby.innerHTML = mode === "host" ? `
+    <p class="eyebrow">Online room created</p>
+    <h2>Waiting for players to join</h2>
+    <p class="muted">Share this link. Joined players appear below. When everyone is in, choose the game and start directly from here.</p>
+    <div class="lobby-code">${online.roomId}</div>
+    <p class="lobby-link">${invite}</p>
+    <button id="copyInviteBtn" class="btn btn-secondary" type="button">Copy invite link</button>
+    <div class="joined-list">${joined.map(n => `<span class="joined-pill">${escapeHtml(n)}</span>`).join("") || `<span class="joined-pill">${escapeHtml(online.myName || "Host")}</span>`}</div>
+    <div class="lobby-setup">
+      <p class="lobby-setup-title">Start online game</p>
+      <div id="lobbyModeCards" class="lobby-mode-cards">
+        <button type="button" class="lobby-mode-card ${selectedGameMode === "draft" ? "selected" : ""}" data-mode="draft">Ultimate Draft 5-a-side<span>Each player controls their own turn from their device.</span></button>
+        <button type="button" class="lobby-mode-card ${selectedGameMode === "bid" ? "selected" : ""}" data-mode="bid">Bid for your Ultimate 5-a-side Team<span>Host-assisted for now; all devices still update live.</span></button>
+      </div>
+      <label id="lobbyExcludeDeclinesLabel" class="lobby-checkbox ${selectedGameMode === "bid" ? "hidden" : ""}">
+        <input id="lobbyExcludeDeclines" type="checkbox" checked />
+        Exclude declined players
+      </label>
+      <div class="lobby-start-row">
+        <button id="startOnlineGameBtn" class="btn btn-primary" type="button">Start online game</button>
+        <button id="editLocalSetupBtn" class="btn btn-secondary" type="button">Edit local setup instead</button>
+      </div>
+    </div>
+  ` : `
+    <p class="eyebrow">Online room joined</p>
+    <h2>Waiting for the host</h2>
+    <p class="muted">You joined as <strong>${escapeHtml(online.myName)}</strong>. Keep this page open. Once the host starts, your controls will unlock when it is your turn.</p>
+    <div class="lobby-code">${online.roomId}</div>
+    <div class="joined-list">${joined.map(n => `<span class="joined-pill">${escapeHtml(n)}</span>`).join("")}</div>
+  `;
+  els.setupPanel.classList.add("hidden");
+  els.gamePanel.classList.add("hidden");
+  els.resultsPanel.classList.add("hidden");
+  lobby.classList.remove("hidden");
+  document.getElementById("copyInviteBtn")?.addEventListener("click", () => navigator.clipboard?.writeText(invite));
+  document.getElementById("lobbyModeCards")?.addEventListener("click", event => {
+    const card = event.target.closest(".lobby-mode-card");
+    if (!card) return;
+    selectedGameMode = card.dataset.mode;
+    showLobby("host", { participants: joined, invite });
+  });
+  document.getElementById("startOnlineGameBtn")?.addEventListener("click", startOnlineGameFromLobby);
+  document.getElementById("editLocalSetupBtn")?.addEventListener("click", () => {
+    lobby.classList.add("hidden");
+    els.setupPanel.classList.remove("hidden");
+    updateSetupForMode();
+    populateNamesFromParticipants();
+  });
+}
+
+function setOnlineStatus(text) {
+  const el = document.getElementById("onlineRoomStatus");
+  if (el) el.textContent = text;
+}
+
+function setOnlineLink(text) {
+  const el = document.getElementById("onlineRoomLink");
+  if (!el) return;
+  el.textContent = text;
+  el.classList.toggle("hidden", !text);
+}
+
+function randomRoomId() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+function firebaseConfigured() {
+  return FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.databaseURL;
+}
+
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    if ([...document.scripts].some(script => script.src === src)) return resolve();
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureFirebase() {
+  if (!firebaseConfigured()) throw new Error("Firebase is not configured yet.");
+  if (online.loaded) return;
+  await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
+  await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js");
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  online.loaded = true;
+}
+
+async function createOnlineRoom() {
+  try {
+    const name = document.getElementById("onlineRoomName")?.value?.trim();
+    if (!name) throw new Error("Type your name first, e.g. Daven.");
+    await ensureFirebase();
+    online.enabled = true;
+    online.isHost = true;
+    online.myName = name;
+    online.roomId = randomRoomId();
+    online.ref = firebase.database().ref(`rooms/${online.roomId}`);
+    const invite = `${location.origin}${location.pathname}?room=${online.roomId}`;
+    await online.ref.set({
+      createdAt: Date.now(),
+      hostName: name,
+      participants: { [safeKey(name)]: name },
+      state: null,
+      currentCandidate: null,
+      ratingsRevealed: false,
+      message: "Room created. Waiting for players."
+    });
+    subscribeToRoom();
+    setOnlineStatus(`Room created: ${online.roomId}`);
+    setOnlineLink(`Share this link: ${invite}`);
+    showLobby("host", { invite, participants: [name] });
+  } catch (err) {
+    setOnlineStatus(err.message);
+  }
+}
+
+async function joinOnlineRoom(code) {
+  try {
+    const name = document.getElementById("onlineRoomName")?.value?.trim();
+    if (!name) throw new Error("Type your player name first. This should match the name the host uses in setup.");
+    if (!code) throw new Error("Enter a room code first.");
+    await ensureFirebase();
+    online.enabled = true;
+    online.isHost = false;
+    online.myName = name;
+    online.roomId = code;
+    online.ref = firebase.database().ref(`rooms/${online.roomId}`);
+    await online.ref.child(`participants/${safeKey(name)}`).set(name);
+    subscribeToRoom();
+    showLobby("player", { participants: [name] });
+  } catch (err) {
+    setOnlineStatus(err.message);
+  }
+}
+
+function subscribeToRoom() {
+  if (!online.ref) return;
+  online.ref.off();
+  online.ref.on("value", snapshot => {
+    const data = snapshot.val();
+    if (!data || applyingRemote) return;
+    const participants = Object.values(data.participants || {});
+    if (!data.state) {
+      showLobby(online.isHost ? "host" : "player", { participants, invite: `${location.origin}${location.pathname}?room=${online.roomId}` });
+      return;
+    }
+    applyRemoteData(data);
+  });
+}
+
+function safeKey(value) {
+  return String(value).trim().toLowerCase().replace(/[.#$\/[\]]/g, "_");
+}
+
+
+function participantNamesFromSnapshot(snapshot) {
+  const names = Object.values(snapshot.val() || {}).map(name => String(name).trim()).filter(Boolean);
+  const unique = [];
+  names.forEach(name => {
+    if (!unique.some(existing => safeKey(existing) === safeKey(name))) unique.push(name);
+  });
+  return unique;
+}
+
+async function startOnlineGameFromLobby() {
+  if (!online.enabled || !online.isHost || !online.ref) return;
+  const snapshot = await online.ref.child("participants").once("value");
+  const names = participantNamesFromSnapshot(snapshot);
+  const minUsers = selectedGameMode === "bid" ? 2 : 1;
+  if (names.length < minUsers) {
+    alert(selectedGameMode === "bid" ? "Bid mode needs at least 2 joined players." : "At least 1 player must join.");
+    return;
+  }
+  const activeNames = names.slice(0, 4);
+  const gameMode = selectedGameMode;
+  ratingsRevealed = false;
+  currentCandidate = null;
+  state = {
+    gameMode,
+    userCount: activeNames.length,
+    currentUserIndex: 0,
+    excludeDeclines: gameMode === "draft" && !!document.getElementById("lobbyExcludeDeclines")?.checked,
+    users: activeNames.map(name => ({
+      name,
+      team: [],
+      declines: 0,
+      declinedNames: new Set(),
+      budget: AUCTION_BUDGET,
+      spent: 0,
+      bidSkips: 0
+    })),
+    acceptedPlayerNames: new Set(),
+    history: [],
+    bidOrder: [],
+    bidRoundIndex: 0
+  };
+  if (gameMode === "draft") {
+    state.users = shuffleArray(state.users);
+    state.currentUserIndex = 0;
+  }
+  if (gameMode === "bid") {
+    state.bidOrder = shuffleArray([...Array(activeNames.length).keys()]);
+    state.currentUserIndex = state.bidOrder[0];
+  }
+  ensureLobby().classList.add("hidden");
+  els.setupPanel.classList.add("hidden");
+  els.gamePanel.classList.remove("hidden");
+  els.resultsPanel.classList.add("hidden");
+  els.revealBtn.classList.add("hidden");
+  updateGameControls();
+  clearCandidate(gameMode === "bid" ? "Click “Randomise player” to start the auction." : "Click “Pick player” to begin.");
+  render();
+  await saveOnlineState("Online game started.");
+}
+
+function populateNamesFromParticipants() {
+  if (!online.ref || !online.isHost) return;
+  online.ref.child("participants").once("value", snapshot => {
+    const names = Object.values(snapshot.val() || {});
+    if (!names.length) return;
+    const count = Math.min(4, Math.max(selectedGameMode === "bid" ? 2 : 1, names.length));
+    els.userCount.value = String(count);
+    renderUserNameInputs();
+    names.slice(0, count).forEach((name, i) => {
+      const input = document.getElementById(`userName${i}`);
+      if (input) input.value = name;
+    });
+  });
+}
+
+function serialiseState() {
+  if (!state) return null;
+  return {
+    ...state,
+    acceptedPlayerNames: [...state.acceptedPlayerNames],
+    users: state.users.map(user => ({ ...user, declinedNames: [...user.declinedNames] }))
+  };
+}
+
+function restoreState(raw) {
+  if (!raw) return null;
+  return {
+    ...raw,
+    acceptedPlayerNames: new Set(raw.acceptedPlayerNames || []),
+    users: (raw.users || []).map(user => ({ ...user, declinedNames: new Set(user.declinedNames || []) }))
+  };
+}
+
+async function saveOnlineState(messageOverride = null) {
+  if (!online.enabled || !online.ref || applyingRemote) return;
+  await online.ref.update({
+    updatedAt: Date.now(),
+    state: serialiseState(),
+    currentCandidate,
+    ratingsRevealed,
+    message: messageOverride ?? els.message.textContent ?? ""
+  });
+}
+
+function applyRemoteData(data) {
+  applyingRemote = true;
+  state = restoreState(data.state);
+  currentCandidate = data.currentCandidate || null;
+  ratingsRevealed = !!data.ratingsRevealed;
+  ensureLobby().classList.add("hidden");
+  els.setupPanel.classList.add("hidden");
+  els.gamePanel.classList.remove("hidden");
+  if (ratingsRevealed) els.resultsPanel.classList.remove("hidden");
+  else els.resultsPanel.classList.add("hidden");
+  updateGameControls();
+  render();
+  if (currentCandidate) renderCandidate(currentCandidate);
+  else clearCandidate(data.message || "Waiting for the next action...");
+  if (ratingsRevealed) renderResults();
+  els.message.textContent = data.message || "";
+  applyingRemote = false;
+  applyOnlinePermissions();
+}
+
+function currentPlayerCanAct() {
+  if (!online.enabled) return true;
+  if (!state) return false;
+  const user = currentUser();
+  return user && safeKey(user.name) === safeKey(online.myName);
+}
+
+function applyOnlinePermissions() {
+  if (!online.enabled || !state) return;
+  const canAct = currentPlayerCanAct();
+  const noteText = canAct ? `It is your turn, ${online.myName}.` : `Waiting for ${currentUser()?.name || "the current player"}. You joined as ${online.myName}.`;
+  let note = document.getElementById("turnLockNote");
+  if (!note && els.message) {
+    note = document.createElement("div");
+    note.id = "turnLockNote";
+    note.className = "turn-lock-note";
+    els.message.insertAdjacentElement("afterend", note);
+  }
+  if (note) note.textContent = noteText;
+
+  if (state.gameMode === "draft") {
+    if (!canAct) {
+      els.pickBtn.disabled = true;
+      els.acceptBtn.disabled = true;
+      els.declineBtn.disabled = true;
+    } else {
+      els.pickBtn.disabled = !!currentCandidate || isGameComplete();
+      els.acceptBtn.disabled = !currentCandidate;
+      els.declineBtn.disabled = !currentCandidate || currentUser().declines >= DECLINES_ALLOWED;
+    }
+  }
+
+  // Bid mode remains shared-screen/host-assisted for now. Draft mode is fully turn-based online.
 }
 
 function updateSetupForMode() {
@@ -351,8 +530,8 @@ function renderUserNameInputs() {
 
 function getUserNames(userCount) {
   return Array.from({ length: userCount }, (_, i) => {
-    const value = document.getElementById(`userName${i}`)?.value?.trim();
-    return value || `User ${i + 1}`;
+    const input = document.getElementById(`userName${i}`);
+    return input?.value?.trim() || `User ${i + 1}`;
   });
 }
 
@@ -368,14 +547,19 @@ function startGame() {
     currentUserIndex: 0,
     excludeDeclines: gameMode === "draft" && els.excludeDeclines.checked,
     users: Array.from({ length: userCount }, (_, i) => ({
-      name: names[i], team: [], declines: 0, declinedNames: new Set(), budget: AUCTION_BUDGET, spent: 0, bidSkips: 0
+      name: names[i],
+      team: [],
+      declines: 0,
+      declinedNames: new Set(),
+      budget: AUCTION_BUDGET,
+      spent: 0,
+      bidSkips: 0
     })),
     acceptedPlayerNames: new Set(),
     history: [],
     bidOrder: [],
     bidRoundIndex: 0
   };
-
   if (gameMode === "draft") {
     state.users = shuffleArray(state.users);
     state.currentUserIndex = 0;
@@ -384,7 +568,7 @@ function startGame() {
     state.bidOrder = shuffleArray([...Array(userCount).keys()]);
     state.currentUserIndex = state.bidOrder[0];
   }
-
+  ensureLobby().classList.add("hidden");
   els.setupPanel.classList.add("hidden");
   els.gamePanel.classList.remove("hidden");
   els.resultsPanel.classList.add("hidden");
@@ -399,11 +583,13 @@ function resetGame() {
   state = null;
   currentCandidate = null;
   ratingsRevealed = false;
+  ensureLobby().classList.add("hidden");
   els.setupPanel.classList.remove("hidden");
   els.gamePanel.classList.add("hidden");
   els.resultsPanel.classList.add("hidden");
   els.message.textContent = "";
   updateSetupForMode();
+  if (online.enabled) saveOnlineState("Game reset.");
 }
 
 function updateGameControls() {
@@ -430,17 +616,14 @@ function getNeededPositions(user) {
 
 function pickRandomPlayer() {
   if (!state || state.gameMode !== "draft" || isGameComplete()) return;
-
-  // FIX: once a player is showing, do not allow unlimited re-randomising via the Pick Player button.
+  if (online.enabled && !currentPlayerCanAct()) return applyOnlinePermissions();
   if (currentCandidate) {
     els.message.textContent = "Please accept or decline the current player before picking another.";
     return;
   }
-
   const user = currentUser();
   const needs = getNeededPositions(user);
   if (needs.length === 0) { moveToNextUser(); return pickRandomPlayer(); }
-
   const pool = players.filter(p => {
     if (!needs.includes(p.mainPosition)) return false;
     if (state.acceptedPlayerNames.has(p.player)) return false;
@@ -460,13 +643,13 @@ function pickRandomPlayer() {
     ? `${user.name} has used all 3 declines and must accept this player.`
     : `${user.name} needs: ${needs.join(", ")}`;
   saveOnlineState();
+  applyOnlinePermissions();
 }
 
 function acceptPlayer() {
   if (!currentCandidate || !state || state.gameMode !== "draft") return;
+  if (online.enabled && !currentPlayerCanAct()) return applyOnlinePermissions();
   const user = currentUser();
-  if (!getNeededPositions(user).includes(currentCandidate.mainPosition)) { currentCandidate = null; pickRandomPlayer(); return; }
-  if (state.acceptedPlayerNames.has(currentCandidate.player)) { currentCandidate = null; pickRandomPlayer(); return; }
   user.team.push(currentCandidate);
   state.acceptedPlayerNames.add(currentCandidate.player);
   state.history.push({ user: user.name, decision: "ACCEPT", player: currentCandidate });
@@ -478,6 +661,7 @@ function acceptPlayer() {
 
 function declinePlayer() {
   if (!currentCandidate || !state || state.gameMode !== "draft") return;
+  if (online.enabled && !currentPlayerCanAct()) return applyOnlinePermissions();
   const user = currentUser();
   if (user.declines >= DECLINES_ALLOWED) {
     els.message.textContent = `${user.name} has no declines left and must accept this player.`;
@@ -499,12 +683,8 @@ function bidRandomPlayer() {
   ensureCurrentNominatorCanNominate();
   const nominator = currentUser();
   const needs = getNeededPositions(nominator);
-  const pool = players.filter(p => {
-    if (!needs.includes(p.mainPosition)) return false;
-    if (state.acceptedPlayerNames.has(p.player)) return false;
-    return state.users.some(u => getNeededPositions(u).includes(p.mainPosition) && u.budget > 0);
-  });
-  if (pool.length === 0) { clearCandidate("No available player for the current nominator. Rotating nominator."); rotateBidNominator(); render(); return; }
+  const pool = players.filter(p => !state.acceptedPlayerNames.has(p.player) && needs.includes(p.mainPosition));
+  if (!pool.length) { clearCandidate("No available player for the current nominator. Rotating nominator."); rotateBidNominator(); render(); return; }
   currentCandidate = pool[Math.floor(Math.random() * pool.length)];
   renderCandidate(currentCandidate);
   renderBidInputs();
@@ -521,15 +701,8 @@ function renderBidInputs() {
     const isComplete = getNeededPositions(user).length === 0;
     const eligible = needsPosition && user.budget > 0 && !isComplete;
     const mustBid = eligible && user.bidSkips >= BID_SKIPS_ALLOWED;
-    let helper = "";
-    if (isComplete) helper = "Team complete";
-    else if (!needsPosition) helper = `Does not need ${currentCandidate.mainPosition}`;
-    else if (user.budget <= 0) helper = "No budget left";
-    else helper = mustBid ? "No skips left — must bid above £0m" : `Budget left: £${user.budget}m • Skips left: ${BID_SKIPS_ALLOWED - user.bidSkips}`;
-    return `<div class="bid-row ${eligible ? "" : "ineligible"}">
-      <label for="bidUser${index}">${escapeHtml(user.name)}<span class="bid-help ${mustBid ? "must-bid" : ""}">${helper}</span></label>
-      <input id="bidUser${index}" class="bid-input" type="number" min="${mustBid ? 1 : 0}" max="${user.budget}" step="1" value="0" ${eligible ? "" : "disabled"} />
-    </div>`;
+    let helper = isComplete ? "Team complete" : !needsPosition ? `Does not need ${currentCandidate.mainPosition}` : user.budget <= 0 ? "No budget left" : mustBid ? "No skips left — must bid above £0m" : `Budget left: £${user.budget}m • Skips left: ${BID_SKIPS_ALLOWED - user.bidSkips}`;
+    return `<div class="bid-row ${eligible ? "" : "ineligible"}"><label for="bidUser${index}">${escapeHtml(user.name)}<span class="bid-help ${mustBid ? "must-bid" : ""}">${helper}</span></label><input id="bidUser${index}" class="bid-input" type="number" min="${mustBid ? 1 : 0}" max="${user.budget}" step="1" value="0" ${eligible ? "" : "disabled"} /></div>`;
   }).join("");
 }
 
@@ -551,12 +724,10 @@ function awardHighestBid() {
   if (!best) { els.message.textContent = "Enter at least one valid bid above £0m, or skip the player."; return; }
   if (tied) { els.message.textContent = "There is a tie for highest bid. Please adjust bids before awarding."; return; }
   recordZeroBidSkips(best.index);
-  const playerWithPrice = { ...currentCandidate, price: best.bid };
-  best.user.team.push(playerWithPrice);
+  best.user.team.push({ ...currentCandidate, price: best.bid });
   best.user.budget -= best.bid;
   best.user.spent += best.bid;
   state.acceptedPlayerNames.add(currentCandidate.player);
-  els.message.textContent = `${best.user.name} signed ${currentCandidate.player} for £${best.bid}m.`;
   currentCandidate = null;
   els.awardBidBtn.disabled = true; els.skipBidBtn.disabled = true; els.bidInputs.innerHTML = "";
   if (isGameComplete()) completeGame(); else { rotateBidNominator(); bidRandomPlayer(); }
@@ -589,6 +760,7 @@ function completeGame() {
   els.declineBtn.disabled = true;
   els.awardBidBtn.disabled = true;
   els.skipBidBtn.disabled = true;
+  saveOnlineState("Game complete. Reveal ratings to see the winner.");
 }
 
 function revealScores() { ratingsRevealed = true; render(); renderResults(); els.resultsPanel.classList.remove("hidden"); els.revealBtn.classList.add("hidden"); saveOnlineState("Scores revealed."); }
@@ -601,16 +773,14 @@ function render() {
   if (state.gameMode === "bid") { els.currentBudgetLeft.textContent = `£${user.budget}m`; renderBidOrder(); }
   else { els.declinesLeft.textContent = DECLINES_ALLOWED - user.declines; }
   renderTeams();
-  applyOnlineControlLock();
+  applyOnlinePermissions();
 }
 
-function renderBidOrder() { if (!state || state.gameMode !== "bid") return; const currentIndex = state.currentUserIndex; els.bidOrderDisplay.innerHTML = state.bidOrder.map((userIndex, orderIndex) => `<span class="order-chip ${userIndex === currentIndex ? "current" : ""}">${orderIndex + 1}. ${escapeHtml(state.users[userIndex].name)}</span>`).join(""); }
+function renderBidOrder() { if (!state || state.gameMode !== "bid") return; els.bidOrderDisplay.innerHTML = state.bidOrder.map((userIndex, orderIndex) => `<span class="order-chip ${userIndex === state.currentUserIndex ? "current" : ""}">${orderIndex + 1}. ${escapeHtml(state.users[userIndex].name)}</span>`).join(""); }
 
 function renderCandidate(p) {
   els.candidateCard.classList.remove("blank");
-  els.candidateCard.innerHTML = `<p class="eyebrow">Random candidate</p><h3 class="player-name">${escapeHtml(p.player)}</h3>
-    <div class="badge-row"><span class="badge dark">${p.mainPosition}</span><span class="badge">${escapeHtml(p.position)}</span><span class="badge">${p.year}</span></div>
-    <div class="detail-grid"><div class="detail"><span>Club</span>${escapeHtml(p.club)}</div><div class="detail"><span>Nation</span>${escapeHtml(p.nation)}</div></div>`;
+  els.candidateCard.innerHTML = `<p class="eyebrow">Random candidate</p><h3 class="player-name">${escapeHtml(p.player)}</h3><div class="badge-row"><span class="badge dark">${p.mainPosition}</span><span class="badge">${escapeHtml(p.position)}</span><span class="badge">${p.year}</span></div><div class="detail-grid"><div class="detail"><span>Club</span>${escapeHtml(p.club)}</div><div class="detail"><span>Nation</span>${escapeHtml(p.nation)}</div></div>`;
 }
 
 function clearCandidate(text) {
@@ -645,47 +815,10 @@ function shortenClub(club) { const replacements = { "Manchester United": "Man Un
 function getFinalScores() { return state.users.map(user => ({ user, total: user.team.reduce((sum, p) => sum + p.rating, 0) })).sort((a, b) => b.total - a.total); }
 function renderResults() { const scored = getFinalScores(); const topScore = scored[0]?.total ?? 0; els.resultsContainer.innerHTML = scored.map(row => `<article class="result-card ${row.total === topScore ? "winner" : ""}"><h3>${escapeHtml(row.user.name)}${row.total === topScore ? " 🏆" : ""}</h3><p class="score">${row.total}</p><p class="muted">${row.user.team.map(p => `${escapeHtml(p.player)} ${p.rating}${p.price ? ` (£${p.price}m)` : ""}`).join(" • ")}</p></article>`).join(""); }
 
-function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2) { const words = String(text || "").split(" "); let line = ""; let lines = []; for (const word of words) { const testLine = line ? `${line} ${word}` : word; if (ctx.measureText(testLine).width > maxWidth && line) { lines.push(line); line = word; } else line = testLine; } if (line) lines.push(line); if (lines.length > maxLines) { lines = lines.slice(0, maxLines); while (ctx.measureText(lines[maxLines - 1] + "…").width > maxWidth && lines[maxLines - 1].length > 0) lines[maxLines - 1] = lines[maxLines - 1].slice(0, -1); lines[maxLines - 1] += "…"; } lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight)); }
-function roundRect(ctx, x, y, width, height, radius, fill, stroke) { const r = Math.min(radius, width / 2, height / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + width, y, x + width, y + height, r); ctx.arcTo(x + width, y + height, x, y + height, r); ctx.arcTo(x, y + height, x, y, r); ctx.arcTo(x, y, x + width, y, r); ctx.closePath(); if (fill) ctx.fill(); if (stroke) ctx.stroke(); }
-
-function createSummaryCanvas() {
-  const scored = getFinalScores();
-  const winnerScore = scored[0]?.total || 0;
-  const winnerNames = scored.filter(s => s.total === winnerScore).map(s => s.user.name).join(" & ");
-  const isBid = state?.gameMode === "bid";
-  const scale = 2, width = 1080, headerHeight = 170, userBlockHeight = 300, footerHeight = 70;
-  const height = headerHeight + state.users.length * userBlockHeight + footerHeight;
-  const canvas = document.createElement("canvas");
-  canvas.width = width * scale; canvas.height = height * scale;
-  const ctx = canvas.getContext("2d"); ctx.scale(scale, scale);
-  const gradient = ctx.createLinearGradient(0, 0, width, height); gradient.addColorStop(0, "#0f172a"); gradient.addColorStop(.55, "#1e3a8a"); gradient.addColorStop(1, "#14532d"); ctx.fillStyle = gradient; ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = "rgba(255,255,255,0.95)"; roundRect(ctx, 40, 34, width - 80, 112, 26, true, false);
-  ctx.fillStyle = "#0f172a"; ctx.font = "900 44px Arial"; ctx.fillText(isBid ? "Bid 5-a-side Results" : "5-a-side Draft Results", 70, 82);
-  ctx.font = "700 24px Arial"; ctx.fillStyle = "#475569"; ctx.fillText(isBid ? "£100m budget • Players from 2005–2026" : "Players from 2005–2026", 70, 119);
-  ctx.textAlign = "right"; ctx.fillStyle = "#92400e"; ctx.font = "900 26px Arial"; ctx.fillText(`Winner: ${winnerNames}`, width - 70, 84); ctx.fillText(`Score: ${winnerScore}`, width - 70, 119); ctx.textAlign = "left";
-  state.users.forEach((user, index) => {
-    const y = headerHeight + index * userBlockHeight;
-    const score = user.team.reduce((sum, p) => sum + p.rating, 0);
-    const isWinner = score === winnerScore;
-    ctx.fillStyle = isWinner ? "rgba(255,251,235,0.97)" : "rgba(248,250,252,0.94)"; roundRect(ctx, 40, y + 10, width - 80, userBlockHeight - 24, 24, true, false);
-    ctx.fillStyle = isWinner ? "#f59e0b" : "#2563eb"; roundRect(ctx, 60, y + 30, 120, 42, 18, true, false);
-    ctx.fillStyle = "#fff"; ctx.font = "900 22px Arial"; ctx.fillText(isWinner ? "WINNER" : "TEAM", 78, y + 58);
-    ctx.fillStyle = "#0f172a"; ctx.font = "900 34px Arial"; ctx.fillText(user.name, 200, y + 60);
-    if (isBid) { ctx.fillStyle = "#166534"; ctx.font = "800 18px Arial"; ctx.fillText(`Spent £${user.spent}m • £${user.budget}m left • Skips ${user.bidSkips}/${BID_SKIPS_ALLOWED}`, 200, y + 86); }
-    ctx.textAlign = "right"; ctx.fillStyle = "#0f172a"; ctx.font = "900 36px Arial"; ctx.fillText(`${score}`, width - 70, y + 60); ctx.font = "700 18px Arial"; ctx.fillStyle = "#64748b"; ctx.fillText("TOTAL", width - 70, y + 84); ctx.textAlign = "left";
-    buildSlots(user).forEach((slot, i) => {
-      const x = 70 + i * 198, rowY = y + 115, cardW = 184, cardH = 142, p = slot.player;
-      ctx.fillStyle = "#fff"; roundRect(ctx, x, rowY, cardW, cardH, 18, true, false); ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 2; roundRect(ctx, x, rowY, cardW, cardH, 18, false, true);
-      ctx.fillStyle = "#0f172a"; roundRect(ctx, x + 12, rowY + 12, 54, 25, 12, true, false); ctx.fillStyle = "#fff"; ctx.font = "900 13px Arial"; ctx.fillText(slot.label, x + 24, rowY + 30);
-      if (p) { ctx.fillStyle = "#0f172a"; ctx.font = "900 18px Arial"; wrapCanvasText(ctx, p.player, x + 12, rowY + 62, cardW - 24, 20, 2); ctx.fillStyle = "#475569"; ctx.font = "700 14px Arial"; wrapCanvasText(ctx, shortenClub(p.club), x + 12, rowY + 103, cardW - 24, 16, 1); ctx.fillStyle = "#b45309"; ctx.font = "900 16px Arial"; ctx.fillText(`${p.year} • OVR ${p.rating}${p.price ? ` • £${p.price}m` : ""}`, x + 12, rowY + 128); }
-    });
-  });
-  ctx.fillStyle = "rgba(255,255,255,0.72)"; ctx.font = "700 18px Arial"; ctx.textAlign = "center"; ctx.fillText("Created with the 5-a-side Draft Game", width / 2, height - 30); ctx.textAlign = "left";
-  return canvas;
-}
+function createSummaryCanvas() { const canvas = document.createElement("canvas"); canvas.width = 1200; canvas.height = 700; const ctx = canvas.getContext("2d"); ctx.fillStyle = "#0f172a"; ctx.fillRect(0,0,1200,700); ctx.fillStyle = "#fff"; ctx.font = "900 42px Arial"; ctx.fillText("5-a-side Results", 50, 70); const scored = getFinalScores(); ctx.font = "700 24px Arial"; scored.forEach((row, i) => ctx.fillText(`${i+1}. ${row.user.name} - ${row.total}`, 60, 130 + i*45)); return canvas; }
 function canvasToBlob(canvas) { return new Promise(resolve => canvas.toBlob(resolve, "image/png", 0.95)); }
 async function saveSummaryImage() { if (!state || !ratingsRevealed) { alert("Reveal the scores first, then save the summary picture."); return; } const canvas = createSummaryCanvas(); const link = document.createElement("a"); link.download = state.gameMode === "bid" ? "5-a-side-bid-results.png" : "5-a-side-draft-results.png"; link.href = canvas.toDataURL("image/png"); link.click(); }
-async function shareSummaryImage() { if (!state || !ratingsRevealed) { alert("Reveal the scores first, then share the summary picture."); return; } const canvas = createSummaryCanvas(); const blob = await canvasToBlob(canvas); const file = new File([blob], state.gameMode === "bid" ? "5-a-side-bid-results.png" : "5-a-side-draft-results.png", { type: "image/png" }); if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ title: "5-a-side Results", text: "Here are the final 5-a-side teams and scores.", files: [file] }); return; } catch (err) { if (err.name === "AbortError") return; } } await saveSummaryImage(); alert("Your browser does not support direct image sharing here, so the picture has been downloaded. You can attach it to WhatsApp manually."); }
+async function shareSummaryImage() { if (!state || !ratingsRevealed) { alert("Reveal the scores first, then share the summary picture."); return; } const canvas = createSummaryCanvas(); const blob = await canvasToBlob(canvas); const file = new File([blob], "5-a-side-results.png", { type: "image/png" }); if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ title: "5-a-side Results", files: [file] }); else await saveSummaryImage(); }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>'"]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[ch])); }
 
 els.startBtn.addEventListener("click", startGame);
