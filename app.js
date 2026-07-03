@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v33
+// app.js v34
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -2710,6 +2710,45 @@ function createSummaryCanvas() {
   ctx.fillText("Generated from Ultimate 5-a-side Draft", 70, canvas.height - 45);
 
   return canvas;
+}
+
+
+
+// --- v34 online turn ownership override ---
+// Host can still create/start the room, but cannot accept/decline/pick on behalf of another user.
+// Only the player whose name matches the current turn can control that turn.
+function currentPlayerCanAct() {
+  if (!online.enabled) return true;
+  const user = currentUser();
+  return !!(user && safeKey(user.name) === safeKey(online.myName));
+}
+
+function applyOnlinePermissions() {
+  if (!online.enabled || !state) return;
+
+  const user = currentUser();
+  const canAct = currentPlayerCanAct();
+
+  let note = $("turnLockNote");
+
+  if (!note && els.message) {
+    note = document.createElement("div");
+    note.id = "turnLockNote";
+    note.className = "turn-lock-note";
+    els.message.insertAdjacentElement("afterend", note);
+  }
+
+  if (note) {
+    note.textContent = canAct
+      ? `It is your turn, ${online.myName}.`
+      : `Waiting for ${user?.name || "the current player"}. You joined as ${online.myName}.`;
+  }
+
+  if (state.gameMode === "draft") {
+    if (els.pickBtn) els.pickBtn.disabled = !canAct || !!currentCandidate || isGameComplete();
+    if (els.acceptBtn) els.acceptBtn.disabled = !canAct || !currentCandidate;
+    if (els.declineBtn) els.declineBtn.disabled = !canAct || !currentCandidate || (currentUser()?.declines || 0) >= DECLINES_ALLOWED;
+  }
 }
 
 function init() {
