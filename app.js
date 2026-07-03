@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v44
+// app.js v45
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -4294,6 +4294,269 @@ async function resolveOnlineBlindBidV38() {
   const zeroText = zeroBidNames.length ? ` ${zeroBidNames.join(", ")} ${zeroBidNames.length === 1 ? "loses" : "lose"} one skip.` : "";
   await saveOnlineState(winnerName ? `${winnerName} won ${candidate.player} for £${winningBid}m.${zeroText}` : `${candidate.player} was skipped.${zeroText}`);
 
+  if (isGameComplete()) {
+    setTimeout(async () => {
+      completeGame();
+      render();
+      await saveOnlineState("Bidding complete. Reveal ratings to see the winner.");
+    }, 3500);
+  } else {
+    setTimeout(async () => {
+      await drawOnlineBlindBidCandidateV38();
+    }, 3500);
+  }
+}
+
+
+// --- v45 online blind bid reserve budget rule ---
+// Online bid mode only.
+// A user must keep at least £1m for every remaining empty squad slot after winning the current player.
+// Example: if they have £50m left and would still need 1 more player after this bid, max bid is £49m.
+function onlineMinimumReserveAfterWinV45(user, candidate = currentCandidate) {
+  if (!user || !candidate) return 0;
+  const needs = getNeededPositions(user);
+  if (!needs.includes(candidate.mainPosition)) return 0;
+  // Winning this candidate fills exactly one of the needed slots.
+  const remainingSlotsAfterWin = Math.max(0, needs.length - 1);
+  return remainingSlotsAfterWin;
+}
+function onlineMaxBidForCandidateV45(user, candidate = currentCandidate) {
+  const budget = Math.max(0, Math.floor(Number(user?.budget || 0)));
+  const reserve = onlineMinimumReserveAfterWinV45(user, candidate);
+  return Math.max(0, budget - reserve);
+}
+function onlineBidReserveHelpTextV45(user, candidate = currentCandidate) {
+  const reserve = onlineMinimumReserveAfterWinV45(user, candidate);
+  const maxBid = onlineMaxBidForCandidateV45(user, candidate);
+  if (reserve > 0) {
+    return `Max bid: £${maxBid}m • Keeps £${reserve}m for ${reserve} remaining player${reserve === 1 ? "" : "s"}`;
+  }
+  return `Max bid: £${maxBid}m`;
+}
+function renderOnlineBidControlsV38() {
+  if (!online.enabled || !state || state.gameMode !== "bid") return;
+  initialiseBlindBidStateV38();
+  v29SafeState();
+  show(els.draftControls, false);
+  show(els.bidControls, true);
+  show(els.declinesPill, false);
+  show(els.budgetPill, false);
+  if (els.bidPickBtn) els.bidPickBtn.classList.add("hidden");
+  if (els.awardBidBtn) els.awardBidBtn.classList.add("hidden");
+  if (els.skipBidBtn) els.skipBidBtn.classList.add("hidden");
+  const me = currentOnlineUserV38();
+  const eligible = eligibleBidUsersV38();
+  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
+  const myKey = safeKey(online.myName);
+  const myBid = state.blindBids?.[myKey];
+  const submittedCount = eligible.filter(user => state.blindBids?.[safeKey(user.name)]?.submitted).length;
+  const totalCount = eligible.length;
+  const outcome = state.bidOutcome;
+  if (els.bidOrderDisplay) {
+    els.bidOrderDisplay.innerHTML = `
+      <div class="bid-status-summary">
+        <strong>Blind bidding</strong>
+        <span>${submittedCount}/${totalCount} eligible bids submitted</span>
+      </div>
+    `;
+  }
+  if (!els.bidInputs) return;
+  if (!currentCandidate && isGameComplete()) {
+    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
+    syncRevealButtonV37?.();
+    return;
+  }
+  if (!currentCandidate && !outcome) {
+    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
+    return;
+  }
+  const statusRows = state.users.map(user => {
+    const key = safeKey(user.name);
+    const isEligible = eligibleKeys.has(key);
+    const submitted = !!state.blindBids?.[key]?.submitted;
+    const budget = Number(user.budget || 0);
+    const skipsLeft = onlineBidSkipsLeftV44(user);
+    const maxBid = isEligible && currentCandidate ? onlineMaxBidForCandidateV45(user, currentCandidate) : 0;
+    return `
+      <div class="bid-row">
+        <label>
+          ${escapeHtml(user.name)}
+          <span class="bid-help">Budget left: £${budget}m • Skips left: ${skipsLeft}/${BID_SKIPS_ALLOWED}${isEligible ? ` • Max bid: £${maxBid}m` : ""}</span>
+        </label>
+        <div class="bid-submit-status ${submitted ? "submitted" : "waiting"}">
+          ${isEligible ? (submitted ? "Bid submitted ✅" : (skipsLeft <= 0 ? "Must bid above £0m" : "Waiting for bid")) : "Not eligible for this position"}
+        </div>
+      </div>
+    `;
+  }).join("");
+  if (outcome) {
+    clearBlindBidDraftV39();
+    const bidRevealRows = outcome.bids.map(row => `
+      <div class="bid-row">
+        <label>${escapeHtml(row.name)}</label>
+        <div class="bid-submit-status submitted">£${Number(row.bid || 0)}m</div>
+      </div>
+    `).join("");
+    els.bidInputs.innerHTML = `
+      <div class="bid-order-card">
+        <p class="eyebrow">Bids revealed</p>
+        <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
+        <p class="message">
+          ${outcome.winnerName
+            ? `${escapeHtml(outcome.winnerName)} wins ${escapeHtml(outcome.player?.player || "the player")} for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
+            : `No valid bids above £0m. ${escapeHtml(outcome.player?.player || "The player")} was skipped.`}
+        </p>
+        ${bidRevealRows}
+        ${outcome.zeroBidNames?.length ? `<p class="muted">${escapeHtml(outcome.zeroBidNames.join(", "))} ${outcome.zeroBidNames.length === 1 ? "loses" : "lose"} one skip for bidding £0m.</p>` : ""}
+        ${outcome.invalidReserveNames?.length ? `<p class="muted">${escapeHtml(outcome.invalidReserveNames.join(", "))} had bids rejected because they did not leave £1m for each remaining squad slot.</p>` : ""}
+        <p class="muted">Next player loading...</p>
+      </div>
+    `;
+    return;
+  }
+  const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
+  const myBudget = Number(me?.budget || 0);
+  const mySkipsLeft = onlineBidSkipsLeftV44(me);
+  const myMaxBid = me && currentCandidate ? onlineMaxBidForCandidateV45(me, currentCandidate) : 0;
+  const reserveHelp = me && currentCandidate ? onlineBidReserveHelpTextV45(me, currentCandidate) : "";
+  const draftValue = getBlindBidDraftV39("0");
+  const submitBox = canSubmit ? `
+    <div class="bid-order-card">
+      <p class="eyebrow">Your blind bid</p>
+      <h3>${escapeHtml(currentCandidate.player)}</h3>
+      <p class="muted">Enter your bid privately. You must leave at least £1m for each remaining empty squad slot after this player.</p>
+      <div class="bid-row">
+        <label for="onlineBlindBidInput">
+          Your bid
+          <span class="bid-help">Budget left: £${myBudget}m • ${escapeHtml(reserveHelp)} • Skips left: ${mySkipsLeft}/${BID_SKIPS_ALLOWED}${mySkipsLeft <= 0 ? " • must bid above £0m" : ""}</span>
+        </label>
+        <input id="onlineBlindBidInput" type="number" min="0" max="${myMaxBid}" step="1" value="${escapeHtml(draftValue)}" />
+      </div>
+      <button id="submitBlindBidBtn" class="btn btn-primary" type="button">Submit blind bid</button>
+    </div>
+  ` : `
+    <div class="bid-order-card">
+      <p class="eyebrow">Your blind bid</p>
+      <p class="muted">
+        ${myBid?.submitted
+          ? "Your bid has been submitted. Waiting for everyone else."
+          : eligibleKeys.has(myKey)
+            ? "Bidding is locked while results are being calculated."
+            : "You are not eligible for this player because your team does not need this position, or you have no budget left."}
+      </p>
+    </div>
+  `;
+  els.bidInputs.innerHTML = submitBox + `<div class="bid-order-card"><p class="eyebrow">Submission status</p>${statusRows}</div>`;
+  const bidInput = $("onlineBlindBidInput");
+  if (bidInput) {
+    bidInput.addEventListener("input", event => setBlindBidDraftV39(event.target.value));
+    bidInput.addEventListener("change", event => setBlindBidDraftV39(event.target.value));
+  }
+  $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
+}
+async function submitOnlineBlindBidV38() {
+  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
+  initialiseBlindBidStateV38();
+  v29SafeState();
+  const me = currentOnlineUserV38();
+  if (!me) throw new Error("You are not listed in this online game.");
+  const eligible = eligibleBidUsersV38();
+  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
+  const myKey = safeKey(me.name);
+  if (!eligibleKeys.has(myKey)) throw new Error("You are not eligible to bid for this player.");
+  if (state.blindBids?.[myKey]?.submitted) return;
+  const input = $("onlineBlindBidInput");
+  const rawValue = input?.value ?? getBlindBidDraftV39("0");
+  const rawBid = Number(rawValue || 0);
+  const bid = Math.max(0, Math.floor(rawBid));
+  if (!Number.isFinite(bid)) throw new Error("Enter a valid bid.");
+  if (bid > Number(me.budget || 0)) throw new Error(`Your bid cannot exceed your remaining budget of £${me.budget}m.`);
+  const maxBid = onlineMaxBidForCandidateV45(me, currentCandidate);
+  const reserve = onlineMinimumReserveAfterWinV45(me, currentCandidate);
+  if (bid > maxBid) {
+    throw new Error(`Your maximum bid is £${maxBid}m because you must keep £${reserve}m for your remaining squad slot${reserve === 1 ? "" : "s"}.`);
+  }
+  if (bid <= 0 && onlineBidSkipsLeftV44(me) <= 0) throw new Error("You have used all 3 skips and must bid above £0m.");
+  state.blindBids[myKey] = {
+    name: me.name,
+    bid,
+    submitted: true,
+    submittedAt: Date.now()
+  };
+  clearBlindBidDraftV39();
+  const allSubmitted = eligible.every(user => state.blindBids?.[safeKey(user.name)]?.submitted);
+  if (allSubmitted) {
+    await resolveOnlineBlindBidV38();
+  } else {
+    renderOnlineBidControlsV38();
+    await saveOnlineState(`${me.name} submitted a blind bid.`);
+  }
+}
+async function resolveOnlineBlindBidV38() {
+  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
+  initialiseBlindBidStateV38();
+  v29SafeState();
+  state.bidSubmittingLocked = true;
+  const candidate = v29NormalisePlayer(currentCandidate);
+  const eligible = eligibleBidUsersV38(candidate);
+  const bids = eligible.map(user => {
+    const entry = state.blindBids?.[safeKey(user.name)] || { name: user.name, bid: 0, submitted: false };
+    return {
+      name: user.name,
+      bid: Math.max(0, Math.floor(Number(entry.bid || 0))),
+      budget: Number(user.budget || 0),
+      maxBid: onlineMaxBidForCandidateV45(user, candidate)
+    };
+  });
+  const zeroBidNames = [];
+  bids.forEach(row => {
+    if (row.bid <= 0) {
+      const user = state.users.find(u => safeKey(u.name) === safeKey(row.name));
+      if (user) {
+        onlineIncrementSkipV44(user);
+        zeroBidNames.push(user.name);
+      }
+    }
+  });
+  const invalidReserveNames = bids
+    .filter(row => row.bid > 0 && row.bid > row.maxBid)
+    .map(row => row.name);
+  let validBids = bids.filter(row => row.bid > 0 && row.bid <= row.budget && row.bid <= row.maxBid);
+  validBids.sort((a, b) => b.bid - a.bid || a.name.localeCompare(b.name));
+  let winnerName = null;
+  let winningBid = 0;
+  let tie = false;
+  if (validBids.length) {
+    const highest = validBids[0].bid;
+    const tied = validBids.filter(row => row.bid === highest);
+    tie = tied.length > 1;
+    const winnerRow = tied[Math.floor(Math.random() * tied.length)];
+    winnerName = winnerRow.name;
+    winningBid = winnerRow.bid;
+    const winner = state.users.find(user => safeKey(user.name) === safeKey(winnerName));
+    if (winner && candidate) {
+      winner.team.push({ ...candidate, price: winningBid });
+      winner.budget = Math.max(0, Number(winner.budget || 0) - winningBid);
+      winner.spent = Number(winner.spent || 0) + winningBid;
+      state.acceptedPlayerNames.add(candidate.player);
+    }
+  }
+  state.bidOutcome = {
+    player: candidate,
+    bids,
+    winnerName,
+    winningBid,
+    tie,
+    zeroBidNames,
+    invalidReserveNames,
+    resolvedAt: Date.now()
+  };
+  currentCandidate = null;
+  renderOnlineBidControlsV38();
+  renderTeams();
+  const zeroText = zeroBidNames.length ? ` ${zeroBidNames.join(", ")} ${zeroBidNames.length === 1 ? "loses" : "lose"} one skip.` : "";
+  const reserveText = invalidReserveNames.length ? ` ${invalidReserveNames.join(", ")} had bids rejected for not leaving enough money to finish their team.` : "";
+  await saveOnlineState(winnerName ? `${winnerName} won ${candidate.player} for £${winningBid}m.${zeroText}${reserveText}` : `${candidate.player} was skipped.${zeroText}${reserveText}`);
   if (isGameComplete()) {
     setTimeout(async () => {
       completeGame();
