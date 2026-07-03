@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v38
+// app.js v39
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -3381,6 +3381,211 @@ function applyRemoteData(data) {
   applyingRemote = false;
   applyOnlinePermissions();
   syncRevealButtonV37();
+}
+
+
+
+// --- v39 preserve unsubmitted blind bid input during remote updates ---
+// Fixes: When another online user submits, Firebase refresh re-renders the controls. Any typed-but-unsubmitted bid now persists locally.
+function blindBidDraftKeyV39() {
+  const playerKey = currentCandidate?.player ? safeKey(currentCandidate.player) : "no_player";
+  const roomKey = online.roomId || "local_room";
+  const userKey = safeKey(online.myName || "anon");
+  return `ultimate5aside_blind_bid_draft_${roomKey}_${userKey}_${playerKey}`;
+}
+
+function getBlindBidDraftV39(defaultValue = "0") {
+  try {
+    return localStorage.getItem(blindBidDraftKeyV39()) ?? defaultValue;
+  } catch (err) {
+    return defaultValue;
+  }
+}
+
+function setBlindBidDraftV39(value) {
+  try {
+    localStorage.setItem(blindBidDraftKeyV39(), String(value ?? "0"));
+  } catch (err) {
+    // localStorage can be blocked in some privacy modes. If so, the game still works; only the draft preservation is skipped.
+  }
+}
+
+function clearBlindBidDraftV39() {
+  try {
+    localStorage.removeItem(blindBidDraftKeyV39());
+  } catch (err) {
+    // Ignore.
+  }
+}
+
+function renderOnlineBidControlsV38() {
+  if (!online.enabled || !state || state.gameMode !== "bid") return;
+  initialiseBlindBidStateV38();
+
+  show(els.draftControls, false);
+  show(els.bidControls, true);
+  show(els.declinesPill, false);
+  show(els.budgetPill, false);
+
+  if (els.bidPickBtn) els.bidPickBtn.classList.add("hidden");
+  if (els.awardBidBtn) els.awardBidBtn.classList.add("hidden");
+  if (els.skipBidBtn) els.skipBidBtn.classList.add("hidden");
+
+  const me = currentOnlineUserV38();
+  const eligible = eligibleBidUsersV38();
+  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
+  const myKey = safeKey(online.myName);
+  const myBid = state.blindBids?.[myKey];
+  const submittedCount = eligible.filter(user => state.blindBids?.[safeKey(user.name)]?.submitted).length;
+  const totalCount = eligible.length;
+  const outcome = state.bidOutcome;
+
+  if (els.bidOrderDisplay) {
+    els.bidOrderDisplay.innerHTML = `
+      <div class="bid-status-summary">
+        <strong>Blind bidding</strong>
+        <span>${submittedCount}/${totalCount} eligible bids submitted</span>
+      </div>
+    `;
+  }
+
+  if (!els.bidInputs) return;
+
+  if (!currentCandidate && isGameComplete()) {
+    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
+    syncRevealButtonV37?.();
+    return;
+  }
+
+  if (!currentCandidate && !outcome) {
+    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
+    return;
+  }
+
+  const statusRows = state.users.map(user => {
+    const key = safeKey(user.name);
+    const isEligible = eligibleKeys.has(key);
+    const submitted = !!state.blindBids?.[key]?.submitted;
+    const budget = Number(user.budget || 0);
+    return `
+      <div class="bid-row">
+        <label>
+          ${escapeHtml(user.name)}
+          <span class="bid-help">Budget left: £${budget}m</span>
+        </label>
+        <div class="bid-submit-status ${submitted ? "submitted" : "waiting"}">
+          ${isEligible ? (submitted ? "Bid submitted ✅" : "Waiting for bid") : "Not eligible for this position"}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (outcome) {
+    clearBlindBidDraftV39();
+    const bidRevealRows = outcome.bids.map(row => `
+      <div class="bid-row">
+        <label>${escapeHtml(row.name)}</label>
+        <div class="bid-submit-status submitted">£${Number(row.bid || 0)}m</div>
+      </div>
+    `).join("");
+
+    els.bidInputs.innerHTML = `
+      <div class="bid-order-card">
+        <p class="eyebrow">Bids revealed</p>
+        <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
+        <p class="message">
+          ${outcome.winnerName
+            ? `${escapeHtml(outcome.winnerName)} wins ${escapeHtml(outcome.player?.player || "the player")} for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
+            : `No valid bids above £0m. ${escapeHtml(outcome.player?.player || "The player")} was skipped.`}
+        </p>
+        ${bidRevealRows}
+        <p class="muted">Next player loading...</p>
+      </div>
+    `;
+    return;
+  }
+
+  const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
+  const myBudget = Number(me?.budget || 0);
+  const draftValue = getBlindBidDraftV39("0");
+
+  const submitBox = canSubmit ? `
+    <div class="bid-order-card">
+      <p class="eyebrow">Your blind bid</p>
+      <h3>${escapeHtml(currentCandidate.player)}</h3>
+      <p class="muted">Enter your bid privately. Other users will only see that you have submitted.</p>
+      <div class="bid-row">
+        <label for="onlineBlindBidInput">
+          Your bid
+          <span class="bid-help">Budget left: £${myBudget}m</span>
+        </label>
+        <input id="onlineBlindBidInput" type="number" min="0" max="${myBudget}" step="1" value="${escapeHtml(draftValue)}" />
+      </div>
+      <button id="submitBlindBidBtn" class="btn btn-primary" type="button">Submit blind bid</button>
+    </div>
+  ` : `
+    <div class="bid-order-card">
+      <p class="eyebrow">Your blind bid</p>
+      <p class="muted">
+        ${myBid?.submitted
+          ? "Your bid has been submitted. Waiting for everyone else."
+          : eligibleKeys.has(myKey)
+            ? "Bidding is locked while results are being calculated."
+            : "You are not eligible for this player because your team does not need this position, or you have no budget left."}
+      </p>
+    </div>
+  `;
+
+  els.bidInputs.innerHTML = submitBox + `<div class="bid-order-card"><p class="eyebrow">Submission status</p>${statusRows}</div>`;
+
+  const bidInput = $("onlineBlindBidInput");
+  if (bidInput) {
+    bidInput.addEventListener("input", event => setBlindBidDraftV39(event.target.value));
+    bidInput.addEventListener("change", event => setBlindBidDraftV39(event.target.value));
+  }
+
+  $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
+}
+
+async function submitOnlineBlindBidV38() {
+  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
+  initialiseBlindBidStateV38();
+  v29SafeState();
+
+  const me = currentOnlineUserV38();
+  if (!me) throw new Error("You are not listed in this online game.");
+
+  const eligible = eligibleBidUsersV38();
+  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
+  const myKey = safeKey(me.name);
+
+  if (!eligibleKeys.has(myKey)) throw new Error("You are not eligible to bid for this player.");
+  if (state.blindBids?.[myKey]?.submitted) return;
+
+  const input = $("onlineBlindBidInput");
+  const rawValue = input?.value ?? getBlindBidDraftV39("0");
+  const rawBid = Number(rawValue || 0);
+  const bid = Math.max(0, Math.floor(rawBid));
+
+  if (!Number.isFinite(bid)) throw new Error("Enter a valid bid.");
+  if (bid > Number(me.budget || 0)) throw new Error(`Your bid cannot exceed your remaining budget of £${me.budget}m.`);
+
+  state.blindBids[myKey] = {
+    name: me.name,
+    bid,
+    submitted: true,
+    submittedAt: Date.now()
+  };
+  clearBlindBidDraftV39();
+
+  const allSubmitted = eligible.every(user => state.blindBids?.[safeKey(user.name)]?.submitted);
+
+  if (allSubmitted) {
+    await resolveOnlineBlindBidV38();
+  } else {
+    renderOnlineBidControlsV38();
+    await saveOnlineState(`${me.name} submitted a blind bid.`);
+  }
 }
 
 function init() {
