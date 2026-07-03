@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v39
+// app.js v42
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -3586,6 +3586,210 @@ async function submitOnlineBlindBidV38() {
     renderOnlineBidControlsV38();
     await saveOnlineState(`${me.name} submitted a blind bid.`);
   }
+}
+
+
+
+// --- v42 local bid controls fix ---
+// Fixes local bid mode where Award highest bid and Skip player stayed disabled.
+// Online blind bidding from v39 is deliberately left unchanged.
+function setBidActionButtonsV42() {
+  if (!state || state.gameMode !== "bid") return;
+
+  // Online bid mode uses its own blind bidding controls, so don't interfere with it.
+  if (online.enabled) return;
+
+  const hasCandidate = !!currentCandidate;
+  const complete = isGameComplete();
+
+  if (els.bidPickBtn) {
+    els.bidPickBtn.classList.remove("hidden");
+    els.bidPickBtn.disabled = hasCandidate || complete;
+  }
+
+  if (els.awardBidBtn) {
+    els.awardBidBtn.classList.remove("hidden");
+    els.awardBidBtn.disabled = !hasCandidate || complete;
+  }
+
+  if (els.skipBidBtn) {
+    els.skipBidBtn.classList.remove("hidden");
+    els.skipBidBtn.disabled = !hasCandidate || complete;
+  }
+}
+
+function clearLocalBidInputsV42(message = "") {
+  if (!online.enabled && state?.gameMode === "bid" && els.bidInputs) {
+    els.bidInputs.innerHTML = message ? `<p class="muted">${escapeHtml(message)}</p>` : "";
+  }
+}
+
+function renderBidInputs() {
+  if (!els.bidInputs || !state || state.gameMode !== "bid") return;
+
+  if (!currentCandidate) {
+    clearLocalBidInputsV42("Randomise a player to enter bids.");
+    setBidActionButtonsV42();
+    return;
+  }
+
+  els.bidInputs.innerHTML = state.users.map((u, i) => `
+    <div class="bid-row">
+      <label for="bidUser${i}">
+        ${escapeHtml(u.name)}
+        <span class="bid-help">Budget left: £${u.budget}m</span>
+      </label>
+      <input id="bidUser${i}" type="number" min="0" max="${u.budget}" step="1" value="0" />
+    </div>
+  `).join("");
+
+  setBidActionButtonsV42();
+}
+
+async function bidRandomPlayer() {
+  if (online.enabled && state?.gameMode === "bid") {
+    await drawOnlineBlindBidCandidateV38();
+    return;
+  }
+
+  await ensurePlayersReady();
+  if (!state || state.gameMode !== "bid") return;
+  v29SafeState();
+
+  if (currentCandidate) {
+    setMessage("Award or skip the current player before randomising another.");
+    setBidActionButtonsV42();
+    return;
+  }
+
+  if (isGameComplete()) {
+    completeGame();
+    render();
+    return;
+  }
+
+  const user = currentUser();
+  if (!user) return;
+
+  const needs = getNeededPositions(user);
+  const pool = players.filter(p => {
+    return needs.includes(p.mainPosition) && !state.acceptedPlayerNames.has(p.player);
+  });
+
+  if (!pool.length) {
+    setMessage(`No available player for ${user.name}.`);
+    setBidActionButtonsV42();
+    return;
+  }
+
+  currentCandidate = pool[Math.floor(Math.random() * pool.length)];
+  renderCandidate(currentCandidate);
+  renderBidInputs();
+  setMessage(`${user.name} nominated ${currentCandidate.player}. Enter bids, then award or skip.`);
+  renderTeams();
+  setBidActionButtonsV42();
+  await saveOnlineState();
+}
+
+async function awardHighestBid() {
+  // Keep online mode completely separate.
+  if (online.enabled) return;
+  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
+  v29SafeState();
+
+  let best = null;
+
+  state.users.forEach((u, i) => {
+    const bid = getBid(i);
+    if (bid > 0 && bid <= u.budget && (!best || bid > best.bid)) {
+      best = { user: u, index: i, bid };
+    }
+  });
+
+  if (!best) {
+    setMessage("Enter at least one valid bid above £0m.");
+    setBidActionButtonsV42();
+    return;
+  }
+
+  const awardedPlayer = v29NormalisePlayer(currentCandidate);
+  if (!awardedPlayer) return;
+
+  best.user.team.push({
+    ...awardedPlayer,
+    price: best.bid
+  });
+
+  best.user.budget = Math.max(0, Number(best.user.budget || 0) - best.bid);
+  best.user.spent = Number(best.user.spent || 0) + best.bid;
+  state.acceptedPlayerNames.add(awardedPlayer.player);
+
+  const winnerName = best.user.name;
+  const playerName = awardedPlayer.player;
+  currentCandidate = null;
+
+  if (isGameComplete()) {
+    completeGame();
+    clearLocalBidInputsV42("Bidding complete. Reveal ratings to see the winner.");
+  } else {
+    rotateBidNominator();
+    clearCandidate("Click Randomise player to continue.");
+    clearLocalBidInputsV42("Randomise the next player to enter bids.");
+    setMessage(`${winnerName} won ${playerName} for £${best.bid}m.`);
+  }
+
+  render();
+  setBidActionButtonsV42();
+  await saveOnlineState();
+}
+
+async function skipBidPlayer() {
+  // Keep online mode completely separate.
+  if (online.enabled) return;
+  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
+  v29SafeState();
+
+  const skippedName = currentCandidate.player;
+  currentCandidate = null;
+
+  rotateBidNominator();
+  clearCandidate("Player skipped. Click Randomise player to continue.");
+  clearLocalBidInputsV42("Randomise the next player to enter bids.");
+  setMessage(`${skippedName} was skipped.`);
+
+  render();
+  setBidActionButtonsV42();
+  await saveOnlineState();
+}
+
+function render() {
+  if (!state) return;
+  v29SafeState();
+  updateGameControls();
+
+  const user = currentUser();
+  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
+
+  if (state.gameMode === "draft" && els.declinesLeft) {
+    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
+  }
+
+  if (state.gameMode === "bid" && els.currentBudgetLeft) {
+    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
+  }
+
+  renderTeams();
+
+  if (online.enabled && state.gameMode === "bid") {
+    renderOnlineBidControlsV38();
+  } else if (state.gameMode === "bid") {
+    setBidActionButtonsV42();
+  } else {
+    setDraftActionButtons();
+  }
+
+  applyOnlinePermissions();
+  syncRevealButtonV37();
 }
 
 function init() {
