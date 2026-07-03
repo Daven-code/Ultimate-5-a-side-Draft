@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v34
+// app.js v36
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -2749,6 +2749,167 @@ function applyOnlinePermissions() {
     if (els.acceptBtn) els.acceptBtn.disabled = !canAct || !currentCandidate;
     if (els.declineBtn) els.declineBtn.disabled = !canAct || !currentCandidate || (currentUser()?.declines || 0) >= DECLINES_ALLOWED;
   }
+}
+
+
+
+// --- v35 full reset-to-front-page override ---
+// This reset fully exits online/local game state and returns to the initial front page.
+function resetGame() {
+  try {
+    if (online.ref && online.subscribed && typeof online.ref.off === "function") {
+      online.ref.off();
+    }
+  } catch (err) {
+    console.warn("Could not detach Firebase listener during reset", err);
+  }
+
+  state = null;
+  currentCandidate = null;
+  ratingsRevealed = false;
+  applyingRemote = false;
+
+  online.enabled = false;
+  online.isHost = false;
+  online.roomId = null;
+  online.ref = null;
+  online.myName = "";
+  online.subscribed = false;
+
+  const turnNote = $("turnLockNote");
+  if (turnNote) turnNote.remove();
+
+  if (els.message) els.message.textContent = "";
+  if (els.candidateCard) clearCandidate("Click “Pick player” to begin.");
+  if (els.teamsContainer) els.teamsContainer.innerHTML = "";
+  if (els.resultsContainer) els.resultsContainer.innerHTML = "";
+  if (els.resultsPanel) els.resultsPanel.classList.remove("finished-results-page");
+
+  show(ensureLobby(), false);
+  show(els.setupPanel, false);
+  show(els.gamePanel, false);
+  show(els.resultsPanel, false);
+
+  injectEntryPanel();
+  show($("gameEntryPanel"), true);
+
+  const onlineName = $("onlineRoomName");
+  const roomCode = $("joinRoomCode");
+  const onlineStatus = $("onlineRoomStatus");
+  const onlineLink = $("onlineRoomLink");
+  if (onlineName) onlineName.value = "";
+  if (roomCode) roomCode.value = "";
+  if (onlineStatus) onlineStatus.textContent = "Online games use joined player names automatically.";
+  if (onlineLink) {
+    onlineLink.textContent = "";
+    onlineLink.classList.add("hidden");
+  }
+
+  if (els.revealBtn) els.revealBtn.classList.add("hidden");
+  if (els.pickBtn) els.pickBtn.disabled = false;
+  if (els.acceptBtn) els.acceptBtn.disabled = true;
+  if (els.declineBtn) els.declineBtn.disabled = true;
+  if (els.bidPickBtn) els.bidPickBtn.disabled = false;
+  if (els.awardBidBtn) els.awardBidBtn.disabled = true;
+  if (els.skipBidBtn) els.skipBidBtn.disabled = true;
+
+  // If the user arrived via an online room link, remove ?room=... so reset feels like a true new start.
+  try {
+    if (window.history && window.location.search) {
+      window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}`);
+    }
+  } catch (err) {
+    console.warn("Could not clear room URL during reset", err);
+  }
+
+  selectedGameMode = "draft";
+  updateSetupForMode();
+}
+
+
+
+// --- v36 improved 4-player results layout override ---
+// Keeps the v35 behaviour but makes the finished results page use a roomier 2-column layout on desktop.
+function injectResultsLayoutStylesV36() {
+  if ($("finishedResultsLayoutStylesV36")) return;
+  const style = document.createElement("style");
+  style.id = "finishedResultsLayoutStylesV36";
+  style.textContent = `
+    .results-card.finished-results-page {
+      max-width: 1320px !important;
+      width: min(1320px, calc(100vw - 32px));
+    }
+
+    .finished-results-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(420px, 1fr)) !important;
+      gap: 24px !important;
+      align-items: start;
+    }
+
+    .finished-team-card {
+      min-width: 0;
+      padding: 20px !important;
+    }
+
+    .finished-team-card .pitch {
+      min-height: 360px;
+    }
+
+    .finished-player-list {
+      gap: 10px !important;
+    }
+
+    .finished-player-row {
+      grid-template-columns: 52px minmax(0, 1fr) 44px !important;
+      min-width: 0;
+    }
+
+    .finished-player-name,
+    .finished-player-meta {
+      display: block;
+      min-width: 0;
+    }
+
+    @media (max-width: 980px) {
+      .finished-results-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .results-card.finished-results-page {
+        width: min(760px, calc(100vw - 24px));
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function showFinishedResultsPageV33() {
+  if (!state) return;
+  injectFinishedStylesV33();
+  injectResultsLayoutStylesV36();
+  ratingsRevealed = true;
+  currentCandidate = null;
+  removeTurnLockNoteV33();
+  setMessage("");
+
+  show($("gameEntryPanel"), false);
+  show(ensureLobby(), false);
+  show(els.setupPanel, false);
+  show(els.gamePanel, false);
+  show(els.resultsPanel, true);
+
+  if (els.resultsPanel) els.resultsPanel.classList.add("finished-results-page");
+  if (els.revealBtn) els.revealBtn.classList.add("hidden");
+  if (els.pickBtn) els.pickBtn.disabled = true;
+  if (els.acceptBtn) els.acceptBtn.disabled = true;
+  if (els.declineBtn) els.declineBtn.disabled = true;
+  if (els.bidPickBtn) els.bidPickBtn.disabled = true;
+  if (els.awardBidBtn) els.awardBidBtn.disabled = true;
+  if (els.skipBidBtn) els.skipBidBtn.disabled = true;
+
+  renderResults();
+  setTimeout(() => els.resultsPanel?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
 }
 
 function init() {
