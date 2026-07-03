@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>5-a-side Draft Game</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="background-glow glow-one"></div>
+  <div class="background-glow glow-two"></div>
+
+  <header class="app-header">
+    <div>
+      <h1>5-a-side Draft Game</h1>
+      <p class="header-subtitle">Build your ultimate five-a-side team.</p>
+    </div>
+    <button id="resetBtn" class="btn btn-secondary">Reset game</button>
+  </header>
+
+  <main class="app-shell">
+    <section id="setupPanel" class="setup-card-home">
+      <div class="setup-hero-card">
+        <div class="setup-copy">
+          <p class="eyebrow">2005–2026 player pool</p>
+          <h2>Choose your 5-a-side challenge</h2>
+          <p class="setup-lead">Pick a game mode, add your players, then build the strongest five-a-side team from the top-rated players across the years.</p>
+          <div class="feature-pills">
+            <span>⚽ GK • DEF • MID • MID • FWD</span>
+            <span>🏆 Reveal scores at the end</span>
+          </div>
+        </div>
+        <div class="mini-pitch-card" aria-hidden="true">
+          <div class="mini-pitch-lines"></div>
+          <div class="mini-player mini-gk">GK</div>
+          <div class="mini-player mini-def">DEF</div>
+          <div class="mini-player mini-mid-a">MID</div>
+          <div class="mini-player mini-mid-b">MID</div>
+          <div class="mini-player mini-fwd">FWD</div>
+        </div>
+      </div>
+
+      <div class="setup-panel-card">
+        <label>Choose game</label>
+        <div id="gameModeCards" class="game-mode-cards">
+          <button type="button" class="game-mode-card selected" data-mode="draft">
+            <span class="game-icon">🎲</span>
+            <span class="game-mode-title">Ultimate Draft 5-a-side</span>
+            <span class="game-mode-text">Take turns accepting or declining random players. Can you gamble your way to the best team?</span>
+          </button>
+          <button type="button" class="game-mode-card" data-mode="bid">
+            <span class="game-icon">💰</span>
+            <span class="game-mode-title">Bid for your Ultimate 5-a-side Team</span>
+            <span class="game-mode-text">Spend a £100m budget wisely. Big stars cost big money, but every squad needs balance.</span>
+          </button>
+        </div>
+        <p id="gameModeDescription" class="mode-description"></p>
+
+        <div class="setup-controls-grid">
+          <div>
+            <label for="userCount">Number of users</label>
+            <select id="userCount"></select>
+          </div>
+          <div class="setup-note-box">
+            <strong>Tip:</strong> ratings are hidden until the end, so the draft stays unpredictable.
+          </div>
+        </div>
+
+        <div id="userNameFields" class="user-name-fields"></div>
+
+        <label for="excludeDeclines" id="excludeDeclinesLabel" class="checkbox-row">
+          <input id="excludeDeclines" type="checkbox" />
+          Exclude declined players
+        </label>
+
+        <button id="startBtn" class="btn btn-primary btn-wide start-game-btn">Start game</button>
+        <p id="loadStatus" class="status-note" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="gamePanel" class="game-grid hidden">
+      <div class="card draft-card">
+        <div class="turn-row">
+          <div>
+            <p class="eyebrow" id="turnEyebrow">Current turn</p>
+            <h2 id="currentUserLabel">User 1</h2>
+          </div>
+          <div id="declinesPill" class="lives-pill"><span id="declinesLeft">3</span> declines left</div>
+          <div id="budgetPill" class="lives-pill budget-pill hidden"><span id="currentBudgetLeft">£100m</span> left</div>
+        </div>
+
+        <div id="candidateCard" class="player-card blank">
+          <p class="muted">Click “Pick player” to begin.</p>
+        </div>
+
+        <div id="draftControls" class="button-row">
+          <button id="pickBtn" class="btn btn-secondary">Pick player</button>
+          <button id="acceptBtn" class="btn btn-success" disabled>Accept</button>
+          <button id="declineBtn" class="btn btn-danger" disabled>Decline</button>
+        </div>
+
+        <div id="bidControls" class="bid-controls hidden">
+          <div class="bid-order-card">
+            <p class="eyebrow">Bidding order</p>
+            <div id="bidOrderDisplay" class="bid-order-display"></div>
+          </div>
+          <p class="warning-note bid-warning">⚠️ If an eligible user doesn't bid more than £0m, it counts as a skip. After 3 skips, they must bid above £0m.</p>
+          <div id="bidInputs" class="bid-inputs"></div>
+          <div class="button-row">
+            <button id="bidPickBtn" class="btn btn-secondary">Randomise player</button>
+            <button id="awardBidBtn" class="btn btn-success" disabled>Award highest bid</button>
+            <button id="skipBidBtn" class="btn btn-danger" disabled>Skip player</button>
+          </div>
+        </div>
+
+        <p id="message" class="message"></p>
+      </div>
+
+      <div class="card teams-card">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Draft board</p>
+            <h2>Teams</h2>
+          </div>
+          <button id="revealBtn" class="btn btn-primary hidden">Reveal ratings</button>
+        </div>
+        <div id="teamsContainer" class="teams-container"></div>
+      </div>
+    </section>
+
+    <section id="resultsPanel" class="card results-card hidden">
+      <div class="section-title-row">
+        <div>
+          <p class="eyebrow">Shareable summary</p>
+          <h2>Final results</h2>
+        </div>
+        <div class="share-actions">
+          <button id="shareSummaryBtn" class="btn btn-primary">Share summary</button>
+          <button id="saveSummaryBtn" class="btn btn-secondary">Save picture</button>
+        </div>
+      </div>
+      <p class="muted">Creates a simplified image of the final teams and scores, suitable for WhatsApp.</p>
+      <div id="resultsContainer" class="results-grid"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer legal-footer">
+    <p>© 2026 Ultimate 5-a-side Draft. All rights reserved.</p>
+    <p>This is an independent fan-made football draft game. It is not affiliated with, endorsed by, sponsored by, licensed by, or otherwise associated with any football club, league, competition, governing body, player association, game publisher, ratings provider, or data provider.</p>
+    <p>Player names, club names, ratings and related data are used for informational, descriptive and gameplay purposes only. No official logos, crests, player images, likenesses or other official branding are used. All trademarks, trade names, player-related rights, ratings, data and other intellectual property rights remain the property of their respective owners.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

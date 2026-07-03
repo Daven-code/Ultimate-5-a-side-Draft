@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FIFA 5-a-side Draft</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">FIFA / EA FC Top 50 Draft</p>
+      <h1>5-a-side Draft Game</h1>
+    </div>
+    <button id="resetBtn" class="btn btn-secondary">Reset game</button>
+  </header>
+
+  <main class="app-shell">
+    <section id="setupPanel" class="card setup-card">
+      <h2>Game setup</h2>
+      <p class="muted">Choose up to 4 users, then draft a GK, DEF, MID, MID and FWD.</p>
+      <label for="userCount">Number of users</label>
+      <select id="userCount">
+        <option value="1">1 user</option>
+        <option value="2">2 users</option>
+        <option value="3">3 users</option>
+        <option value="4">4 users</option>
+      </select>
+      <label for="excludeDeclines" class="checkbox-row">
+        <input id="excludeDeclines" type="checkbox" />
+        Exclude declined players for that user
+      </label>
+      <button id="startBtn" class="btn btn-primary">Start draft</button>
+      <p id="loadStatus" class="status-note"></p>
+    </section>
+
+    <section id="gamePanel" class="game-grid hidden">
+      <div class="card draft-card">
+        <div class="turn-row">
+          <div>
+            <p class="eyebrow">Current turn</p>
+            <h2 id="currentUserLabel">User 1</h2>
+          </div>
+          <div class="lives-pill"><span id="declinesLeft">3</span> declines left</div>
+        </div>
+
+        <div id="candidateCard" class="player-card blank">
+          <p class="muted">Click “Pick player” to begin.</p>
+        </div>
+
+        <div class="button-row">
+          <button id="pickBtn" class="btn btn-secondary">Pick player</button>
+          <button id="acceptBtn" class="btn btn-success" disabled>Accept</button>
+          <button id="declineBtn" class="btn btn-danger" disabled>Decline</button>
+        </div>
+        <p id="message" class="message"></p>
+      </div>
+
+      <div class="card teams-card">
+        <div class="section-title-row">
+          <h2>Teams</h2>
+          <button id="revealBtn" class="btn btn-primary hidden">Reveal ratings</button>
+        </div>
+        <div id="teamsContainer" class="teams-container"></div>
+      </div>
+    </section>
+
+    <section id="resultsPanel" class="card results-card hidden">
+      <h2>Final results</h2>
+      <div id="resultsContainer" class="results-grid"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>Prototype built from your FIFA ratings dataset.</span>
+    <span id="playerCount"></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
