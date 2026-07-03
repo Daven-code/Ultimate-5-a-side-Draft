@@ -29,13 +29,14 @@ let ratingsRevealed = false;
 // 2) Replace the placeholder values below with your Firebase web app config.
 // 3) For testing only, use temporary database rules. Lock this down before wider sharing.
 const FIREBASE_CONFIG = {
-  apiKey: "PASTE_FIREBASE_API_KEY_HERE",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://PASTE_DATABASE_NAME.europe-west1.firebasedatabase.app",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyAcqef5WtEuICYihdza6l_gcad7UUjIjS0",
+  authDomain: "ultimate-5-a-side-draft.firebaseapp.com",
+  databaseURL: "https://ultimate-5-a-side-draft-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ultimate-5-a-side-draft",
+  storageBucket: "ultimate-5-a-side-draft.firebasestorage.app",
+  messagingSenderId: "947937131392",
+  appId: "1:947937131392:web:c2a228b6697cf397439f65",
+  measurementId: "G-22516PSZD7"
 };
 
 const online = {
