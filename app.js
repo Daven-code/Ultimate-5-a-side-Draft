@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v36
+// app.js v37
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -2910,6 +2910,78 @@ function showFinishedResultsPageV33() {
 
   renderResults();
   setTimeout(() => els.resultsPanel?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+}
+
+
+
+// --- v37 allow any online user to reveal final results ---
+// Once all teams are complete, every joined online user sees and can click Reveal ratings.
+function syncRevealButtonV37() {
+  if (!state || !els.revealBtn) return;
+  if (ratingsRevealed) {
+    els.revealBtn.classList.add("hidden");
+    els.revealBtn.disabled = true;
+    return;
+  }
+  const complete = isGameComplete();
+  els.revealBtn.classList.toggle("hidden", !complete);
+  els.revealBtn.disabled = !complete;
+}
+
+function render() {
+  if (!state) return;
+  v29SafeState();
+  updateGameControls();
+  const user = currentUser();
+  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
+  if (state.gameMode === "draft" && els.declinesLeft) {
+    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
+  }
+  if (state.gameMode === "bid" && els.currentBudgetLeft) {
+    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
+  }
+  renderTeams();
+  setDraftActionButtons();
+  applyOnlinePermissions();
+  syncRevealButtonV37();
+}
+
+function applyRemoteData(data) {
+  applyingRemote = true;
+  state = restoreState(data.state);
+  currentCandidate = data.currentCandidate || null;
+  ratingsRevealed = !!data.ratingsRevealed;
+
+  if (ratingsRevealed) {
+    applyingRemote = false;
+    showFinishedResultsPageV33();
+    return;
+  }
+
+  hideEntryPanel();
+  show(ensureLobby(), false);
+  show(els.setupPanel, false);
+  show(els.gamePanel, true);
+  show(els.resultsPanel, false);
+  updateGameControls();
+  render();
+  if (currentCandidate) renderCandidate(currentCandidate);
+  else clearCandidate(data.message || (isGameComplete() ? "Game complete. Reveal ratings to see the winner." : "Waiting for the next action..."));
+  renderTeams();
+  setMessage(data.message || "");
+  applyingRemote = false;
+  applyOnlinePermissions();
+  syncRevealButtonV37();
+}
+
+function completeGame() {
+  currentCandidate = null;
+  clearCandidate("Game complete. Reveal ratings to see the winner.");
+  syncRevealButtonV37();
+  if (els.pickBtn) els.pickBtn.disabled = true;
+  if (els.acceptBtn) els.acceptBtn.disabled = true;
+  if (els.declineBtn) els.declineBtn.disabled = true;
+  saveOnlineState("Game complete. Reveal ratings to see the winner.");
 }
 
 function init() {
