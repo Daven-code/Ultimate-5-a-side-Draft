@@ -111,7 +111,16 @@ function injectOnlineStyles() {
   const style = document.createElement("style");
   style.id = "onlineStyles";
   style.textContent = `
-    .online-room-panel { margin-bottom: 18px; }
+    .game-entry-panel { max-width: 980px; margin: 28px auto; }
+    .game-entry-heading { text-align: center; margin-bottom: 18px; }
+    .game-entry-heading h2 { margin: 0 0 6px; color: #fff; font-size: clamp(1.8rem, 4vw, 2.8rem); }
+    .game-entry-heading p { margin: 0; color: rgba(255,255,255,.82); font-weight: 800; }
+    .game-entry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .entry-card { background: rgba(255,255,255,.95); border: 1px solid rgba(255,255,255,.4); border-radius: 24px; padding: 22px; box-shadow: 0 24px 70px rgba(15,23,42,.22); }
+    .entry-card h3 { margin: 0 0 8px; color: #0f172a; font-size: 1.35rem; }
+    .entry-card p { margin: 0 0 14px; color: #475569; font-weight: 750; line-height: 1.4; }
+    .local-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 265px; }
+    .online-room-panel { margin-bottom: 0; }
     .online-room-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 18px; padding: 14px; display: grid; gap: 10px; }
     .online-room-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
     .online-room-status { margin: 2px 0 0; color: #475569; font-weight: 800; font-size: .88rem; line-height: 1.35; }
@@ -130,35 +139,68 @@ function injectOnlineStyles() {
     .lobby-checkbox { display: flex; gap: 8px; align-items: center; color: #334155; font-weight: 850; margin: 10px 0 14px; }
     .lobby-start-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .turn-lock-note { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 14px; padding: 10px; font-weight: 900; margin-top: 10px; }
-    @media (max-width: 620px) { .online-room-actions, .lobby-mode-cards { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) { .game-entry-grid, .online-room-actions, .lobby-mode-cards { grid-template-columns: 1fr; } }
   `;
   document.head.appendChild(style);
 }
 
 function injectOnlinePanel() {
   injectOnlineStyles();
-  const setupCard = document.querySelector(".setup-panel-card") || els.setupPanel;
-  if (!setupCard || document.getElementById("onlineRoomPanel")) return;
-  const panel = document.createElement("div");
-  panel.id = "onlineRoomPanel";
-  panel.className = "online-room-panel";
-  panel.innerHTML = `
-    <label>Online room</label>
-    <div class="online-room-box">
-      <div class="online-room-actions">
-        <input id="onlineRoomName" type="text" placeholder="Your name" />
-        <button id="createOnlineRoomBtn" type="button" class="btn btn-secondary">Create online room</button>
-      </div>
-      <div class="online-room-actions">
-        <input id="joinRoomCode" type="text" placeholder="Room code" />
-        <button id="joinOnlineRoomBtn" type="button" class="btn btn-secondary">Join room</button>
-      </div>
-      <p id="onlineRoomStatus" class="online-room-status">Create a room, then share the link. Each person joins using their own name.</p>
-      <p id="onlineRoomLink" class="online-room-link hidden"></p>
+  if (document.getElementById("gameEntryPanel")) return;
+
+  const shell = document.querySelector(".app-shell") || document.body;
+  const entry = document.createElement("section");
+  entry.id = "gameEntryPanel";
+  entry.className = "game-entry-panel";
+  entry.innerHTML = `
+    <div class="game-entry-heading">
+      <h2>Choose how to play</h2>
+      <p>Start a quick local game, or create/join an online room with friends.</p>
+    </div>
+    <div class="game-entry-grid">
+      <article class="entry-card online-card">
+        <h3>Online game</h3>
+        <p>Create a room and share the link, or join using a room code.</p>
+        <div id="onlineRoomPanel" class="online-room-panel">
+          <div class="online-room-box">
+            <div class="online-room-actions">
+              <input id="onlineRoomName" type="text" placeholder="Your name" />
+              <button id="createOnlineRoomBtn" type="button" class="btn btn-secondary">Create online room</button>
+            </div>
+            <div class="online-room-actions">
+              <input id="joinRoomCode" type="text" placeholder="Room code" />
+              <button id="joinOnlineRoomBtn" type="button" class="btn btn-secondary">Join room</button>
+            </div>
+            <p id="onlineRoomStatus" class="online-room-status">Online games use joined player names automatically.</p>
+            <p id="onlineRoomLink" class="online-room-link hidden"></p>
+          </div>
+        </div>
+      </article>
+      <article class="entry-card local-card">
+        <div>
+          <h3>Local game</h3>
+          <p>Play on this device using the normal local setup options.</p>
+        </div>
+        <button id="startLocalGameBtn" type="button" class="btn btn-primary">Set up local game</button>
+      </article>
     </div>`;
-  setupCard.insertBefore(panel, setupCard.firstChild);
+
+  shell.insertBefore(entry, els.setupPanel);
+  els.setupPanel.classList.add("hidden");
+  els.gamePanel.classList.add("hidden");
+  els.resultsPanel.classList.add("hidden");
+
   document.getElementById("createOnlineRoomBtn").addEventListener("click", createOnlineRoom);
   document.getElementById("joinOnlineRoomBtn").addEventListener("click", () => joinOnlineRoom(document.getElementById("joinRoomCode").value.trim().toUpperCase()));
+  document.getElementById("startLocalGameBtn").addEventListener("click", () => {
+    online.enabled = false;
+    online.isHost = false;
+    online.roomId = null;
+    online.ref = null;
+    document.getElementById("gameEntryPanel")?.classList.add("hidden");
+    els.setupPanel.classList.remove("hidden");
+    updateSetupForMode();
+  });
 
   const params = new URLSearchParams(location.search);
   const room = params.get("room");
@@ -166,6 +208,10 @@ function injectOnlinePanel() {
     document.getElementById("joinRoomCode").value = room.toUpperCase();
     setOnlineStatus(`Room code detected: ${room.toUpperCase()}. Type your player name, then click Join room.`);
   }
+}
+
+function hideEntryPanel() {
+  document.getElementById("gameEntryPanel")?.classList.add("hidden");
 }
 
 function ensureLobby() {
@@ -213,6 +259,7 @@ function showLobby(mode, data = {}) {
     <div class="lobby-code">${online.roomId}</div>
     <div class="joined-list">${joined.map(n => `<span class="joined-pill">${escapeHtml(n)}</span>`).join("")}</div>
   `;
+  hideEntryPanel();
   els.setupPanel.classList.add("hidden");
   els.gamePanel.classList.add("hidden");
   els.resultsPanel.classList.add("hidden");
@@ -390,6 +437,8 @@ async function startOnlineGameFromLobby() {
     state.bidOrder = shuffleArray([...Array(activeNames.length).keys()]);
     state.currentUserIndex = state.bidOrder[0];
   }
+  hideEntryPanel();
+  hideEntryPanel();
   ensureLobby().classList.add("hidden");
   els.setupPanel.classList.add("hidden");
   els.gamePanel.classList.remove("hidden");
@@ -450,6 +499,8 @@ function applyRemoteData(data) {
   state = restoreState(data.state);
   currentCandidate = data.currentCandidate || null;
   ratingsRevealed = !!data.ratingsRevealed;
+  hideEntryPanel();
+  hideEntryPanel();
   ensureLobby().classList.add("hidden");
   els.setupPanel.classList.add("hidden");
   els.gamePanel.classList.remove("hidden");
@@ -576,6 +627,7 @@ function startGame() {
     state.bidOrder = shuffleArray([...Array(userCount).keys()]);
     state.currentUserIndex = state.bidOrder[0];
   }
+  hideEntryPanel();
   ensureLobby().classList.add("hidden");
   els.setupPanel.classList.add("hidden");
   els.gamePanel.classList.remove("hidden");
@@ -592,12 +644,18 @@ function resetGame() {
   currentCandidate = null;
   ratingsRevealed = false;
   ensureLobby().classList.add("hidden");
-  els.setupPanel.classList.remove("hidden");
   els.gamePanel.classList.add("hidden");
   els.resultsPanel.classList.add("hidden");
   els.message.textContent = "";
+  if (online.enabled) {
+    hideEntryPanel();
+    els.setupPanel.classList.remove("hidden");
+    saveOnlineState("Game reset.");
+  } else {
+    els.setupPanel.classList.add("hidden");
+    document.getElementById("gameEntryPanel")?.classList.remove("hidden");
+  }
   updateSetupForMode();
-  if (online.enabled) saveOnlineState("Game reset.");
 }
 
 function updateGameControls() {
