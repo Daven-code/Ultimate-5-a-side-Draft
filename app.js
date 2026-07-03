@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v26
+// app.js v30
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -1819,6 +1819,383 @@ function wireEvents() {
 
     updateSetupForMode();
   });
+}
+
+
+
+// --- v29 targeted local draft fix and safe state overrides ---
+// These override earlier functions while preserving the existing visual layout and app structure.
+function v29Array(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function v29Set(value) {
+  return value instanceof Set ? value : new Set(v29Array(value));
+}
+
+function v29NormalisePlayer(p, idx = 0) {
+  if (!p) return null;
+  const position = p.Position ?? p.position ?? p.POS ?? p.pos ?? "";
+  const main = p.Main_Position ?? p.mainPosition ?? p.MainPosition ?? p.main_position ?? "";
+  const player = String(p.Player ?? p.player ?? p.Name ?? p.name ?? "").trim();
+  if (!player) return null;
+  return {
+    id: p.id ?? idx + 1,
+    player,
+    year: Number(p.Game_Year ?? p.year ?? p.Year ?? p.gameYear ?? 0),
+    rating: Number(p.Rating_OVR ?? p.rating ?? p.OVR ?? p.ovr ?? p.Rating ?? 0),
+    position: String(position || main || "").trim(),
+    mainPosition: normalisePosition(main, position),
+    club: String(p.Club ?? p.club ?? "").trim(),
+    nation: String(p.Nation ?? p.nation ?? "").trim(),
+    ...(p.price !== undefined ? { price: Number(p.price) } : {})
+  };
+}
+
+function v29SafeUser(user, index = 0) {
+  const team = v29Array(user?.team).map((p, i) => v29NormalisePlayer(p, i)).filter(Boolean);
+  return {
+    name: user?.name || `User ${index + 1}`,
+    team,
+    declines: Number(user?.declines || 0),
+    declinedNames: v29Set(user?.declinedNames),
+    budget: Number(user?.budget ?? AUCTION_BUDGET),
+    spent: Number(user?.spent || 0),
+    bidSkips: Number(user?.bidSkips || 0)
+  };
+}
+
+function v29SafeState() {
+  if (!state) return;
+  state.users = v29Array(state.users).map((user, index) => v29SafeUser(user, index));
+  state.userCount = state.users.length;
+  state.currentUserIndex = state.users.length
+    ? Math.min(Math.max(Number(state.currentUserIndex || 0), 0), state.users.length - 1)
+    : 0;
+  state.acceptedPlayerNames = v29Set(state.acceptedPlayerNames);
+  state.history = v29Array(state.history);
+  state.bidOrder = v29Array(state.bidOrder);
+  state.bidRoundIndex = Number(state.bidRoundIndex || 0);
+}
+
+function serialiseState() {
+  if (!state) return null;
+  v29SafeState();
+  return {
+    ...state,
+    acceptedPlayerNames: [...state.acceptedPlayerNames],
+    users: state.users.map((user, index) => {
+      const safeUser = v29SafeUser(user, index);
+      return {
+        ...safeUser,
+        declinedNames: [...safeUser.declinedNames]
+      };
+    })
+  };
+}
+
+function restoreState(raw) {
+  if (!raw) return null;
+  const users = v29Array(raw.users).map((user, index) => v29SafeUser(user, index));
+  const safeIndex = users.length
+    ? Math.min(Math.max(Number(raw.currentUserIndex || 0), 0), users.length - 1)
+    : 0;
+  return {
+    ...raw,
+    users,
+    userCount: users.length,
+    currentUserIndex: safeIndex,
+    acceptedPlayerNames: new Set(v29Array(raw.acceptedPlayerNames)),
+    history: v29Array(raw.history),
+    bidOrder: v29Array(raw.bidOrder),
+    bidRoundIndex: Number(raw.bidRoundIndex || 0)
+  };
+}
+
+function getNeededPositions(user) {
+  const safeUser = v29SafeUser(user || {}, 0);
+  const counts = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+  safeUser.team.forEach(player => {
+    const p = normalisePosition(player.mainPosition || player.position);
+    if (counts[p] !== undefined) counts[p] += 1;
+  });
+  const needed = [];
+  TEAM_SHAPE.forEach(pos => {
+    if (counts[pos] > 0) counts[pos] -= 1;
+    else needed.push(pos);
+  });
+  return needed;
+}
+
+function isGameComplete() {
+  v29SafeState();
+  return !!state && state.users.every(user => getNeededPositions(user).length === 0);
+}
+
+function setDraftActionButtons() {
+  if (!state || state.gameMode !== "draft") return;
+  const canAct = !online.enabled || currentPlayerCanAct();
+  const user = currentUser();
+  if (els.pickBtn) els.pickBtn.disabled = !canAct || !!currentCandidate || isGameComplete();
+  if (els.acceptBtn) els.acceptBtn.disabled = !canAct || !currentCandidate;
+  if (els.declineBtn) els.declineBtn.disabled = !canAct || !currentCandidate || (user?.declines || 0) >= DECLINES_ALLOWED;
+}
+
+async function pickRandomPlayer() {
+  await ensurePlayersReady();
+  if (!state || state.gameMode !== "draft") return;
+  v29SafeState();
+
+  if (isGameComplete()) {
+    completeGame();
+    return;
+  }
+
+  if (online.enabled && !currentPlayerCanAct()) {
+    applyOnlinePermissions();
+    return;
+  }
+
+  if (currentCandidate) {
+    setMessage("Please accept or decline the current player before picking another.");
+    setDraftActionButtons();
+    return;
+  }
+
+  const user = currentUser();
+  if (!user) {
+    setMessage("No current user found.");
+    return;
+  }
+
+  const needs = getNeededPositions(user);
+  if (!needs.length) {
+    moveToNextUser();
+    await pickRandomPlayer();
+    return;
+  }
+
+  const pool = players.filter(p => {
+    if (!needs.includes(p.mainPosition)) return false;
+    if (state.acceptedPlayerNames.has(p.player)) return false;
+    if (state.excludeDeclines && user.declinedNames.has(p.player)) return false;
+    return true;
+  });
+
+  if (!pool.length) {
+    clearCandidate(`No available player found for ${user.name}. They need: ${needs.join(", ")}.`);
+    await saveOnlineState();
+    setDraftActionButtons();
+    return;
+  }
+
+  currentCandidate = pool[Math.floor(Math.random() * pool.length)];
+  renderCandidate(currentCandidate);
+  setMessage(`${user.name} needs: ${needs.join(", ")}`);
+  render();
+  setDraftActionButtons();
+  await saveOnlineState();
+}
+
+async function acceptPlayer() {
+  if (!state || !currentCandidate || state.gameMode !== "draft") return;
+  v29SafeState();
+
+  if (online.enabled && !currentPlayerCanAct()) {
+    applyOnlinePermissions();
+    return;
+  }
+
+  const user = currentUser();
+  if (!user) return;
+
+  const picked = v29NormalisePlayer(currentCandidate);
+  if (!picked) return;
+
+  user.team.push(picked);
+  state.acceptedPlayerNames.add(picked.player);
+  state.history.push({ user: user.name, decision: "ACCEPT", player: picked });
+  currentCandidate = null;
+
+  if (isGameComplete()) {
+    completeGame();
+  } else {
+    moveToNextUser();
+    clearCandidate("Click Pick player to continue.");
+  }
+
+  render();
+  setDraftActionButtons();
+  await saveOnlineState();
+}
+
+async function declinePlayer() {
+  if (!state || !currentCandidate || state.gameMode !== "draft") return;
+  v29SafeState();
+
+  if (online.enabled && !currentPlayerCanAct()) {
+    applyOnlinePermissions();
+    return;
+  }
+
+  const user = currentUser();
+  if (!user) return;
+
+  if (user.declines >= DECLINES_ALLOWED) {
+    setMessage(`${user.name} has no declines left and must accept this player.`);
+    setDraftActionButtons();
+    return;
+  }
+
+  user.declines += 1;
+  user.declinedNames.add(currentCandidate.player);
+  state.history.push({ user: user.name, decision: "DECLINE", player: currentCandidate });
+  currentCandidate = null;
+
+  clearCandidate("Click Pick player to try another player.");
+  render();
+  setDraftActionButtons();
+  await saveOnlineState();
+}
+
+function render() {
+  if (!state) return;
+  v29SafeState();
+  updateGameControls();
+  const user = currentUser();
+  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
+  if (state.gameMode === "draft" && els.declinesLeft) {
+    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
+  }
+  if (state.gameMode === "bid" && els.currentBudgetLeft) {
+    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
+  }
+  renderTeams();
+  setDraftActionButtons();
+  applyOnlinePermissions();
+}
+
+function buildSlots(user) {
+  const safeUser = v29SafeUser(user || {}, 0);
+  const mids = safeUser.team.filter(p => p.mainPosition === "MID");
+  return [
+    { label: "GK", player: safeUser.team.find(p => p.mainPosition === "GK") },
+    { label: "DEF", player: safeUser.team.find(p => p.mainPosition === "DEF") },
+    { label: "MID", player: mids[0] },
+    { label: "MID", player: mids[1] },
+    { label: "FWD", player: safeUser.team.find(p => p.mainPosition === "FWD") }
+  ];
+}
+
+function renderTeams() {
+  if (!els.teamsContainer || !state || !Array.isArray(state.users)) return;
+  v29SafeState();
+  els.teamsContainer.innerHTML = state.users.map((user, index) => {
+    const safeUser = v29SafeUser(user, index);
+    state.users[index] = safeUser;
+    const total = safeUser.team.reduce((sum, p) => sum + Number(p.rating || 0), 0);
+    const needs = getNeededPositions(safeUser);
+    return `
+      <article class="team-card">
+        <div class="team-top-row">
+          <div>
+            <h3>${escapeHtml(safeUser.name)}</h3>
+            <div class="team-meta">${needs.length ? `Needs ${needs.join(", ")}` : "Complete"}</div>
+          </div>
+          <div class="score">${ratingsRevealed ? total : "Hidden"}</div>
+        </div>
+        ${renderPitch(buildSlots(safeUser))}
+        ${state.gameMode === "draft"
+          ? `<div class="score">Declines used: ${safeUser.declines}/${DECLINES_ALLOWED}</div>`
+          : ""}
+      </article>
+    `;
+  }).join("");
+}
+
+function getFinalScores() {
+  if (!state || !Array.isArray(state.users)) return [];
+  v29SafeState();
+  return state.users
+    .map((user, index) => {
+      const safeUser = v29SafeUser(user, index);
+      return {
+        user: safeUser,
+        total: safeUser.team.reduce((sum, p) => sum + Number(p.rating || 0), 0)
+      };
+    })
+    .sort((a, b) => b.total - a.total);
+}
+
+
+
+// --- v30 smoother local draft flow overrides ---
+// After Accept or Decline, immediately randomise the next eligible player so the game flows smoothly.
+async function acceptPlayer() {
+  if (!state || !currentCandidate || state.gameMode !== "draft") return;
+  v29SafeState();
+
+  if (online.enabled && !currentPlayerCanAct()) {
+    applyOnlinePermissions();
+    return;
+  }
+
+  const user = currentUser();
+  if (!user) return;
+
+  const picked = v29NormalisePlayer(currentCandidate);
+  if (!picked) return;
+
+  user.team.push(picked);
+  state.acceptedPlayerNames.add(picked.player);
+  state.history.push({ user: user.name, decision: "ACCEPT", player: picked });
+  currentCandidate = null;
+
+  if (isGameComplete()) {
+    completeGame();
+    render();
+    await saveOnlineState();
+    return;
+  }
+
+  moveToNextUser();
+  render();
+  setDraftActionButtons();
+  await saveOnlineState();
+
+  // Smooth flow: automatically pick the next player for the next user's turn.
+  await pickRandomPlayer();
+}
+
+async function declinePlayer() {
+  if (!state || !currentCandidate || state.gameMode !== "draft") return;
+  v29SafeState();
+
+  if (online.enabled && !currentPlayerCanAct()) {
+    applyOnlinePermissions();
+    return;
+  }
+
+  const user = currentUser();
+  if (!user) return;
+
+  if (user.declines >= DECLINES_ALLOWED) {
+    setMessage(`${user.name} has no declines left and must accept this player.`);
+    setDraftActionButtons();
+    return;
+  }
+
+  user.declines += 1;
+  user.declinedNames.add(currentCandidate.player);
+  state.history.push({ user: user.name, decision: "DECLINE", player: currentCandidate });
+  currentCandidate = null;
+
+  render();
+  setDraftActionButtons();
+  await saveOnlineState();
+
+  // Smooth flow: automatically pick another player for the same user's turn.
+  await pickRandomPlayer();
 }
 
 function init() {
