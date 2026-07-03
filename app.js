@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v39
+// app.js v40
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -3586,6 +3586,461 @@ async function submitOnlineBlindBidV38() {
     renderOnlineBidControlsV38();
     await saveOnlineState(`${me.name} submitted a blind bid.`);
   }
+}
+
+
+
+// --- v40 clearer online blind bidding UI ---
+function injectOnlineBidStylesV40() {
+  if ($("onlineBidStylesV40")) return;
+  const style = document.createElement("style");
+  style.id = "onlineBidStylesV40";
+  style.textContent = `
+    .online-bid-layout-v40 {
+      display: grid;
+      gap: 18px;
+    }
+
+    .blind-bid-hero-v40 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr);
+      gap: 18px;
+      padding: 18px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(34,197,94,.14), rgba(59,130,246,.14));
+      border: 1px solid rgba(226,232,240,.9);
+      box-shadow: 0 18px 42px rgba(15,23,42,.10);
+    }
+
+    .blind-bid-hero-v40 h3 {
+      margin: 4px 0 8px;
+      font-size: clamp(1.45rem, 3vw, 2.15rem);
+      color: #0f172a;
+    }
+
+    .blind-bid-mini-steps-v40 {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .blind-bid-step-v40 {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(226,232,240,.95);
+      border-radius: 14px;
+      padding: 9px 10px;
+      color: #334155;
+      font-weight: 850;
+    }
+
+    .blind-bid-step-number-v40 {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #16a34a;
+      color: white;
+      display: inline-grid;
+      place-items: center;
+      font-weight: 950;
+    }
+
+    .blind-bid-player-card-v40 {
+      background: #0f172a;
+      color: white;
+      border-radius: 22px;
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+      align-content: center;
+      min-height: 180px;
+      box-shadow: 0 18px 42px rgba(15,23,42,.22);
+    }
+
+    .blind-bid-player-card-v40 .player-name-v40 {
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      font-weight: 950;
+      line-height: 1.05;
+    }
+
+    .blind-bid-pill-row-v40 {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .blind-bid-pill-v40 {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-weight: 900;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.16);
+      color: #e2e8f0;
+      font-size: .86rem;
+    }
+
+    .blind-bid-action-card-v40 {
+      background: rgba(255,255,255,.96);
+      border: 1px solid #dbeafe;
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: 0 18px 44px rgba(37,99,235,.09);
+    }
+
+    .blind-bid-action-header-v40 {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .blind-bid-budget-v40 {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: #dcfce7;
+      color: #166534;
+      padding: 8px 12px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .blind-bid-input-row-v40 {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .blind-bid-input-wrap-v40 label {
+      display: block;
+      color: #334155;
+      font-weight: 950;
+      margin-bottom: 6px;
+    }
+
+    .blind-bid-input-wrap-v40 input {
+      width: 100%;
+      font-size: 1.6rem;
+      font-weight: 950;
+      border: 2px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: #eff6ff;
+      color: #0f172a;
+    }
+
+    .blind-bid-input-wrap-v40 input:focus {
+      outline: 3px solid rgba(37,99,235,.18);
+      border-color: #2563eb;
+      background: white;
+    }
+
+    .blind-bid-submit-v40 {
+      min-height: 56px;
+      padding-left: 22px !important;
+      padding-right: 22px !important;
+      font-weight: 950 !important;
+    }
+
+    .blind-bid-helper-v40 {
+      margin-top: 10px;
+      color: #64748b;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .blind-bid-status-grid-v40 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+    }
+
+    .blind-bid-status-card-v40 {
+      border-radius: 18px;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: grid;
+      gap: 5px;
+    }
+
+    .blind-bid-status-card-v40.submitted {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .blind-bid-status-card-v40.waiting {
+      background: #fff7ed;
+      border-color: #fed7aa;
+    }
+
+    .blind-bid-status-card-v40.not-eligible {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .blind-bid-status-name-v40 {
+      font-weight: 950;
+      color: #0f172a;
+    }
+
+    .blind-bid-status-line-v40 {
+      font-size: .86rem;
+      font-weight: 850;
+      color: #475569;
+    }
+
+    .blind-bid-progress-v40 {
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .blind-bid-progress-bar-v40 {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #2563eb);
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+
+    .blind-bid-reveal-card-v40 {
+      background: linear-gradient(135deg, #fef3c7, #eff6ff);
+      border: 1px solid #f59e0b;
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: 0 18px 44px rgba(245,158,11,.14);
+    }
+
+    .blind-bid-reveal-grid-v40 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .blind-bid-reveal-bid-v40 {
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(226,232,240,.95);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .blind-bid-reveal-bid-v40.winner {
+      border-color: #f59e0b;
+      background: #fffbeb;
+    }
+
+    .blind-bid-reveal-name-v40 {
+      font-weight: 950;
+      color: #0f172a;
+    }
+
+    .blind-bid-reveal-amount-v40 {
+      font-size: 1.45rem;
+      font-weight: 950;
+      color: #1d4ed8;
+      margin-top: 3px;
+    }
+
+    @media (max-width: 780px) {
+      .blind-bid-hero-v40,
+      .blind-bid-input-row-v40 {
+        grid-template-columns: 1fr;
+      }
+      .blind-bid-submit-v40 {
+        width: 100%;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function bidPlayerSummaryV40(player) {
+  if (!player) return "";
+  const chunks = [player.mainPosition, player.position, player.club, player.year].filter(Boolean);
+  return chunks.map(escapeHtml).join(" • ");
+}
+
+function renderOnlineBidControlsV38() {
+  if (!online.enabled || !state || state.gameMode !== "bid") return;
+  injectOnlineBidStylesV40();
+  initialiseBlindBidStateV38();
+
+  show(els.draftControls, false);
+  show(els.bidControls, true);
+  show(els.declinesPill, false);
+  show(els.budgetPill, false);
+
+  if (els.bidPickBtn) els.bidPickBtn.classList.add("hidden");
+  if (els.awardBidBtn) els.awardBidBtn.classList.add("hidden");
+  if (els.skipBidBtn) els.skipBidBtn.classList.add("hidden");
+
+  const me = currentOnlineUserV38();
+  const eligible = eligibleBidUsersV38();
+  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
+  const myKey = safeKey(online.myName);
+  const myBid = state.blindBids?.[myKey];
+  const submittedCount = eligible.filter(user => state.blindBids?.[safeKey(user.name)]?.submitted).length;
+  const totalCount = eligible.length;
+  const progress = totalCount ? Math.round((submittedCount / totalCount) * 100) : 0;
+  const outcome = state.bidOutcome;
+
+  if (els.bidOrderDisplay) {
+    els.bidOrderDisplay.innerHTML = `
+      <div class="blind-bid-progress-v40" aria-label="Bid submission progress">
+        <div class="blind-bid-progress-bar-v40" style="width:${progress}%"></div>
+      </div>
+      <p class="muted" style="margin-top:8px;font-weight:900;">${submittedCount}/${totalCount} eligible bids submitted</p>
+    `;
+  }
+
+  if (!els.bidInputs) return;
+
+  if (!currentCandidate && isGameComplete()) {
+    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
+    syncRevealButtonV37?.();
+    return;
+  }
+
+  if (!currentCandidate && !outcome) {
+    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
+    return;
+  }
+
+  const statusCards = state.users.map(user => {
+    const key = safeKey(user.name);
+    const isEligible = eligibleKeys.has(key);
+    const submitted = !!state.blindBids?.[key]?.submitted;
+    const budget = Number(user.budget || 0);
+    const css = !isEligible ? "not-eligible" : submitted ? "submitted" : "waiting";
+    const status = !isEligible ? "Not eligible" : submitted ? "Submitted ✅" : "Waiting";
+    return `
+      <div class="blind-bid-status-card-v40 ${css}">
+        <div class="blind-bid-status-name-v40">${escapeHtml(user.name)}</div>
+        <div class="blind-bid-status-line-v40">${status}</div>
+        <div class="blind-bid-status-line-v40">Budget: £${budget}m</div>
+      </div>
+    `;
+  }).join("");
+
+  if (outcome) {
+    clearBlindBidDraftV39();
+    const bidRevealRows = outcome.bids.map(row => `
+      <div class="blind-bid-reveal-bid-v40 ${safeKey(row.name) === safeKey(outcome.winnerName || "") ? "winner" : ""}">
+        <div class="blind-bid-reveal-name-v40">${escapeHtml(row.name)}${safeKey(row.name) === safeKey(outcome.winnerName || "") ? " 🏆" : ""}</div>
+        <div class="blind-bid-reveal-amount-v40">£${Number(row.bid || 0)}m</div>
+      </div>
+    `).join("");
+
+    els.bidInputs.innerHTML = `
+      <div class="online-bid-layout-v40">
+        <div class="blind-bid-reveal-card-v40">
+          <p class="eyebrow">Bids revealed</p>
+          <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
+          <p class="message">
+            ${outcome.winnerName
+              ? `${escapeHtml(outcome.winnerName)} wins for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
+              : `No valid bids above £0m. The player was skipped.`}
+          </p>
+          <div class="blind-bid-reveal-grid-v40">${bidRevealRows}</div>
+          <p class="muted" style="margin-top:12px;font-weight:900;">Next player loading...</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
+  const myBudget = Number(me?.budget || 0);
+  const draftValue = getBlindBidDraftV39("0");
+
+  const actionCard = canSubmit ? `
+    <div class="blind-bid-action-card-v40">
+      <div class="blind-bid-action-header-v40">
+        <div>
+          <p class="eyebrow">Your action</p>
+          <h3 style="margin:4px 0 0;">Submit your blind bid</h3>
+        </div>
+        <div class="blind-bid-budget-v40">Budget: £${myBudget}m</div>
+      </div>
+      <div class="blind-bid-input-row-v40">
+        <div class="blind-bid-input-wrap-v40">
+          <label for="onlineBlindBidInput">Your private bid</label>
+          <input id="onlineBlindBidInput" type="number" min="0" max="${myBudget}" step="1" value="${escapeHtml(draftValue)}" />
+        </div>
+        <button id="submitBlindBidBtn" class="btn btn-primary blind-bid-submit-v40" type="button">Submit bid</button>
+      </div>
+      <p class="blind-bid-helper-v40">Other players will only see that you have submitted — they won’t see your amount until everyone has submitted.</p>
+    </div>
+  ` : `
+    <div class="blind-bid-action-card-v40">
+      <p class="eyebrow">Your action</p>
+      <h3 style="margin:4px 0 8px;">${myBid?.submitted ? "Bid submitted" : eligibleKeys.has(myKey) ? "Waiting" : "You are not bidding this round"}</h3>
+      <p class="muted">
+        ${myBid?.submitted
+          ? "Your bid is locked in. Waiting for the other eligible players."
+          : eligibleKeys.has(myKey)
+            ? "Bidding is locked while results are being calculated."
+            : "Your team does not need this player’s position, or you have no budget left."}
+      </p>
+    </div>
+  `;
+
+  els.bidInputs.innerHTML = `
+    <div class="online-bid-layout-v40">
+      <div class="blind-bid-hero-v40">
+        <div>
+          <p class="eyebrow">Online blind bidding</p>
+          <h3>Bid privately. Reveal together.</h3>
+          <p class="muted">All eligible users bid at the same time. Once everyone has submitted, the bids are revealed and the highest bid wins.</p>
+          <div class="blind-bid-mini-steps-v40">
+            <div class="blind-bid-step-v40"><span class="blind-bid-step-number-v40">1</span><span>Check the player and your remaining budget.</span></div>
+            <div class="blind-bid-step-v40"><span class="blind-bid-step-number-v40">2</span><span>Enter your private bid and submit it.</span></div>
+            <div class="blind-bid-step-v40"><span class="blind-bid-step-number-v40">3</span><span>Wait for everyone else — bids reveal together.</span></div>
+          </div>
+        </div>
+        <div class="blind-bid-player-card-v40">
+          <div class="blind-bid-pill-row-v40">
+            <span class="blind-bid-pill-v40">${escapeHtml(currentCandidate.mainPosition || "")}</span>
+            <span class="blind-bid-pill-v40">Hidden rating</span>
+          </div>
+          <div class="player-name-v40">${escapeHtml(currentCandidate.player)}</div>
+          <div class="blind-bid-pill-row-v40">
+            <span class="blind-bid-pill-v40">${bidPlayerSummaryV40(currentCandidate)}</span>
+          </div>
+        </div>
+      </div>
+      ${actionCard}
+      <div class="blind-bid-action-card-v40">
+        <div class="blind-bid-action-header-v40">
+          <div>
+            <p class="eyebrow">Submission status</p>
+            <h3 style="margin:4px 0 0;">${submittedCount}/${totalCount} submitted</h3>
+          </div>
+        </div>
+        <div class="blind-bid-progress-v40"><div class="blind-bid-progress-bar-v40" style="width:${progress}%"></div></div>
+        <div class="blind-bid-status-grid-v40" style="margin-top:14px;">${statusCards}</div>
+      </div>
+    </div>
+  `;
+
+  const bidInput = $("onlineBlindBidInput");
+  if (bidInput) {
+    bidInput.addEventListener("input", event => setBlindBidDraftV39(event.target.value));
+    bidInput.addEventListener("change", event => setBlindBidDraftV39(event.target.value));
+  }
+
+  $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
 }
 
 function init() {
