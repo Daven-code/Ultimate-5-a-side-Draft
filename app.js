@@ -621,6 +621,29 @@ function randomRoomId() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
+
+
+function validateUsername(name) {
+  name = (name || "").trim();
+  if (name.length < 3 || name.length > 18) return false;
+  if (!/^[a-zA-Z0-9 _-]+$/.test(name)) return false;
+  const blocked = ["admin","administrator","moderator","support","official"];
+  return !blocked.includes(name.toLowerCase());
+}
+
+async function submitLeaderboardScore(username, score, gameMode) {
+  if (!validateUsername(username)) {
+    throw new Error("Invalid username");
+  }
+  await ensureFirebase();
+  await firebase.database().ref("leaderboard").push({
+    username,
+    score,
+    gameMode,
+    timestamp: Date.now()
+  });
+}
+
 async function createOnlineRoom() {
   const name = $("onlineRoomName")?.value.trim();
 
@@ -7681,4 +7704,132 @@ init();
   };
 
   applyStep17();
+})();
+
+// --- step19 realtime database leaderboard submit on results reveal ---
+// Adds a "Submit to leaderboard" button to the final results screen.
+// The button appears after ratings are revealed, validates the username,
+// then writes the top final score into Realtime Database at /leaderboard.
+(function () {
+  function leaderboardGameModeLabelStep19() {
+    if (!state) return "Unknown";
+    if (!online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1) {
+      return "Solo Challenge";
+    }
+    if (online.enabled && state.gameMode === "draft") {
+      return "Online Ultimate Draft";
+    }
+    if (online.enabled && state.gameMode === "bid" && state.onlineBidMode === "live") {
+      return "Online Live Auction";
+    }
+    if (online.enabled && state.gameMode === "bid") {
+      return "Online Blind Bidding";
+    }
+    if (state.gameMode === "bid") {
+      return "Local Bidding";
+    }
+    return "Ultimate Draft";
+  }
+
+  function cleanLeaderboardTeamStep19(user) {
+    return Array.isArray(user?.team)
+      ? user.team.map(player => ({
+          name: player.player || "",
+          year: Number(player.year || 0),
+          position: player.mainPosition || player.position || "",
+          rating: Number(player.rating || 0),
+          club: player.club || "",
+          nation: player.nation || ""
+        }))
+      : [];
+  }
+
+  async function submitCurrentResultToLeaderboardStep19() {
+    if (!state || !ratingsRevealed) {
+      alert("Reveal the ratings first.");
+      return;
+    }
+
+    if (state.leaderboardSubmitted) {
+      alert("This result has already been submitted from this screen.");
+      return;
+    }
+
+    const scored = getFinalScores();
+    const top = scored[0];
+
+    if (!top) {
+      alert("No score found to submit.");
+      return;
+    }
+
+    const defaultName = top.user?.name && top.user.name !== "You" ? top.user.name : "";
+    const username = prompt("Enter leaderboard name (3-18 letters/numbers):", defaultName || "");
+
+    if (username === null) return;
+
+    if (!validateUsername(username)) {
+      alert("Invalid username. Use 3-18 characters: letters, numbers, spaces, underscores or hyphens. Avoid reserved names.");
+      return;
+    }
+
+    await ensureFirebase();
+
+    await firebase.database().ref("leaderboard").push({
+      username: username.trim(),
+      score: Number(top.total || 0),
+      gameMode: leaderboardGameModeLabelStep19(),
+      online: !!online.enabled,
+      roomId: online.enabled ? (online.roomId || "") : "",
+      yearRange: state.yearRange || null,
+      team: cleanLeaderboardTeamStep19(top.user),
+      timestamp: Date.now()
+    });
+
+    state.leaderboardSubmitted = true;
+
+    const btn = document.getElementById("submitLeaderboardBtnStep19");
+    if (btn) {
+      btn.textContent = "Submitted ✅";
+      btn.disabled = true;
+    }
+
+    alert("Score submitted to leaderboard.");
+  }
+
+  function addLeaderboardButtonStep19() {
+    if (!state || !ratingsRevealed) return;
+
+    const actions = document.querySelector("#resultsPanel .finished-actions");
+    if (!actions) return;
+
+    let btn = document.getElementById("submitLeaderboardBtnStep19");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.id = "submitLeaderboardBtnStep19";
+      btn.type = "button";
+      btn.className = "btn btn-success";
+      btn.textContent = state.leaderboardSubmitted ? "Submitted ✅" : "Submit to leaderboard";
+      actions.insertBefore(btn, actions.firstChild);
+    }
+
+    btn.disabled = !!state.leaderboardSubmitted;
+    btn.onclick = safe(submitCurrentResultToLeaderboardStep19);
+  }
+
+  const previousRenderResultsStep19 = renderResults;
+  renderResults = function (...args) {
+    const result = previousRenderResultsStep19.apply(this, args);
+    addLeaderboardButtonStep19();
+    return result;
+  };
+
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const previousShowFinishedResultsPageStep19 = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function (...args) {
+      const result = previousShowFinishedResultsPageStep19.apply(this, args);
+      addLeaderboardButtonStep19();
+      return result;
+    };
+  }
 })();
