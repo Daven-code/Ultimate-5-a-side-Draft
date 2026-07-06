@@ -7214,3 +7214,323 @@ init();
 
   injectOnlineBoardFitStylesStep14();
 })();
+
+// --- step15 online bid action highlight and skip enforcement ---
+// Improves clarity for online bidding and ensures skip lives behave consistently.
+(function () {
+  function injectStep15Styles() {
+    if ($("step15OnlineBidStyles")) return;
+    const style = document.createElement("style");
+    style.id = "step15OnlineBidStyles";
+    style.textContent = `
+      body.online-game-active-step12 .online-action-needed-step15 {
+        position: relative;
+        border: 3px solid #22c55e !important;
+        box-shadow: 0 0 0 5px rgba(34,197,94,.18), 0 18px 44px rgba(15,23,42,.16) !important;
+        background: linear-gradient(180deg, #ffffff, #f0fdf4) !important;
+      }
+      body.online-game-active-step12 .online-action-needed-step15::before {
+        content: "Your go";
+        position: absolute;
+        right: 14px;
+        top: -15px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #22c55e;
+        color: #052e16;
+        font-size: .78rem;
+        font-weight: 950;
+        letter-spacing: .03em;
+        box-shadow: 0 10px 26px rgba(34,197,94,.28);
+        z-index: 4;
+      }
+      body.online-game-active-step12 .online-action-title-step15 {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 10px;
+        padding: 8px 11px;
+        border-radius: 999px;
+        background: #dcfce7;
+        color: #14532d;
+        font-weight: 950;
+        font-size: .84rem;
+      }
+      body.online-game-active-step12 .online-action-needed-step15 input[type="number"] {
+        border-color: #22c55e !important;
+        box-shadow: 0 0 0 4px rgba(34,197,94,.14) !important;
+      }
+      body.online-game-active-step12 .online-skip-rule-step15 {
+        margin-top: 8px;
+        font-size: .72rem;
+        font-weight: 850;
+        color: #64748b;
+        line-height: 1.25;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function clampSkipsStep15(value) {
+    const n = Math.max(0, Math.floor(Number(value || 0)));
+    return Math.min(BID_SKIPS_ALLOWED, n);
+  }
+
+  // Clamp all bid-skip values whenever user state is normalised.
+  if (typeof v29SafeUser === "function") {
+    const previousSafeUserStep15 = v29SafeUser;
+    v29SafeUser = function (...args) {
+      const user = previousSafeUserStep15.apply(this, args);
+      user.bidSkips = clampSkipsStep15(user.bidSkips);
+      return user;
+    };
+  }
+
+  if (typeof onlineBidSkipsLeftV44 === "function") {
+    onlineBidSkipsLeftV44 = function (user) {
+      return Math.max(0, BID_SKIPS_ALLOWED - clampSkipsStep15(user?.bidSkips));
+    };
+  }
+
+  if (typeof onlineBidSkipsUsedV44 === "function") {
+    onlineBidSkipsUsedV44 = function (user) {
+      return clampSkipsStep15(user?.bidSkips);
+    };
+  }
+
+  if (typeof onlineIncrementSkipV44 === "function") {
+    onlineIncrementSkipV44 = function (user) {
+      if (!user) return;
+      user.bidSkips = clampSkipsStep15(Number(user.bidSkips || 0) + 1);
+    };
+  }
+
+  function markActionCardStep15(card, text, helper) {
+    if (!card) return;
+    if (!card.classList.contains("online-action-needed-step15")) {
+      card.classList.add("online-action-needed-step15");
+    }
+    if (!card.querySelector(".online-action-title-step15")) {
+      const note = document.createElement("div");
+      note.className = "online-action-title-step15";
+      note.textContent = text || "Your go - action needed";
+      card.insertBefore(note, card.firstChild);
+    }
+    if (helper && !card.querySelector(".online-skip-rule-step15")) {
+      const p = document.createElement("p");
+      p.className = "online-skip-rule-step15";
+      p.textContent = helper;
+      card.appendChild(p);
+    }
+  }
+
+  function highlightOnlineBidActionStep15() {
+    injectStep15Styles();
+    document.querySelectorAll(".online-action-needed-step15").forEach(card => {
+      card.classList.remove("online-action-needed-step15");
+      card.querySelectorAll(".online-action-title-step15").forEach(n => n.remove());
+    });
+    if (!online.enabled || !state || state.gameMode !== "bid" || ratingsRevealed) return;
+
+    const blindBtn = $("submitBlindBidBtn");
+    if (blindBtn && !blindBtn.disabled) {
+      markActionCardStep15(
+        blindBtn.closest(".bid-order-card"),
+        "Your go - submit your bid",
+        "£0m counts as one of your 3 skips. After 3 skips, you must bid above £0m when eligible."
+      );
+      return;
+    }
+
+    const liveBidBtn = $("submitLiveBidBtnStep2");
+    const livePassBtn = $("passLiveBidBtnStep2");
+    const liveCanAct = (liveBidBtn && !liveBidBtn.disabled) || (livePassBtn && !livePassBtn.disabled);
+    if (liveCanAct) {
+      markActionCardStep15(
+        (liveBidBtn || livePassBtn).closest(".live-auction-panel-step2, .bid-order-card"),
+        "Your go - bid or pass",
+        "Saying no before any first bid uses one of your 3 skips. Passing after someone has bid does not use a skip."
+      );
+    }
+  }
+
+  function getBlindBidValueStep15() {
+    const input = $("onlineBlindBidInput");
+    const rawValue = input?.value ?? (typeof getBlindBidDraftV39 === "function" ? getBlindBidDraftV39("0") : "0");
+    const bid = Math.max(0, Math.floor(Number(rawValue || 0)));
+    if (!Number.isFinite(bid)) throw new Error("Enter a valid bid.");
+    return bid;
+  }
+
+  // Override blind bid submit: £0m immediately consumes one skip and is saved to Firebase.
+  if (typeof submitOnlineBlindBidV38 === "function") {
+    submitOnlineBlindBidV38 = async function () {
+      if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
+      initialiseBlindBidStateV38();
+      v29SafeState();
+      const me = currentOnlineUserV38();
+      if (!me) throw new Error("You are not listed in this online game.");
+      const eligible = eligibleBidUsersV38();
+      const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
+      const myKey = safeKey(me.name);
+      if (!eligibleKeys.has(myKey)) throw new Error("You are not eligible to bid for this player.");
+      if (state.blindBids?.[myKey]?.submitted) return;
+
+      const bid = getBlindBidValueStep15();
+      if (bid > Number(me.budget || 0)) throw new Error(`Your bid cannot exceed your remaining budget of £${me.budget}m.`);
+      const maxBid = onlineMaxBidForCandidateV45(me, currentCandidate);
+      const reserve = onlineMinimumReserveAfterWinV45(me, currentCandidate);
+      if (bid > maxBid) {
+        throw new Error(`Your maximum bid is £${maxBid}m because you must keep £${reserve}m for your remaining squad slot${reserve === 1 ? "" : "s"}.`);
+      }
+
+      let usedSkip = false;
+      if (bid <= 0) {
+        if (onlineBidSkipsLeftV44(me) <= 0) throw new Error("You have used all 3 skips and must bid above £0m.");
+        onlineIncrementSkipV44(me);
+        usedSkip = true;
+      }
+
+      state.blindBids[myKey] = {
+        name: me.name,
+        bid,
+        submitted: true,
+        submittedAt: Date.now(),
+        usedSkip
+      };
+
+      if (typeof clearBlindBidDraftV39 === "function") clearBlindBidDraftV39();
+      const allSubmitted = eligible.every(user => state.blindBids?.[safeKey(user.name)]?.submitted);
+      if (allSubmitted) {
+        await resolveOnlineBlindBidV38();
+      } else {
+        renderOnlineBidControlsV38();
+        await saveOnlineState(bid <= 0 ? `${me.name} submitted £0m and used one skip.` : `${me.name} submitted a blind bid.`);
+      }
+      highlightOnlineBidActionStep15();
+    };
+  }
+
+  // Override blind bid resolve: do not double-count £0m skips already consumed on submit.
+  if (typeof resolveOnlineBlindBidV38 === "function") {
+    resolveOnlineBlindBidV38 = async function () {
+      if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
+      initialiseBlindBidStateV38();
+      v29SafeState();
+      state.bidSubmittingLocked = true;
+      const candidate = v29NormalisePlayer(currentCandidate);
+      const eligible = eligibleBidUsersV38(candidate);
+      const bids = eligible.map(user => {
+        const entry = state.blindBids?.[safeKey(user.name)] || { name: user.name, bid: 0, submitted: false, usedSkip: false };
+        return {
+          name: user.name,
+          bid: Math.max(0, Math.floor(Number(entry.bid || 0))),
+          budget: Number(user.budget || 0),
+          maxBid: onlineMaxBidForCandidateV45(user, candidate),
+          usedSkip: !!entry.usedSkip
+        };
+      });
+
+      const zeroBidNames = [];
+      bids.forEach(row => {
+        if (row.bid <= 0) {
+          const user = state.users.find(u => safeKey(u.name) === safeKey(row.name));
+          if (user) {
+            if (!row.usedSkip) onlineIncrementSkipV44(user);
+            user.bidSkips = clampSkipsStep15(user.bidSkips);
+            zeroBidNames.push(user.name);
+          }
+        }
+      });
+
+      const invalidReserveNames = bids
+        .filter(row => row.bid > 0 && row.bid > row.maxBid)
+        .map(row => row.name);
+      let validBids = bids.filter(row => row.bid > 0 && row.bid <= row.budget && row.bid <= row.maxBid);
+      validBids.sort((a, b) => b.bid - a.bid || a.name.localeCompare(b.name));
+
+      let winnerName = null;
+      let winningBid = 0;
+      let tie = false;
+      if (validBids.length) {
+        const highest = validBids[0].bid;
+        const tied = validBids.filter(row => row.bid === highest);
+        tie = tied.length > 1;
+        const winnerRow = tied[Math.floor(Math.random() * tied.length)];
+        winnerName = winnerRow.name;
+        winningBid = winnerRow.bid;
+        const winner = state.users.find(user => safeKey(user.name) === safeKey(winnerName));
+        if (winner && candidate) {
+          winner.team.push({ ...candidate, price: winningBid });
+          winner.budget = Math.max(0, Number(winner.budget || 0) - winningBid);
+          winner.spent = Number(winner.spent || 0) + winningBid;
+          state.acceptedPlayerNames.add(candidate.player);
+        }
+      }
+
+      state.bidOutcome = {
+        player: candidate,
+        bids,
+        winnerName,
+        winningBid,
+        tie,
+        zeroBidNames,
+        invalidReserveNames,
+        resolvedAt: Date.now()
+      };
+      currentCandidate = null;
+      renderOnlineBidControlsV38();
+      renderTeams();
+      const zeroText = zeroBidNames.length ? ` ${zeroBidNames.join(", ")} ${zeroBidNames.length === 1 ? "loses" : "lose"} one skip.` : "";
+      const reserveText = invalidReserveNames.length ? ` ${invalidReserveNames.join(", ")} had bids rejected for not leaving enough money to finish their team.` : "";
+      await saveOnlineState(winnerName ? `${winnerName} won ${candidate.player} for £${winningBid}m.${zeroText}${reserveText}` : `${candidate.player} was skipped.${zeroText}${reserveText}`);
+
+      if (isGameComplete()) {
+        setTimeout(async () => {
+          completeGame();
+          render();
+          await saveOnlineState("Bidding complete. Reveal ratings to see the winner.");
+        }, 3500);
+      } else {
+        setTimeout(async () => {
+          await drawOnlineBlindBidCandidateV38();
+        }, 3500);
+      }
+      highlightOnlineBidActionStep15();
+    };
+  }
+
+  // Live auction: keep existing immediate skip logic, but clamp after remote updates/renders.
+  const previousRenderStep15 = render;
+  render = function (...args) {
+    const result = previousRenderStep15.apply(this, args);
+    if (state?.users) state.users.forEach(u => u.bidSkips = clampSkipsStep15(u.bidSkips));
+    highlightOnlineBidActionStep15();
+    return result;
+  };
+
+  const previousApplyRemoteDataStep15 = applyRemoteData;
+  applyRemoteData = function (...args) {
+    const result = previousApplyRemoteDataStep15.apply(this, args);
+    if (state?.users) state.users.forEach(u => u.bidSkips = clampSkipsStep15(u.bidSkips));
+    highlightOnlineBidActionStep15();
+    return result;
+  };
+
+  const previousRenderOnlineBidControlsStep15 = renderOnlineBidControlsV38;
+  renderOnlineBidControlsV38 = function (...args) {
+    const result = previousRenderOnlineBidControlsStep15.apply(this, args);
+    highlightOnlineBidActionStep15();
+    return result;
+  };
+
+  const previousResetStep15 = resetGame;
+  resetGame = function (...args) {
+    const result = previousResetStep15.apply(this, args);
+    document.querySelectorAll(".online-action-needed-step15").forEach(card => card.classList.remove("online-action-needed-step15"));
+    return result;
+  };
+
+  injectStep15Styles();
+  highlightOnlineBidActionStep15();
+})();
