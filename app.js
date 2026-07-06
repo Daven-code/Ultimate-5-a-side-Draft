@@ -5070,7 +5070,7 @@ init();
       if (onlineBidSkipsLeftV44(me) <= 0) {
         throw new Error("You have used all 3 skips and must make the first bid above £0m.");
       }
-      onlineIncrementSkipV44(me);
+      me.bidSkips = Math.min(BID_SKIPS_ALLOWED, Number(me.bidSkips || 0) + 1);
       auction.noFirstBidKeys[myKey] = true;
     }
     auction.passedKeys[myKey] = true;
@@ -7420,4 +7420,265 @@ init();
   };
 
   applyStep16();
+})();
+
+// --- step17 online headers action highlight cleanup and skip hardening ---
+// Polishes online headers, restores a clear active-input highlight, removes duplicate helper/status text,
+// and hardens live-auction skip behaviour.
+(function () {
+  function injectStep17Styles() {
+    if ($("step17OnlineHeaderActionStyles")) return;
+    const style = document.createElement("style");
+    style.id = "step17OnlineHeaderActionStyles";
+    style.textContent = `
+      /* Make the main online action title match the polished draft-board header style. */
+      body.online-game-active-step12 .draft-card > .turn-row,
+      body.online-game-active-step12 .teams-card > .section-title-row {
+        position: sticky;
+        top: 0;
+        z-index: 12;
+        margin: -4px -4px 18px !important;
+        padding: 16px 16px !important;
+        border-radius: 22px !important;
+        background: linear-gradient(135deg, #0f172a, #1e3a8a 55%, #2563eb) !important;
+        color: #ffffff !important;
+        box-shadow: 0 18px 44px rgba(15,23,42,.20) !important;
+        border: 1px solid rgba(255,255,255,.18) !important;
+        backdrop-filter: blur(10px);
+      }
+      body.online-game-active-step12 .draft-card > .turn-row .eyebrow,
+      body.online-game-active-step12 .teams-card > .section-title-row .eyebrow {
+        display: inline-flex !important;
+        width: fit-content !important;
+        padding: 5px 9px !important;
+        border-radius: 999px !important;
+        background: rgba(255,255,255,.16) !important;
+        color: #bfdbfe !important;
+        font-size: .68rem !important;
+        letter-spacing: .11em !important;
+        font-weight: 950 !important;
+      }
+      body.online-game-active-step12 .draft-card > .turn-row h2,
+      body.online-game-active-step12 .teams-card > .section-title-row h2 {
+        margin: 0 !important;
+        color: #ffffff !important;
+        font-size: clamp(1.5rem, 2.8vw, 2.25rem) !important;
+        line-height: 1.05 !important;
+        font-weight: 950 !important;
+      }
+      body.online-game-active-step12 .draft-card > .turn-row .lives-pill,
+      body.online-game-active-step12 .draft-card > .turn-row .online-room-mini-step12 {
+        background: rgba(255,255,255,.16) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255,255,255,.18) !important;
+      }
+      body.online-game-active-step12 .teams-card > .section-title-row h2::after {
+        content: "Live teams";
+        display: block;
+        margin-top: 4px;
+        font-size: .78rem;
+        line-height: 1.2;
+        color: rgba(255,255,255,.76);
+        font-weight: 800;
+      }
+
+      /* Strong, reliable highlight for the exact online bidding section the user must use. */
+      body.online-game-active-step12 .online-action-needed-step17 {
+        position: relative !important;
+        border: 4px solid #22c55e !important;
+        box-shadow: 0 0 0 6px rgba(34,197,94,.18), 0 22px 54px rgba(15,23,42,.20) !important;
+        background: linear-gradient(180deg, #ffffff, #f0fdf4) !important;
+      }
+      .online-action-banner-step17 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        margin: -2px 0 14px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #16a34a, #86efac);
+        color: #052e16;
+        font-weight: 950;
+        font-size: .95rem;
+        box-shadow: 0 12px 28px rgba(34,197,94,.24);
+        box-sizing: border-box;
+      }
+      .online-action-banner-step17 span:last-child {
+        font-size: .76rem;
+        opacity: .88;
+      }
+      body.online-game-active-step12 .online-action-needed-step17 input[type="number"] {
+        border-color: #16a34a !important;
+        box-shadow: 0 0 0 5px rgba(34,197,94,.16) !important;
+      }
+      body.online-game-active-step12 .online-action-needed-step17 .btn-primary,
+      body.online-game-active-step12 .online-action-needed-step17 #submitLiveBidBtnStep2,
+      body.online-game-active-step12 .online-action-needed-step17 #submitBlindBidBtn {
+        box-shadow: 0 12px 30px rgba(37,99,235,.25) !important;
+      }
+      @media (max-width: 720px) {
+        body.online-game-active-step12 .draft-card > .turn-row,
+        body.online-game-active-step12 .teams-card > .section-title-row {
+          margin: 0 0 14px !important;
+          padding: 14px !important;
+          border-radius: 20px !important;
+        }
+        body.online-game-active-step12 .draft-card > .turn-row h2,
+        body.online-game-active-step12 .teams-card > .section-title-row h2 {
+          font-size: 1.45rem !important;
+        }
+        .online-action-banner-step17 {
+          position: sticky;
+          top: 8px;
+          z-index: 30;
+          padding: 13px 14px;
+          font-size: 1rem;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function clampSkipsStep17(value) {
+    const n = Math.max(0, Math.floor(Number(value || 0)));
+    return Math.min(BID_SKIPS_ALLOWED, n);
+  }
+
+  function userKeyStep17(value) {
+    return typeof safeKey === "function" ? safeKey(value) : String(value || "").trim().toLowerCase();
+  }
+
+  // Make the global skip helper robust for all online bidding calls.
+  if (typeof onlineIncrementSkipV44 === "function") {
+    onlineIncrementSkipV44 = function (user) {
+      if (!user) return;
+      user.bidSkips = clampSkipsStep17(Number(user.bidSkips || 0) + 1);
+    };
+  }
+  if (typeof onlineBidSkipsLeftV44 === "function") {
+    onlineBidSkipsLeftV44 = function (user) {
+      return Math.max(0, BID_SKIPS_ALLOWED - clampSkipsStep17(user?.bidSkips));
+    };
+  }
+  if (typeof onlineBidSkipsUsedV44 === "function") {
+    onlineBidSkipsUsedV44 = function (user) {
+      return clampSkipsStep17(user?.bidSkips);
+    };
+  }
+
+  function findActionCardStep17() {
+    if (!online.enabled || !state || state.gameMode !== "bid" || ratingsRevealed) return null;
+    const blindBtn = $("submitBlindBidBtn");
+    if (blindBtn && !blindBtn.disabled) return blindBtn.closest(".bid-order-card");
+    const liveBidBtn = $("submitLiveBidBtnStep2");
+    const livePassBtn = $("passLiveBidBtnStep2");
+    if ((liveBidBtn && !liveBidBtn.disabled) || (livePassBtn && !livePassBtn.disabled)) {
+      return (liveBidBtn || livePassBtn).closest(".live-auction-panel-step2, .bid-order-card");
+    }
+    return null;
+  }
+
+  function applyActionHighlightStep17() {
+    document.querySelectorAll(".online-action-needed-step17").forEach(card => card.classList.remove("online-action-needed-step17"));
+    document.querySelectorAll(".online-action-banner-step17").forEach(n => n.remove());
+    const card = findActionCardStep17();
+    if (!card) return;
+    card.classList.add("online-action-needed-step17");
+    const banner = document.createElement("div");
+    banner.className = "online-action-banner-step17";
+    const isLive = state?.onlineBidMode === "live";
+    banner.innerHTML = `<span>YOUR GO</span><span>${isLive ? "Bid or pass" : "Submit your bid"}</span>`;
+    card.insertBefore(banner, card.firstChild);
+  }
+
+  function polishHeadersStep17() {
+    if (!online.enabled || !state) return;
+    const boardEyebrow = document.querySelector(".teams-card > .section-title-row .eyebrow");
+    const boardTitle = document.querySelector(".teams-card > .section-title-row h2");
+    if (boardEyebrow) boardEyebrow.textContent = "Draft board";
+    if (boardTitle) boardTitle.textContent = "Teams";
+  }
+
+  function removeDuplicateHelperTextStep17() {
+    if (!online.enabled || !state) return;
+    if (els?.message) {
+      const txt = (els.message.textContent || "").trim();
+      if (/^Live auction open for/i.test(txt) || /^It is your turn/i.test(txt) || /^Active player pool/i.test(txt)) {
+        els.message.textContent = "";
+      }
+    }
+    const pill = document.getElementById("activeYearRangePillStep5");
+    if (pill && online.enabled) pill.style.display = "none";
+  }
+
+  function soloPoolTextNoCountStep17() {
+    const pill = document.getElementById("activeYearRangePillStep5");
+    if (!pill || online.enabled) return;
+    pill.style.display = "";
+    pill.textContent = pill.textContent.replace(/\s*\(\d+\s+players\)/i, "");
+  }
+
+  function repairNoFirstBidSkipStep17() {
+    if (!online.enabled || !state || state.gameMode !== "bid" || state.onlineBidMode !== "live") return;
+    const auction = state.liveAuction;
+    if (!auction?.noFirstBidKeys || !state.users) return;
+    Object.keys(auction.noFirstBidKeys).forEach(key => {
+      if (!auction.noFirstBidKeys[key]) return;
+      const user = state.users.find(u => userKeyStep17(u.name) === key);
+      if (!user) return;
+      // If no-first-bid is recorded but the skip counter did not move, repair to at least 1.
+      if (clampSkipsStep17(user.bidSkips) < 1) user.bidSkips = 1;
+      user.bidSkips = clampSkipsStep17(user.bidSkips);
+    });
+  }
+
+  function applyStep17() {
+    injectStep17Styles();
+    repairNoFirstBidSkipStep17();
+    polishHeadersStep17();
+    removeDuplicateHelperTextStep17();
+    soloPoolTextNoCountStep17();
+    setTimeout(applyActionHighlightStep17, 0);
+  }
+
+  const previousRenderStep17 = render;
+  render = function (...args) {
+    const result = previousRenderStep17.apply(this, args);
+    applyStep17();
+    return result;
+  };
+
+  const previousApplyRemoteDataStep17 = applyRemoteData;
+  applyRemoteData = function (...args) {
+    const result = previousApplyRemoteDataStep17.apply(this, args);
+    applyStep17();
+    return result;
+  };
+
+  const previousRenderOnlineBidControlsStep17 = renderOnlineBidControlsV38;
+  renderOnlineBidControlsV38 = function (...args) {
+    const result = previousRenderOnlineBidControlsStep17.apply(this, args);
+    applyStep17();
+    return result;
+  };
+
+  const previousSetMessageStep17 = setMessage;
+  setMessage = function (message) {
+    const txt = String(message || "");
+    if (online.enabled && (/^Live auction open for/i.test(txt) || /^It is your turn/i.test(txt) || /^Active player pool/i.test(txt))) {
+      return previousSetMessageStep17.call(this, "");
+    }
+    return previousSetMessageStep17.apply(this, arguments);
+  };
+
+  const previousResetStep17 = resetGame;
+  resetGame = function (...args) {
+    const result = previousResetStep17.apply(this, args);
+    document.querySelectorAll(".online-action-banner-step17").forEach(n => n.remove());
+    return result;
+  };
+
+  applyStep17();
 })();
