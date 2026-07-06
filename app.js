@@ -7034,3 +7034,183 @@ init();
 
   injectOnlinePitchOverflowFixStep13();
 })();
+
+// --- step14 online draft board fit and scroll all teams ---
+// Fixes the online draft board/pitch sidebar so each pitch fits without being clipped,
+// and all online teams remain accessible inside a tidy scrollable draft-board panel.
+(function () {
+  function injectOnlineBoardFitStylesStep14() {
+    if ($("onlineBoardFitStylesStep14")) return;
+    const style = document.createElement("style");
+    style.id = "onlineBoardFitStylesStep14";
+    style.textContent = `
+      body.online-game-active-step12 #gamePanel.game-grid {
+        max-width: 1320px !important;
+        width: min(1320px, calc(100vw - 40px)) !important;
+        grid-template-columns: minmax(0, 1.35fr) minmax(390px, .88fr) !important;
+        align-items: start !important;
+        overflow: visible !important;
+      }
+
+      body.online-game-active-step12 .teams-card {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        padding: 18px !important;
+      }
+
+      body.online-game-active-step12 #teamsContainer.teams-container {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: calc(100vh - 230px);
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding-right: 8px;
+        scrollbar-gutter: stable;
+      }
+
+      body.online-game-active-step12 #teamsContainer.teams-container::-webkit-scrollbar {
+        width: 8px;
+      }
+      body.online-game-active-step12 #teamsContainer.teams-container::-webkit-scrollbar-track {
+        background: rgba(226,232,240,.85);
+        border-radius: 999px;
+      }
+      body.online-game-active-step12 #teamsContainer.teams-container::-webkit-scrollbar-thumb {
+        background: rgba(100,116,139,.65);
+        border-radius: 999px;
+      }
+
+      body.online-game-active-step12 .team-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
+        padding: 14px !important;
+      }
+
+      body.online-game-active-step12 .teams-card .pitch {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        min-height: 420px !important;
+        max-height: none !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+      }
+
+      body.online-game-active-step12 .teams-card .pitch-player {
+        position: absolute !important;
+        width: min(118px, 30%) !important;
+        min-width: 86px !important;
+        max-width: 118px !important;
+        box-sizing: border-box !important;
+        transform: translate(-50%, -50%) !important;
+      }
+
+      body.online-game-active-step12 .teams-card .pitch-player.gk {
+        left: 50% !important;
+        top: 88% !important;
+        right: auto !important;
+        bottom: auto !important;
+      }
+      body.online-game-active-step12 .teams-card .pitch-player.def {
+        left: 50% !important;
+        top: 68% !important;
+        right: auto !important;
+        bottom: auto !important;
+      }
+      body.online-game-active-step12 .teams-card .pitch-player.mid1 {
+        left: 32% !important;
+        top: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+      }
+      body.online-game-active-step12 .teams-card .pitch-player.mid2 {
+        left: 68% !important;
+        top: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+      }
+      body.online-game-active-step12 .teams-card .pitch-player.fwd {
+        left: 50% !important;
+        top: 22% !important;
+        right: auto !important;
+        bottom: auto !important;
+      }
+
+      body.online-game-active-step12 .teams-card .pitch-player .pos,
+      body.online-game-active-step12 .teams-card .pitch-player .name,
+      body.online-game-active-step12 .teams-card .pitch-player .club,
+      body.online-game-active-step12 .teams-card .pitch-player .year,
+      body.online-game-active-step12 .teams-card .pitch-player .rating,
+      body.online-game-active-step12 .teams-card .pitch-player .price {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+      }
+
+      body.online-game-active-step12 .teams-card .section-title-row {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: rgba(255,255,255,.92);
+        backdrop-filter: blur(8px);
+        border-radius: 16px;
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+      }
+
+      @media (min-width: 981px) and (max-width: 1180px) {
+        body.online-game-active-step12 #gamePanel.game-grid {
+          grid-template-columns: minmax(0, 1.2fr) minmax(360px, .9fr) !important;
+          width: min(1180px, calc(100vw - 28px)) !important;
+          gap: 18px !important;
+        }
+        body.online-game-active-step12 .teams-card .pitch {
+          min-height: 390px !important;
+        }
+        body.online-game-active-step12 #teamsContainer.teams-container {
+          max-height: calc(100vh - 220px);
+        }
+      }
+
+      @media (max-width: 980px) {
+        body.online-game-active-step12 #gamePanel.game-grid {
+          grid-template-columns: 1fr !important;
+          width: min(760px, calc(100vw - 24px)) !important;
+        }
+        body.online-game-active-step12 #teamsContainer.teams-container {
+          max-height: none !important;
+          overflow: visible !important;
+          padding-right: 0 !important;
+        }
+        body.online-game-active-step12 .teams-card .pitch {
+          min-height: 420px !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const previousRenderStep14 = render;
+  render = function (...args) {
+    const result = previousRenderStep14.apply(this, args);
+    injectOnlineBoardFitStylesStep14();
+    return result;
+  };
+
+  const previousApplyRemoteDataStep14 = applyRemoteData;
+  applyRemoteData = function (...args) {
+    const result = previousApplyRemoteDataStep14.apply(this, args);
+    injectOnlineBoardFitStylesStep14();
+    return result;
+  };
+
+  injectOnlineBoardFitStylesStep14();
+})();
