@@ -7682,3 +7682,97 @@ init();
 
   applyStep17();
 })();
+
+
+
+// --- step18 remove online bidding pool player counts ---
+// Append this to the END of the latest app.js if you are not using the full merged file.
+// It keeps the current Step 17 layout exactly as-is and only removes "(X players)" style pool counts
+// from the online bidding screens.
+(function () {
+  function stripPlayerCountTextStep18(text) {
+    return String(text || "")
+      .replace(/\s*\(\s*\d+\s+players\s*\)/gi, "")
+      .replace(/\s*\(\s*\d+\s+player\s*\)/gi, "");
+  }
+
+  function shouldCleanPoolCountsStep18() {
+    return !!(window.online && online.enabled && window.state && state.gameMode === "bid");
+  }
+
+  function removeOnlineBidPoolCountsStep18() {
+    if (!shouldCleanPoolCountsStep18()) return;
+
+    // Main active pool pill, if visible anywhere.
+    const activePill = document.getElementById("activeYearRangePillStep5");
+    if (activePill) {
+      activePill.textContent = stripPlayerCountTextStep18(activePill.textContent);
+    }
+
+    // Candidate/player card pool labels and any helper text in online bidding screens.
+    const selectors = [
+      ".player-card .muted",
+      ".candidate-card .muted",
+      "#candidateCard .muted",
+      "#message",
+      ".message",
+      ".bid-help",
+      ".warning-note",
+      ".status-note"
+    ];
+    document.querySelectorAll(selectors.join(",")).forEach(el => {
+      if (!el || !el.textContent) return;
+      const cleaned = stripPlayerCountTextStep18(el.textContent);
+      if (cleaned !== el.textContent) el.textContent = cleaned;
+    });
+
+    // Fallback: walk visible text nodes inside the online game panel only.
+    const panel = document.getElementById("gamePanel");
+    if (!panel) return;
+    const walker = document.createTreeWalker(panel, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        return /\(\s*\d+\s+players?\s*\)/i.test(node.nodeValue || "")
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_REJECT;
+      }
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node => {
+      node.nodeValue = stripPlayerCountTextStep18(node.nodeValue);
+    });
+  }
+
+  function applyStep18AfterRender() {
+    setTimeout(removeOnlineBidPoolCountsStep18, 0);
+  }
+
+  if (typeof render === "function") {
+    const previousRenderStep18 = render;
+    render = function (...args) {
+      const result = previousRenderStep18.apply(this, args);
+      applyStep18AfterRender();
+      return result;
+    };
+  }
+
+  if (typeof applyRemoteData === "function") {
+    const previousApplyRemoteDataStep18 = applyRemoteData;
+    applyRemoteData = function (...args) {
+      const result = previousApplyRemoteDataStep18.apply(this, args);
+      applyStep18AfterRender();
+      return result;
+    };
+  }
+
+  if (typeof renderOnlineBidControlsV38 === "function") {
+    const previousRenderOnlineBidControlsStep18 = renderOnlineBidControlsV38;
+    renderOnlineBidControlsV38 = function (...args) {
+      const result = previousRenderOnlineBidControlsStep18.apply(this, args);
+      applyStep18AfterRender();
+      return result;
+    };
+  }
+
+  applyStep18AfterRender();
+})();
