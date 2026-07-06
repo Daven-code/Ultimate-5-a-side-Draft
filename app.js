@@ -6939,3 +6939,98 @@ init();
   injectOnlineRefreshStylesStep12();
   refreshOnlineUiStep12();
 })();
+
+// --- step13 online pitch overflow desktop fix ---
+// Fixes online desktop issue where the draft-board/pitch panel could overflow off the right side.
+// Keeps the improved bidding/action UI from Step 12.
+(function () {
+  function injectOnlinePitchOverflowFixStep13() {
+    if ($("onlinePitchOverflowFixStep13")) return;
+    const style = document.createElement("style");
+    style.id = "onlinePitchOverflowFixStep13";
+    style.textContent = `
+      body.online-game-active-step12 #gamePanel.game-grid {
+        box-sizing: border-box;
+        max-width: 1240px !important;
+        width: min(1240px, calc(100vw - 40px)) !important;
+        grid-template-columns: minmax(0, 1.42fr) minmax(0, .78fr) !important;
+        overflow-x: hidden;
+      }
+
+      body.online-game-active-step12 .draft-card,
+      body.online-game-active-step12 .teams-card,
+      body.online-game-active-step12 .team-card,
+      body.online-game-active-step12 .pitch {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+      }
+
+      body.online-game-active-step12 .teams-card {
+        overflow: hidden !important;
+      }
+
+      body.online-game-active-step12 #teamsContainer.teams-container {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+      }
+
+      body.online-game-active-step12 .team-card {
+        width: 100%;
+        overflow: hidden;
+      }
+
+      body.online-game-active-step12 .teams-card .pitch {
+        width: 100% !important;
+        min-height: 300px !important;
+        overflow: hidden !important;
+      }
+
+      body.online-game-active-step12 .teams-card .pitch-player {
+        max-width: 112px !important;
+      }
+
+      body.online-game-active-step12 .teams-card .pitch-player .name,
+      body.online-game-active-step12 .teams-card .pitch-player .club,
+      body.online-game-active-step12 .teams-card .pitch-player .year,
+      body.online-game-active-step12 .teams-card .pitch-player .rating,
+      body.online-game-active-step12 .teams-card .pitch-player .price {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* Preserve mobile behaviour, which already looked fine. */
+      @media (max-width: 980px) {
+        body.online-game-active-step12 #gamePanel.game-grid {
+          width: min(760px, calc(100vw - 24px)) !important;
+          grid-template-columns: 1fr !important;
+          overflow-x: visible;
+        }
+
+        body.online-game-active-step12 .teams-card .pitch {
+          min-height: 330px !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const previousRenderStep13 = render;
+  render = function (...args) {
+    const result = previousRenderStep13.apply(this, args);
+    injectOnlinePitchOverflowFixStep13();
+    return result;
+  };
+
+  const previousApplyRemoteDataStep13 = applyRemoteData;
+  applyRemoteData = function (...args) {
+    const result = previousApplyRemoteDataStep13.apply(this, args);
+    injectOnlinePitchOverflowFixStep13();
+    return result;
+  };
+
+  injectOnlinePitchOverflowFixStep13();
+})();
