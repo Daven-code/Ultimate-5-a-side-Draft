@@ -5232,3 +5232,1710 @@ init();
 
   if (!state) hideResetButtonStep3();
 })();
+
+// --- step4 year range slicer for player pool ---
+// Adds a dynamic year-range slicer before every game starts.
+// The selected range is locked into state.yearRange at game start and all random-player pools use it.
+(function () {
+  let selectedYearRangeStep4 = null;
+
+  function availableYearsStep4() {
+    const rows = Array.isArray(players) && players.length ? players : samplePlayers.map((p, i) => v29NormalisePlayer(p, i)).filter(Boolean);
+    const years = [...new Set(rows.map(p => Number(p.year || p.Game_Year || 0)).filter(Boolean))].sort((a, b) => a - b);
+    return years.length ? years : [2005, 2026];
+  }
+
+  function clampYearRangeStep4(start, end) {
+    const years = availableYearsStep4();
+    const min = years[0] || 2005;
+    const max = years[years.length - 1] || 2026;
+    let a = Number(start ?? min);
+    let b = Number(end ?? max);
+    if (!Number.isFinite(a)) a = min;
+    if (!Number.isFinite(b)) b = max;
+    a = Math.max(min, Math.min(max, Math.round(a)));
+    b = Math.max(min, Math.min(max, Math.round(b)));
+    if (a > b) [a, b] = [b, a];
+    return { start: a, end: b, min, max };
+  }
+
+  function currentYearRangeStep4() {
+    return selectedYearRangeStep4 || clampYearRangeStep4();
+  }
+
+  function getYearRangeFromInputsStep4(prefix) {
+    return clampYearRangeStep4($(`${prefix}YearStartStep4`)?.value, $(`${prefix}YearEndStep4`)?.value);
+  }
+
+  function filteredPlayersForRangeStep4(range = state?.yearRange || currentYearRangeStep4()) {
+    const r = clampYearRangeStep4(range.start, range.end);
+    return (Array.isArray(players) ? players : []).filter(p => Number(p.year || 0) >= r.start && Number(p.year || 0) <= r.end);
+  }
+
+  function filteredCountTextStep4(range) {
+    const count = filteredPlayersForRangeStep4(range).length;
+    return `${count} player${count === 1 ? "" : "s"} in pool`;
+  }
+
+  function setSliderVisualStep4(prefix, range) {
+    const fill = $(`${prefix}YearFillStep4`);
+    if (!fill) return;
+    const total = Math.max(1, range.max - range.min);
+    const left = ((range.start - range.min) / total) * 100;
+    const right = 100 - ((range.end - range.min) / total) * 100;
+    fill.style.left = `${left}%`;
+    fill.style.right = `${right}%`;
+  }
+
+  function updateYearSliderLabelsStep4(prefix, range) {
+    const label = $(`${prefix}YearLabelStep4`);
+    const count = $(`${prefix}YearCountStep4`);
+    const start = $(`${prefix}YearStartValueStep4`);
+    const end = $(`${prefix}YearEndValueStep4`);
+    if (label) label.textContent = `${range.start} - ${range.end}`;
+    if (count) count.textContent = filteredCountTextStep4(range);
+    if (start) start.textContent = String(range.start);
+    if (end) end.textContent = String(range.end);
+    setSliderVisualStep4(prefix, range);
+  }
+
+  function yearSlicerHtmlStep4(prefix, title = "Player year range") {
+    const r = currentYearRangeStep4();
+    return `
+      <div id="${prefix}YearSlicerStep4" class="year-slicer-step4">
+        <div class="year-slicer-head-step4">
+          <div>
+            <label>${escapeHtml(title)}</label>
+            <p class="muted year-slicer-help-step4">Choose which player years are included before the game starts.</p>
+          </div>
+          <div class="year-slicer-summary-step4">
+            <strong id="${prefix}YearLabelStep4">${r.start} - ${r.end}</strong>
+            <span id="${prefix}YearCountStep4">${filteredCountTextStep4(r)}</span>
+          </div>
+        </div>
+        <div class="year-slicer-values-step4">
+          <span>From <strong id="${prefix}YearStartValueStep4">${r.start}</strong></span>
+          <span>To <strong id="${prefix}YearEndValueStep4">${r.end}</strong></span>
+        </div>
+        <div class="year-slider-shell-step4">
+          <div class="year-track-step4"></div>
+          <div id="${prefix}YearFillStep4" class="year-fill-step4"></div>
+          <input id="${prefix}YearStartStep4" class="year-range-step4" type="range" min="${r.min}" max="${r.max}" step="1" value="${r.start}" aria-label="Start year" />
+          <input id="${prefix}YearEndStep4" class="year-range-step4" type="range" min="${r.min}" max="${r.max}" step="1" value="${r.end}" aria-label="End year" />
+        </div>
+      </div>
+    `;
+  }
+
+  function wireYearSlicerStep4(prefix) {
+    const start = $(`${prefix}YearStartStep4`);
+    const end = $(`${prefix}YearEndStep4`);
+    if (!start || !end) return;
+
+    const apply = () => {
+      const range = getYearRangeFromInputsStep4(prefix);
+      selectedYearRangeStep4 = range;
+      start.value = String(range.start);
+      end.value = String(range.end);
+      updateYearSliderLabelsStep4(prefix, range);
+    };
+
+    start.addEventListener("input", apply);
+    end.addEventListener("input", apply);
+    start.addEventListener("change", apply);
+    end.addEventListener("change", apply);
+    apply();
+  }
+
+  function injectYearSlicerStylesStep4() {
+    if ($("yearSlicerStylesStep4")) return;
+    const style = document.createElement("style");
+    style.id = "yearSlicerStylesStep4";
+    style.textContent = `
+      .year-slicer-step4 {
+        margin: 14px 0;
+        padding: 15px;
+        border: 1px solid #dbeafe;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #eff6ff, #f8fafc);
+        box-shadow: 0 10px 28px rgba(15,23,42,.08);
+      }
+      .year-slicer-head-step4 {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .year-slicer-head-step4 label {
+        margin: 0;
+        color: #0f172a;
+        font-weight: 950;
+      }
+      .year-slicer-help-step4 {
+        margin: 4px 0 0;
+        font-size: .86rem;
+      }
+      .year-slicer-summary-step4 {
+        display: grid;
+        gap: 2px;
+        text-align: right;
+      }
+      .year-slicer-summary-step4 strong {
+        color: #1d4ed8;
+        font-size: 1.08rem;
+        font-weight: 950;
+      }
+      .year-slicer-summary-step4 span {
+        color: #64748b;
+        font-size: .82rem;
+        font-weight: 850;
+      }
+      .year-slicer-values-step4 {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 12px 0 8px;
+        color: #334155;
+        font-weight: 850;
+      }
+      .year-slider-shell-step4 {
+        position: relative;
+        height: 36px;
+      }
+      .year-track-step4,
+      .year-fill-step4 {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 16px;
+        height: 7px;
+        border-radius: 999px;
+      }
+      .year-track-step4 { background: #cbd5e1; }
+      .year-fill-step4 { background: linear-gradient(90deg, #22c55e, #2563eb); }
+      .year-range-step4 {
+        position: absolute;
+        left: 0;
+        top: 6px;
+        width: 100%;
+        height: 26px;
+        background: transparent;
+        pointer-events: none;
+        appearance: none;
+        -webkit-appearance: none;
+      }
+      .year-range-step4::-webkit-slider-thumb {
+        pointer-events: auto;
+        appearance: none;
+        -webkit-appearance: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 3px solid #2563eb;
+        box-shadow: 0 4px 12px rgba(15,23,42,.24);
+        cursor: pointer;
+      }
+      .year-range-step4::-moz-range-thumb {
+        pointer-events: auto;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 3px solid #2563eb;
+        box-shadow: 0 4px 12px rgba(15,23,42,.24);
+        cursor: pointer;
+      }
+      @media (max-width: 720px) {
+        .year-slicer-summary-step4 { text-align: left; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function injectLocalYearSlicerStep4() {
+    injectYearSlicerStylesStep4();
+    const panel = document.querySelector(".setup-panel-card");
+    if (!panel) return;
+    let holder = $("localYearSlicerHolderStep4");
+    if (!holder) {
+      holder = document.createElement("div");
+      holder.id = "localYearSlicerHolderStep4";
+      const before = els.userNameFields || els.excludeDeclinesLabel || els.startBtn;
+      if (before && before.parentNode === panel) panel.insertBefore(holder, before);
+      else panel.appendChild(holder);
+    }
+    holder.innerHTML = yearSlicerHtmlStep4("local", "Player year range");
+    wireYearSlicerStep4("local");
+  }
+
+  function injectOnlineYearSlicerStep4() {
+    injectYearSlicerStylesStep4();
+    const lobbySetup = document.querySelector("#onlineLobbyPanel .lobby-setup");
+    if (!lobbySetup) return;
+    let holder = $("onlineYearSlicerHolderStep4");
+    if (!holder) {
+      holder = document.createElement("div");
+      holder.id = "onlineYearSlicerHolderStep4";
+      const bidSelector = $("onlineBidModeSelectorStep2");
+      const startButton = $("startOnlineGameBtn");
+      if (bidSelector && bidSelector.parentNode === lobbySetup) lobbySetup.insertBefore(holder, bidSelector);
+      else if (startButton && startButton.parentNode === lobbySetup) lobbySetup.insertBefore(holder, startButton);
+      else lobbySetup.appendChild(holder);
+    }
+    holder.innerHTML = yearSlicerHtmlStep4("online", "Player year range");
+    wireYearSlicerStep4("online");
+  }
+
+  const previousLoadPlayersStep4 = loadPlayers;
+  loadPlayers = async function (...args) {
+    const result = await previousLoadPlayersStep4.apply(this, args);
+    selectedYearRangeStep4 = selectedYearRangeStep4 || clampYearRangeStep4();
+    if (!state) {
+      injectLocalYearSlicerStep4();
+      if (online.enabled && online.isHost) injectOnlineYearSlicerStep4();
+    }
+    return result;
+  };
+
+  const previousUpdateSetupForModeStep4 = updateSetupForMode;
+  updateSetupForMode = function (...args) {
+    const result = previousUpdateSetupForModeStep4.apply(this, args);
+    if (!state) injectLocalYearSlicerStep4();
+    return result;
+  };
+
+  const previousShowLobbyStep4 = showLobby;
+  showLobby = function (...args) {
+    const result = previousShowLobbyStep4.apply(this, args);
+    const mode = args[0];
+    if (mode === "host") injectOnlineYearSlicerStep4();
+    return result;
+  };
+
+  function lockRangeBeforeStartStep4(isOnlineGame) {
+    const range = isOnlineGame ? getYearRangeFromInputsStep4("online") : getYearRangeFromInputsStep4("local");
+    selectedYearRangeStep4 = range;
+    return { start: range.start, end: range.end };
+  }
+
+  const previousStartNewGameStep4 = startNewGame;
+  startNewGame = function (gameMode, names, isOnlineGame) {
+    const lockedRange = lockRangeBeforeStartStep4(isOnlineGame);
+    const result = previousStartNewGameStep4(gameMode, names, isOnlineGame);
+    if (state) state.yearRange = lockedRange;
+    return result;
+  };
+
+  function withFilteredPlayersStep4(fn) {
+    const originalPlayers = players;
+    if (state?.yearRange) {
+      const filtered = filteredPlayersForRangeStep4(state.yearRange);
+      players = filtered.length ? filtered : [];
+    }
+    try {
+      return fn();
+    } finally {
+      players = originalPlayers;
+    }
+  }
+
+  const previousPickRandomPlayerStep4 = pickRandomPlayer;
+  pickRandomPlayer = async function (...args) {
+    return await withFilteredPlayersStep4(() => previousPickRandomPlayerStep4.apply(this, args));
+  };
+
+  const previousOnlineDrawCandidateStep4 = typeof onlineDrawCandidateForCurrentTurnV32 === "function" ? onlineDrawCandidateForCurrentTurnV32 : null;
+  if (previousOnlineDrawCandidateStep4) {
+    onlineDrawCandidateForCurrentTurnV32 = function (...args) {
+      return withFilteredPlayersStep4(() => previousOnlineDrawCandidateStep4.apply(this, args));
+    };
+  }
+
+  const previousBidRandomPlayerStep4 = bidRandomPlayer;
+  bidRandomPlayer = async function (...args) {
+    return await withFilteredPlayersStep4(() => previousBidRandomPlayerStep4.apply(this, args));
+  };
+
+  const previousDrawOnlineBlindBidCandidateStep4 = drawOnlineBlindBidCandidateV38;
+  drawOnlineBlindBidCandidateV38 = async function (...args) {
+    return await withFilteredPlayersStep4(() => previousDrawOnlineBlindBidCandidateStep4.apply(this, args));
+  };
+
+  const previousRenderCandidateStep4 = renderCandidate;
+  renderCandidate = function (p) {
+    previousRenderCandidateStep4(p);
+    const r = state?.yearRange;
+    if (r && els.candidateCard && p?.year) {
+      const note = document.createElement("p");
+      note.className = "muted";
+      note.style.marginTop = "8px";
+      note.textContent = `Pool: ${r.start} - ${r.end}`;
+      els.candidateCard.appendChild(note);
+    }
+  };
+
+  const previousSerialiseStateStep4 = serialiseState;
+  serialiseState = function (...args) {
+    const raw = previousSerialiseStateStep4.apply(this, args);
+    if (raw && state?.yearRange) raw.yearRange = { start: state.yearRange.start, end: state.yearRange.end };
+    return raw;
+  };
+
+  const previousRestoreStateStep4 = restoreState;
+  restoreState = function (...args) {
+    const restored = previousRestoreStateStep4.apply(this, args);
+    if (restored?.yearRange) restored.yearRange = { start: Number(restored.yearRange.start), end: Number(restored.yearRange.end) };
+    return restored;
+  };
+
+  const previousResetGameStep4 = resetGame;
+  resetGame = function (...args) {
+    const result = previousResetGameStep4.apply(this, args);
+    selectedYearRangeStep4 = clampYearRangeStep4();
+    setTimeout(() => {
+      injectLocalYearSlicerStep4();
+    }, 0);
+    return result;
+  };
+
+  ensurePlayersReady().then(() => {
+    selectedYearRangeStep4 = selectedYearRangeStep4 || clampYearRangeStep4();
+    if (!state) injectLocalYearSlicerStep4();
+  });
+})();
+
+// --- step5 async-safe year range filtering fix ---
+// Fixes Step 4 issue where the slicer UI worked but async random-pick functions could see the full player list.
+// This version filters through helper functions and async-safe wrappers so local/online pools respect state.yearRange.
+(function () {
+  function activeYearRangeStep5() {
+    if (state?.yearRange) return state.yearRange;
+    return null;
+  }
+
+  function playerInActiveYearRangeStep5(player) {
+    const range = activeYearRangeStep5();
+    if (!range) return true;
+    const year = Number(player?.year || player?.Game_Year || 0);
+    return year >= Number(range.start) && year <= Number(range.end);
+  }
+
+  function filteredPlayersStep5() {
+    return (Array.isArray(players) ? players : []).filter(playerInActiveYearRangeStep5);
+  }
+
+  async function withFilteredPlayersAsyncStep5(fn) {
+    const originalPlayers = players;
+    if (state?.yearRange) {
+      players = filteredPlayersStep5();
+    }
+    try {
+      return await fn();
+    } finally {
+      players = originalPlayers;
+    }
+  }
+
+  // Re-wrap the key async functions. These wrappers are intentionally placed after Step 4,
+  // so they override the earlier non-async-safe wrappers.
+  const previousPickRandomPlayerStep5 = pickRandomPlayer;
+  pickRandomPlayer = async function (...args) {
+    return await withFilteredPlayersAsyncStep5(() => previousPickRandomPlayerStep5.apply(this, args));
+  };
+
+  if (typeof onlineDrawCandidateForCurrentTurnV32 === "function") {
+    const previousOnlineDrawCandidateStep5 = onlineDrawCandidateForCurrentTurnV32;
+    onlineDrawCandidateForCurrentTurnV32 = function (...args) {
+      const originalPlayers = players;
+      if (state?.yearRange) players = filteredPlayersStep5();
+      try {
+        return previousOnlineDrawCandidateStep5.apply(this, args);
+      } finally {
+        players = originalPlayers;
+      }
+    };
+  }
+
+  const previousBidRandomPlayerStep5 = bidRandomPlayer;
+  bidRandomPlayer = async function (...args) {
+    return await withFilteredPlayersAsyncStep5(() => previousBidRandomPlayerStep5.apply(this, args));
+  };
+
+  const previousDrawOnlineBlindBidCandidateStep5 = drawOnlineBlindBidCandidateV38;
+  drawOnlineBlindBidCandidateV38 = async function (...args) {
+    return await withFilteredPlayersAsyncStep5(() => previousDrawOnlineBlindBidCandidateStep5.apply(this, args));
+  };
+
+  // If Step 2 live auction is present, it ultimately calls drawOnlineBlindBidCandidateV38 in some flows.
+  // This helper also gives a direct, reliable filtered pool function for any later candidate draw code.
+  window.getUltimate5AsideFilteredPlayersForCurrentGame = filteredPlayersStep5;
+
+  // Add a small visible status in-game so it is obvious which pool is active.
+  const previousRenderStep5 = render;
+  render = function (...args) {
+    const result = previousRenderStep5.apply(this, args);
+    const range = state?.yearRange;
+    if (range && els?.message) {
+      let pill = document.getElementById("activeYearRangePillStep5");
+      if (!pill) {
+        pill = document.createElement("div");
+        pill.id = "activeYearRangePillStep5";
+        pill.className = "turn-lock-note";
+        pill.style.background = "#eff6ff";
+        pill.style.borderColor = "#bfdbfe";
+        pill.style.color = "#1e3a8a";
+        els.message.insertAdjacentElement("afterend", pill);
+      }
+      const count = filteredPlayersStep5().length;
+      pill.textContent = `Active player pool: ${range.start} - ${range.end} (${count} players)`;
+    }
+    return result;
+  };
+
+  const previousResetGameStep5 = resetGame;
+  resetGame = function (...args) {
+    const result = previousResetGameStep5.apply(this, args);
+    const pill = document.getElementById("activeYearRangePillStep5");
+    if (pill) pill.remove();
+    return result;
+  };
+})();
+
+// --- step6 rebind first randomise buttons to filtered handlers ---
+// Fixes the remaining first-pick issue.
+// Reason: the original Pick player / Randomise player click listeners were wired during init()
+// before the year-filter override functions were appended. The first click could therefore use
+// the old unfiltered handler, while later auto-picks used the new filtered handler.
+(function () {
+  function bindFilteredClickStep6(button, handler) {
+    if (!button || button.dataset.step6FilteredBound === "1") return;
+    button.dataset.step6FilteredBound = "1";
+    button.addEventListener("click", function (event) {
+      // Capture phase: stop the original init-time listener and call the current filtered handler instead.
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      safe(handler)();
+    }, true);
+  }
+
+  bindFilteredClickStep6(els.pickBtn, function () {
+    return pickRandomPlayer();
+  });
+
+  bindFilteredClickStep6(els.bidPickBtn, function () {
+    return bidRandomPlayer();
+  });
+})();
+
+// --- step7 solo challenge local mode only ---
+// Local play is now a single-player Solo Challenge only.
+// Local bidding and local multi-user setup are removed from the UI/flow.
+// Online modes are deliberately left unchanged: online draft, blind bidding and live auction remain available.
+(function () {
+  function injectSoloChallengeStylesStep7() {
+    if ($("soloChallengeStylesStep7")) return;
+    const style = document.createElement("style");
+    style.id = "soloChallengeStylesStep7";
+    style.textContent = `
+      .solo-local-hidden-step7 { display: none !important; }
+      .solo-setup-card-step7 {
+        margin: 12px 0 14px;
+        padding: 14px;
+        background: linear-gradient(135deg, #ecfdf5, #eff6ff);
+        border: 1px solid #bfdbfe;
+        border-radius: 18px;
+      }
+      .solo-setup-card-step7 h3 {
+        margin: 0 0 6px;
+        color: #0f172a;
+        font-size: 1.15rem;
+      }
+      .solo-setup-card-step7 p {
+        margin: 0;
+        color: #475569;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function adjustEntryPanelToSoloStep7() {
+    injectSoloChallengeStylesStep7();
+    const localCard = document.querySelector(".local-card");
+    if (!localCard) return;
+    const heading = localCard.querySelector("h3");
+    const copy = localCard.querySelector("p");
+    const button = $("startLocalGameBtn");
+    if (heading) heading.textContent = "Solo Challenge";
+    if (copy) copy.textContent = "Play a quick single-player draft on this device. Pick, accept or decline players and build your best 5-a-side team.";
+    if (button) button.textContent = "Set up Solo Challenge";
+  }
+
+  function configureSoloSetupStep7() {
+    injectSoloChallengeStylesStep7();
+    selectedGameMode = "draft";
+
+    const heroEyebrow = document.querySelector("#setupPanel .setup-copy .eyebrow");
+    const heroTitle = document.querySelector("#setupPanel .setup-copy h2");
+    const heroLead = document.querySelector("#setupPanel .setup-copy .setup-lead");
+    if (heroEyebrow) heroEyebrow.textContent = "Solo Challenge";
+    if (heroTitle) heroTitle.textContent = "Build your ultimate 5-a-side team";
+    if (heroLead) heroLead.textContent = "Choose your year range, then draft a single-player team using the normal pick, accept and decline rules.";
+
+    const setupPanelCard = document.querySelector(".setup-panel-card");
+    if (setupPanelCard) {
+      let soloIntro = $("soloSetupIntroStep7");
+      if (!soloIntro) {
+        soloIntro = document.createElement("div");
+        soloIntro.id = "soloSetupIntroStep7";
+        soloIntro.className = "solo-setup-card-step7";
+        const firstLabel = setupPanelCard.querySelector("label");
+        if (firstLabel) setupPanelCard.insertBefore(soloIntro, firstLabel);
+        else setupPanelCard.prepend(soloIntro);
+      }
+      soloIntro.innerHTML = `
+        <h3>Solo Challenge</h3>
+        <p>Single-player draft mode. Complete a GK, DEF, MID, MID and FWD, then reveal your final rating.</p>
+      `;
+    }
+
+    // Hide local-only multi-user / local-bidding controls.
+    const chooseGameLabel = document.querySelector(".setup-panel-card > label");
+    if (chooseGameLabel) chooseGameLabel.classList.add("solo-local-hidden-step7");
+    if (els.gameModeCards) els.gameModeCards.classList.add("solo-local-hidden-step7");
+    if (els.userCount) els.userCount.closest("div")?.classList.add("solo-local-hidden-step7");
+    if (els.userNameFields) els.userNameFields.classList.add("solo-local-hidden-step7");
+
+    // Keep the decline option available for the Solo Challenge because it belongs to draft mode.
+    if (els.excludeDeclinesLabel) els.excludeDeclinesLabel.classList.remove("hidden", "solo-local-hidden-step7");
+    if (els.excludeDeclines) els.excludeDeclines.checked = true;
+
+    if (els.gameModeDescription) {
+      els.gameModeDescription.textContent = "Solo Challenge: accept or decline random players to complete your 5-a-side team.";
+    }
+    if (els.startBtn) {
+      els.startBtn.textContent = "Start Solo Challenge";
+    }
+  }
+
+  function startSoloChallengeStep7() {
+    selectedGameMode = "draft";
+    online.enabled = false;
+    const soloName = "You";
+    startNewGame("draft", [soloName], false);
+  }
+
+  const previousInjectEntryPanelStep7 = injectEntryPanel;
+  injectEntryPanel = function (...args) {
+    const result = previousInjectEntryPanelStep7.apply(this, args);
+    adjustEntryPanelToSoloStep7();
+    return result;
+  };
+
+  const previousUpdateSetupForModeStep7 = updateSetupForMode;
+  updateSetupForMode = function (...args) {
+    const result = previousUpdateSetupForModeStep7.apply(this, args);
+    if (!online.enabled && !state && !els.setupPanel?.classList.contains("hidden")) {
+      configureSoloSetupStep7();
+    }
+    return result;
+  };
+
+  document.addEventListener("click", function (event) {
+    if (event.target?.closest?.("#startLocalGameBtn")) {
+      setTimeout(configureSoloSetupStep7, 0);
+    }
+
+    if (event.target?.closest?.("#startBtn") && !online.enabled && !els.setupPanel?.classList.contains("hidden")) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      safe(startSoloChallengeStep7)();
+    }
+  }, true);
+
+  // If the page is already loaded when this patch runs, update the existing front panel now.
+  adjustEntryPanelToSoloStep7();
+})();
+
+// --- step8 solo challenge setup cleanup and layout polish ---
+// Cleans up duplicated Solo Challenge setup text and improves the in-game solo layout.
+// Keeps the existing 5-a-side pitch graphics and player names, but gives the player-pick panel more space.
+(function () {
+  function injectSoloPolishStylesStep8() {
+    if ($("soloPolishStylesStep8")) return;
+    const style = document.createElement("style");
+    style.id = "soloPolishStylesStep8";
+    style.textContent = `
+      body.solo-challenge-active-step8 #gamePanel.game-grid {
+        max-width: 1320px;
+        width: min(1320px, calc(100vw - 32px));
+        margin-left: auto;
+        margin-right: auto;
+        grid-template-columns: minmax(0, 1.65fr) minmax(320px, .85fr) !important;
+        gap: 22px;
+        align-items: start;
+      }
+
+      body.solo-challenge-active-step8 .draft-card {
+        min-width: 0;
+        padding: 24px !important;
+        border: 1px solid rgba(255,255,255,.42);
+        box-shadow: 0 24px 70px rgba(15,23,42,.18);
+      }
+
+      body.solo-challenge-active-step8 .teams-card {
+        min-width: 0;
+        padding: 18px !important;
+        background: rgba(255,255,255,.90);
+        border: 1px solid rgba(226,232,240,.9);
+        box-shadow: 0 20px 52px rgba(15,23,42,.13);
+      }
+
+      body.solo-challenge-active-step8 .teams-card .section-title-row {
+        margin-bottom: 10px;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .section-title-row h2 {
+        font-size: 1.45rem;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .section-title-row .eyebrow {
+        font-size: .72rem;
+        letter-spacing: .08em;
+      }
+
+      body.solo-challenge-active-step8 #teamsContainer.teams-container {
+        display: block;
+      }
+
+      body.solo-challenge-active-step8 .team-card {
+        padding: 14px !important;
+        border-radius: 20px !important;
+        background: linear-gradient(180deg, rgba(248,250,252,.96), rgba(255,255,255,.98));
+        border: 1px solid rgba(203,213,225,.85);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 32px rgba(15,23,42,.10);
+      }
+
+      body.solo-challenge-active-step8 .team-card .team-top-row {
+        margin-bottom: 10px;
+      }
+
+      body.solo-challenge-active-step8 .team-card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 2px;
+      }
+
+      body.solo-challenge-active-step8 .team-meta {
+        font-size: .78rem;
+      }
+
+      body.solo-challenge-active-step8 .team-card .score {
+        font-size: .92rem;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch {
+        min-height: 420px;
+        border-radius: 24px;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player {
+        transform: scale(.92);
+        transform-origin: center;
+      }
+
+      body.solo-challenge-active-step8 .player-card {
+        min-height: 340px;
+        padding: 24px !important;
+        border-radius: 28px !important;
+      }
+
+      body.solo-challenge-active-step8 .player-card .player-name {
+        font-size: clamp(2rem, 4vw, 3.4rem);
+        line-height: 1.02;
+      }
+
+      body.solo-challenge-active-step8 .detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      body.solo-challenge-active-step8 #draftControls.button-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+      }
+
+      body.solo-challenge-active-step8 #draftControls .btn {
+        min-height: 48px;
+        font-size: 1rem;
+      }
+
+      body.solo-challenge-active-step8 .turn-row {
+        margin-bottom: 16px;
+      }
+
+      body.solo-challenge-active-step8 .turn-row h2 {
+        font-size: clamp(1.8rem, 3vw, 2.6rem);
+      }
+
+      body.solo-challenge-active-step8 #activeYearRangePillStep5 {
+        margin-top: 12px;
+      }
+
+      @media (max-width: 980px) {
+        body.solo-challenge-active-step8 #gamePanel.game-grid {
+          grid-template-columns: 1fr !important;
+          width: min(760px, calc(100vw - 24px));
+        }
+
+        body.solo-challenge-active-step8 .teams-card {
+          order: 2;
+        }
+
+        body.solo-challenge-active-step8 .draft-card {
+          order: 1;
+        }
+      }
+
+      @media (max-width: 640px) {
+        body.solo-challenge-active-step8 #draftControls.button-row {
+          grid-template-columns: 1fr;
+        }
+        body.solo-challenge-active-step8 .detail-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function cleanupSoloSetupCopyStep8() {
+    // Remove the duplicated mode description text.
+    if (els?.gameModeDescription) {
+      els.gameModeDescription.textContent = "";
+      els.gameModeDescription.classList.add("solo-local-hidden-step7");
+    }
+
+    // Remove the ratings-hidden tip box on Solo Challenge setup.
+    const tipBox = document.querySelector("#setupPanel .setup-note-box");
+    if (tipBox) tipBox.classList.add("solo-local-hidden-step7");
+
+    // If the controls grid only exists for hidden user count + hidden tip, hide the shell too.
+    const controlsGrid = document.querySelector("#setupPanel .setup-controls-grid");
+    if (controlsGrid) controlsGrid.classList.add("solo-local-hidden-step7");
+  }
+
+  function isSoloChallengeStateStep8() {
+    return !!state && !online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1;
+  }
+
+  function applySoloGameLayoutStep8() {
+    injectSoloPolishStylesStep8();
+    document.body.classList.toggle("solo-challenge-active-step8", isSoloChallengeStateStep8());
+
+    if (isSoloChallengeStateStep8()) {
+      if (els.turnEyebrow) els.turnEyebrow.textContent = "Solo Challenge";
+      if (els.currentUserLabel) els.currentUserLabel.textContent = "Build your team";
+      const teamsTitle = document.querySelector(".teams-card .section-title-row h2");
+      const teamsEyebrow = document.querySelector(".teams-card .section-title-row .eyebrow");
+      if (teamsTitle) teamsTitle.textContent = "Your team";
+      if (teamsEyebrow) teamsEyebrow.textContent = "5-a-side pitch";
+    }
+  }
+
+  const previousConfigureSoloSetupStep8 = typeof configureSoloSetupStep7 === "function" ? configureSoloSetupStep7 : null;
+  if (previousConfigureSoloSetupStep8) {
+    configureSoloSetupStep7 = function (...args) {
+      const result = previousConfigureSoloSetupStep8.apply(this, args);
+      cleanupSoloSetupCopyStep8();
+      return result;
+    };
+  }
+
+  const previousUpdateSetupForModeStep8 = updateSetupForMode;
+  updateSetupForMode = function (...args) {
+    const result = previousUpdateSetupForModeStep8.apply(this, args);
+    if (!online.enabled && !state && !els.setupPanel?.classList.contains("hidden")) {
+      cleanupSoloSetupCopyStep8();
+    }
+    return result;
+  };
+
+  document.addEventListener("click", function (event) {
+    if (event.target?.closest?.("#startLocalGameBtn")) {
+      setTimeout(cleanupSoloSetupCopyStep8, 0);
+    }
+  }, true);
+
+  const previousRenderStep8 = render;
+  render = function (...args) {
+    const result = previousRenderStep8.apply(this, args);
+    applySoloGameLayoutStep8();
+    return result;
+  };
+
+  const previousStartNewGameStep8 = startNewGame;
+  startNewGame = function (...args) {
+    const result = previousStartNewGameStep8.apply(this, args);
+    applySoloGameLayoutStep8();
+    return result;
+  };
+
+  const previousResetGameStep8 = resetGame;
+  resetGame = function (...args) {
+    const result = previousResetGameStep8.apply(this, args);
+    document.body.classList.remove("solo-challenge-active-step8");
+    return result;
+  };
+
+  // Initial safety pass.
+  injectSoloPolishStylesStep8();
+  cleanupSoloSetupCopyStep8();
+  applySoloGameLayoutStep8();
+})();
+
+// --- step9 solo layout rebalance and centred results ---
+// Rebalances the Solo Challenge layout after Step 8:
+// - Makes the pitch/draft board wider again so names sit correctly on the existing pitch graphic.
+// - Restores the label to "Draft board".
+// - Centres and polishes the solo results page.
+(function () {
+  function injectSoloRebalanceStylesStep9() {
+    if ($("soloRebalanceStylesStep9")) return;
+    const style = document.createElement("style");
+    style.id = "soloRebalanceStylesStep9";
+    style.textContent = `
+      body.solo-challenge-active-step8 #gamePanel.game-grid {
+        max-width: 1280px !important;
+        width: min(1280px, calc(100vw - 32px)) !important;
+        grid-template-columns: minmax(0, 1.18fr) minmax(440px, .92fr) !important;
+        gap: 22px !important;
+        align-items: start;
+      }
+
+      body.solo-challenge-active-step8 .draft-card {
+        padding: 22px !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card {
+        padding: 20px !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .section-title-row h2 {
+        font-size: 1.65rem !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .section-title-row .eyebrow {
+        font-size: .78rem !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch {
+        min-height: 470px !important;
+        border-radius: 24px;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player {
+        transform: none !important;
+        transform-origin: center;
+      }
+
+      body.solo-challenge-active-step8 .player-card {
+        min-height: 315px !important;
+      }
+
+      body.solo-challenge-active-step8 .player-card .player-name {
+        font-size: clamp(1.85rem, 3.4vw, 3rem) !important;
+      }
+
+      body.solo-challenge-active-step8 .team-card {
+        padding: 16px !important;
+      }
+
+      body.solo-challenge-active-step8 .team-card h3 {
+        font-size: 1.2rem !important;
+      }
+
+      body.solo-results-centred-step9 #resultsPanel.finished-results-page {
+        max-width: 980px !important;
+        width: min(980px, calc(100vw - 32px)) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        text-align: center;
+      }
+
+      body.solo-results-centred-step9 .finished-hero {
+        grid-template-columns: 1fr !important;
+        justify-items: center;
+        text-align: center;
+      }
+
+      body.solo-results-centred-step9 .winner-badge-large {
+        margin-left: auto;
+        margin-right: auto;
+        justify-content: center;
+      }
+
+      body.solo-results-centred-step9 .finished-actions {
+        justify-content: center !important;
+      }
+
+      body.solo-results-centred-step9 .finished-results-grid {
+        grid-template-columns: minmax(320px, 620px) !important;
+        justify-content: center !important;
+        align-items: start;
+      }
+
+      body.solo-results-centred-step9 .finished-team-card {
+        text-align: left;
+      }
+
+      body.solo-results-centred-step9 .finished-team-top {
+        text-align: left;
+      }
+
+      body.solo-results-centred-step9 .finished-team-card .pitch {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      @media (max-width: 1100px) {
+        body.solo-challenge-active-step8 #gamePanel.game-grid {
+          grid-template-columns: 1fr !important;
+          width: min(820px, calc(100vw - 24px)) !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function isSoloStep9() {
+    return !!state && !online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1;
+  }
+
+  function restoreDraftBoardLabelsStep9() {
+    if (!isSoloStep9()) return;
+    const teamsTitle = document.querySelector(".teams-card .section-title-row h2");
+    const teamsEyebrow = document.querySelector(".teams-card .section-title-row .eyebrow");
+    if (teamsTitle) teamsTitle.textContent = "Draft board";
+    if (teamsEyebrow) teamsEyebrow.textContent = "Your team";
+  }
+
+  function syncSoloResultClassStep9() {
+    const showCentred = !!(ratingsRevealed && state && !online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1);
+    document.body.classList.toggle("solo-results-centred-step9", showCentred);
+  }
+
+  const prevRenderStep9 = render;
+  render = function (...args) {
+    const result = prevRenderStep9.apply(this, args);
+    injectSoloRebalanceStylesStep9();
+    restoreDraftBoardLabelsStep9();
+    syncSoloResultClassStep9();
+    return result;
+  };
+
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const prevFinishedStep9 = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function (...args) {
+      const result = prevFinishedStep9.apply(this, args);
+      injectSoloRebalanceStylesStep9();
+      syncSoloResultClassStep9();
+      return result;
+    };
+  }
+
+  const prevRenderResultsStep9 = renderResults;
+  renderResults = function (...args) {
+    const result = prevRenderResultsStep9.apply(this, args);
+    syncSoloResultClassStep9();
+    return result;
+  };
+
+  const prevResetStep9 = resetGame;
+  resetGame = function (...args) {
+    const result = prevResetStep9.apply(this, args);
+    document.body.classList.remove("solo-results-centred-step9");
+    return result;
+  };
+
+  injectSoloRebalanceStylesStep9();
+  restoreDraftBoardLabelsStep9();
+  syncSoloResultClassStep9();
+})();
+
+// --- step10 solo pitch position fix ---
+// Fixes Solo Challenge draft board player positions on the pitch.
+// Step 9 widened the pitch, but the base pitch-positioning rules were still not ideal for the solo card size.
+// These overrides keep the existing 5-a-side pitch graphic, but explicitly centre each slot inside the pitch.
+(function () {
+  function injectSoloPitchPositionStylesStep10() {
+    if ($("soloPitchPositionStylesStep10")) return;
+    const style = document.createElement("style");
+    style.id = "soloPitchPositionStylesStep10";
+    style.textContent = `
+      body.solo-challenge-active-step8 .teams-card .pitch {
+        position: relative;
+        overflow: hidden;
+        min-height: 470px !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player {
+        position: absolute !important;
+        width: min(124px, 28%) !important;
+        min-width: 96px;
+        max-width: 128px;
+        box-sizing: border-box;
+        text-align: center;
+        transform: translate(-50%, -50%) !important;
+        z-index: 3;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player.gk {
+        left: 50% !important;
+        top: 88% !important;
+        bottom: auto !important;
+        right: auto !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player.def {
+        left: 50% !important;
+        top: 68% !important;
+        bottom: auto !important;
+        right: auto !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player.mid1 {
+        left: 34% !important;
+        top: 50% !important;
+        bottom: auto !important;
+        right: auto !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player.mid2 {
+        left: 66% !important;
+        top: 50% !important;
+        bottom: auto !important;
+        right: auto !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player.fwd {
+        left: 50% !important;
+        top: 24% !important;
+        bottom: auto !important;
+        right: auto !important;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player .pos,
+      body.solo-challenge-active-step8 .teams-card .pitch-player .name,
+      body.solo-challenge-active-step8 .teams-card .pitch-player .club,
+      body.solo-challenge-active-step8 .teams-card .pitch-player .year,
+      body.solo-challenge-active-step8 .teams-card .pitch-player .rating,
+      body.solo-challenge-active-step8 .teams-card .pitch-player .price {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      body.solo-challenge-active-step8 .teams-card .pitch-player .name {
+        display: block;
+        line-height: 1.1;
+      }
+
+      body.solo-results-centred-step9 .finished-team-card {
+        max-width: 680px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      body.solo-results-centred-step9 .finished-team-card .pitch {
+        max-width: 560px;
+        width: 100%;
+      }
+
+      body.solo-results-centred-step9 .finished-player-list {
+        max-width: 560px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const prevRenderStep10 = render;
+  render = function (...args) {
+    const result = prevRenderStep10.apply(this, args);
+    injectSoloPitchPositionStylesStep10();
+    return result;
+  };
+
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const prevFinishedStep10 = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function (...args) {
+      const result = prevFinishedStep10.apply(this, args);
+      injectSoloPitchPositionStylesStep10();
+      return result;
+    };
+  }
+
+  injectSoloPitchPositionStylesStep10();
+})();
+
+// --- step11 pitch centre line and solo results polish ---
+// Tweaks requested after Step 10:
+// - Extend the centre line to both pitch edges.
+// - Remove active pool player count from the in-game range note.
+// - Centre-align the top results hero.
+// - Make the solo results pitch wider and less cramped on desktop and mobile.
+(function () {
+  function injectStep11Styles() {
+    if ($("step11SoloPitchResultsStyles")) return;
+    const style = document.createElement("style");
+    style.id = "step11SoloPitchResultsStyles";
+    style.textContent = `
+      /* Extend the centre line fully to each pitch edge. */
+      body.solo-challenge-active-step8 .pitch::before,
+      body.solo-results-centred-step9 .pitch::before {
+        left: 0 !important;
+        right: 0 !important;
+        width: auto !important;
+      }
+
+      /* Keep pitch markings inside the rounded pitch but allow the middle line to meet the border. */
+      body.solo-challenge-active-step8 .pitch,
+      body.solo-results-centred-step9 .pitch {
+        overflow: hidden;
+      }
+
+      /* Stronger, cleaner top alignment on the solo results page. */
+      body.solo-results-centred-step9 #resultsPanel.finished-results-page {
+        max-width: 1120px !important;
+        width: min(1120px, calc(100vw - 32px)) !important;
+        text-align: center !important;
+      }
+
+      body.solo-results-centred-step9 #resultsPanel .finished-hero {
+        max-width: 760px;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        text-align: center !important;
+        justify-items: center !important;
+        align-items: center !important;
+      }
+
+      body.solo-results-centred-step9 #resultsPanel .finished-hero > div {
+        text-align: center !important;
+        width: 100%;
+      }
+
+      body.solo-results-centred-step9 #resultsPanel .finished-hero h2,
+      body.solo-results-centred-step9 #resultsPanel .finished-hero p,
+      body.solo-results-centred-step9 #resultsPanel .finished-hero .eyebrow {
+        text-align: center !important;
+      }
+
+      body.solo-results-centred-step9 #resultsPanel .winner-badge-large {
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+
+      body.solo-results-centred-step9 #resultsPanel .finished-actions {
+        width: 100%;
+        justify-content: center !important;
+      }
+
+      /* Wider, more professional solo result card and pitch. */
+      body.solo-results-centred-step9 .finished-results-grid {
+        grid-template-columns: minmax(360px, 780px) !important;
+        justify-content: center !important;
+      }
+
+      body.solo-results-centred-step9 .finished-team-card {
+        max-width: 780px !important;
+        width: 100%;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        padding: 22px !important;
+      }
+
+      body.solo-results-centred-step9 .finished-team-card .pitch {
+        width: min(640px, 100%) !important;
+        max-width: 640px !important;
+        min-height: 560px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+
+      body.solo-results-centred-step9 .finished-player-list {
+        width: min(640px, 100%) !important;
+        max-width: 640px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+
+      body.solo-results-centred-step9 .finished-player-row {
+        grid-template-columns: 56px minmax(0, 1fr) 46px !important;
+      }
+
+      @media (max-width: 720px) {
+        body.solo-results-centred-step9 #resultsPanel.finished-results-page {
+          width: min(100vw - 18px, 720px) !important;
+          padding-left: 12px !important;
+          padding-right: 12px !important;
+        }
+
+        body.solo-results-centred-step9 #resultsPanel .finished-hero {
+          max-width: 100%;
+          padding: 16px !important;
+        }
+
+        body.solo-results-centred-step9 #resultsPanel .finished-actions {
+          display: grid !important;
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+
+        body.solo-results-centred-step9 .finished-team-card {
+          padding: 14px !important;
+        }
+
+        body.solo-results-centred-step9 .finished-team-card .pitch {
+          width: 100% !important;
+          min-height: 500px !important;
+        }
+
+        body.solo-results-centred-step9 .finished-player-row {
+          grid-template-columns: 50px minmax(0, 1fr) 42px !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function updateActivePoolNoteStep11() {
+    const range = state?.yearRange;
+    const pill = document.getElementById("activeYearRangePillStep5");
+    if (range && pill) {
+      pill.textContent = `Active player pool: ${range.start} - ${range.end}`;
+    }
+  }
+
+  const previousRenderStep11 = render;
+  render = function (...args) {
+    const result = previousRenderStep11.apply(this, args);
+    injectStep11Styles();
+    updateActivePoolNoteStep11();
+    return result;
+  };
+
+  if (typeof renderResults === "function") {
+    const previousRenderResultsStep11 = renderResults;
+    renderResults = function (...args) {
+      const result = previousRenderResultsStep11.apply(this, args);
+      injectStep11Styles();
+      return result;
+    };
+  }
+
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const previousFinishedStep11 = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function (...args) {
+      const result = previousFinishedStep11.apply(this, args);
+      injectStep11Styles();
+      return result;
+    };
+  }
+
+  injectStep11Styles();
+  updateActivePoolNoteStep11();
+})();
+
+// --- step12 online game UI refresh ---
+// Improves the online in-game screens without changing game logic.
+// Focus: clearer action area, cleaner bid input, smaller tip/helper text, compact room badge and better hierarchy.
+(function () {
+  function injectOnlineRefreshStylesStep12() {
+    if ($("onlineRefreshStylesStep12")) return;
+    const style = document.createElement("style");
+    style.id = "onlineRefreshStylesStep12";
+    style.textContent = `
+      body.online-game-active-step12 #gamePanel.game-grid {
+        max-width: 1320px;
+        width: min(1320px, calc(100vw - 32px));
+        margin-left: auto;
+        margin-right: auto;
+        grid-template-columns: minmax(0, 1.45fr) minmax(360px, .82fr) !important;
+        gap: 22px;
+        align-items: start;
+      }
+
+      body.online-game-active-step12 .draft-card {
+        padding: 22px !important;
+        border: 1px solid rgba(255,255,255,.40);
+        box-shadow: 0 24px 70px rgba(15,23,42,.18);
+      }
+
+      body.online-game-active-step12 .teams-card {
+        padding: 18px !important;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(226,232,240,.95);
+        box-shadow: 0 20px 52px rgba(15,23,42,.12);
+      }
+
+      body.online-game-active-step12 .turn-row {
+        align-items: center;
+        padding: 14px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(239,246,255,.96), rgba(240,253,244,.92));
+        border: 1px solid rgba(191,219,254,.95);
+        margin-bottom: 14px;
+      }
+
+      body.online-game-active-step12 .turn-row h2 {
+        margin: 2px 0 0;
+        font-size: clamp(1.7rem, 3.2vw, 2.7rem);
+        line-height: 1.05;
+      }
+
+      body.online-game-active-step12 .turn-row .eyebrow {
+        font-size: .72rem;
+        letter-spacing: .09em;
+      }
+
+      body.online-game-active-step12 .player-card {
+        min-height: 280px;
+        padding: 24px !important;
+        border-radius: 28px !important;
+      }
+
+      body.online-game-active-step12 .player-card .player-name {
+        font-size: clamp(2rem, 4vw, 3.35rem);
+        line-height: 1.02;
+      }
+
+      body.online-game-active-step12 .player-card .badge-row {
+        margin-top: 12px;
+      }
+
+      body.online-game-active-step12 .player-card .detail-grid {
+        gap: 12px;
+      }
+
+      body.online-game-active-step12 #bidControls.bid-controls {
+        display: grid;
+        gap: 12px;
+      }
+
+      body.online-game-active-step12 #bidControls > .bid-order-card:first-child {
+        padding: 12px 14px !important;
+        border-radius: 18px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+
+      body.online-game-active-step12 .bid-status-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      body.online-game-active-step12 .bid-status-summary strong {
+        font-size: 1rem;
+        color: #0f172a;
+      }
+
+      body.online-game-active-step12 .bid-status-summary span {
+        font-size: .76rem;
+        color: #64748b;
+        font-weight: 850;
+      }
+
+      body.online-game-active-step12 .bid-warning,
+      body.online-game-active-step12 .warning-note,
+      body.online-game-active-step12 .muted,
+      body.online-game-active-step12 .bid-help,
+      body.online-game-active-step12 .turn-lock-note {
+        font-size: .76rem !important;
+        line-height: 1.3 !important;
+      }
+
+      body.online-game-active-step12 .bid-warning,
+      body.online-game-active-step12 .warning-note {
+        padding: 8px 10px !important;
+        margin: 0 !important;
+        border-radius: 12px;
+        opacity: .86;
+      }
+
+      body.online-game-active-step12 #bidInputs {
+        display: grid;
+        gap: 12px;
+      }
+
+      body.online-game-active-step12 #bidInputs > .bid-order-card,
+      body.online-game-active-step12 .live-auction-panel-step2,
+      body.online-game-active-step12 #bidInputs > .bid-order-card:first-child {
+        border-radius: 22px !important;
+        border: 1px solid #dbeafe !important;
+        background: linear-gradient(180deg, #ffffff, #f8fafc) !important;
+        box-shadow: 0 16px 38px rgba(15,23,42,.10);
+        padding: 16px !important;
+      }
+
+      body.online-game-active-step12 #bidInputs > .bid-order-card:first-child .eyebrow,
+      body.online-game-active-step12 .live-auction-panel-step2 .eyebrow {
+        color: #2563eb;
+        font-size: .72rem;
+        letter-spacing: .09em;
+      }
+
+      body.online-game-active-step12 #bidInputs > .bid-order-card:first-child h3,
+      body.online-game-active-step12 .live-auction-panel-step2 h3 {
+        font-size: clamp(1.35rem, 2.8vw, 2rem);
+        margin: 4px 0 6px;
+        color: #0f172a;
+      }
+
+      body.online-game-active-step12 .bid-row {
+        gap: 8px;
+        padding: 10px !important;
+        border-radius: 16px !important;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+
+      body.online-game-active-step12 .bid-row label {
+        font-size: .92rem;
+        font-weight: 950;
+        color: #0f172a;
+      }
+
+      body.online-game-active-step12 input[type="number"]#onlineBlindBidInput,
+      body.online-game-active-step12 input[type="number"]#onlineLiveBidInput,
+      body.online-game-active-step12 .bid-row input[type="number"] {
+        min-height: 54px;
+        border-radius: 16px;
+        font-size: 1.45rem;
+        font-weight: 950;
+        text-align: center;
+        color: #0f172a;
+        border: 2px solid #bfdbfe;
+        background: #ffffff;
+      }
+
+      body.online-game-active-step12 #submitBlindBidBtn,
+      body.online-game-active-step12 #submitLiveBidBtnStep2,
+      body.online-game-active-step12 #passLiveBidBtnStep2 {
+        min-height: 50px;
+        border-radius: 16px;
+        font-size: 1rem;
+        font-weight: 950;
+      }
+
+      body.online-game-active-step12 .live-auction-top-step2 {
+        border-radius: 18px;
+        padding: 13px !important;
+        background: #eff6ff !important;
+      }
+
+      body.online-game-active-step12 .live-highest-step2 {
+        font-size: 1.45rem !important;
+        line-height: 1.1;
+      }
+
+      body.online-game-active-step12 .live-auction-actions-step2 {
+        grid-template-columns: minmax(0, 1fr) minmax(96px, auto) minmax(96px, auto) !important;
+        gap: 10px !important;
+      }
+
+      body.online-game-active-step12 .live-status-row-step2 {
+        padding: 8px 10px !important;
+      }
+
+      body.online-game-active-step12 .live-status-pill-step2,
+      body.online-game-active-step12 .bid-submit-status {
+        font-size: .72rem !important;
+        border-radius: 999px;
+        padding: 5px 8px;
+        font-weight: 950;
+      }
+
+      body.online-game-active-step12 .teams-card .section-title-row h2 {
+        font-size: 1.45rem;
+      }
+
+      body.online-game-active-step12 .teams-card .section-title-row .eyebrow {
+        font-size: .72rem;
+        letter-spacing: .08em;
+      }
+
+      body.online-game-active-step12 .team-card {
+        padding: 13px !important;
+        border-radius: 18px !important;
+      }
+
+      body.online-game-active-step12 .team-card h3 {
+        font-size: 1rem;
+      }
+
+      body.online-game-active-step12 .team-meta,
+      body.online-game-active-step12 .team-card .score {
+        font-size: .76rem;
+      }
+
+      body.online-game-active-step12 .teams-card .pitch {
+        min-height: 330px;
+      }
+
+      .online-room-mini-step12 {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        background: rgba(15,23,42,.88);
+        color: #ffffff;
+        font-size: .72rem;
+        font-weight: 950;
+        letter-spacing: .02em;
+        box-shadow: 0 10px 26px rgba(15,23,42,.18);
+        white-space: nowrap;
+      }
+
+      body.online-game-active-step12 .turn-row .online-room-mini-step12 {
+        margin-left: auto;
+      }
+
+      body.online-game-active-step12 #message.message {
+        font-size: .86rem;
+        font-weight: 850;
+        color: #334155;
+      }
+
+      @media (max-width: 980px) {
+        body.online-game-active-step12 #gamePanel.game-grid {
+          grid-template-columns: 1fr !important;
+          width: min(760px, calc(100vw - 24px));
+        }
+
+        body.online-game-active-step12 .teams-card {
+          order: 2;
+        }
+
+        body.online-game-active-step12 .draft-card {
+          order: 1;
+        }
+
+        body.online-game-active-step12 .live-auction-actions-step2 {
+          grid-template-columns: 1fr !important;
+        }
+      }
+
+      @media (max-width: 640px) {
+        body.online-game-active-step12 .turn-row {
+          grid-template-columns: 1fr;
+        }
+
+        body.online-game-active-step12 .turn-row .online-room-mini-step12 {
+          margin-left: 0;
+          width: fit-content;
+        }
+
+        body.online-game-active-step12 .player-card {
+          min-height: 240px;
+          padding: 18px !important;
+        }
+
+        body.online-game-active-step12 #bidInputs > .bid-order-card,
+        body.online-game-active-step12 .live-auction-panel-step2 {
+          padding: 13px !important;
+        }
+
+        body.online-game-active-step12 input[type="number"]#onlineBlindBidInput,
+        body.online-game-active-step12 input[type="number"]#onlineLiveBidInput,
+        body.online-game-active-step12 .bid-row input[type="number"] {
+          min-height: 50px;
+          font-size: 1.25rem;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function isOnlineGameActiveStep12() {
+    return !!state && !!online.enabled && !ratingsRevealed;
+  }
+
+  function setOnlineBodyClassStep12() {
+    document.body.classList.toggle("online-game-active-step12", isOnlineGameActiveStep12());
+  }
+
+  function addOnlineRoomBadgeStep12() {
+    if (!isOnlineGameActiveStep12()) return;
+    const row = document.querySelector(".draft-card .turn-row");
+    if (!row) return;
+    let badge = $("onlineRoomMiniStep12");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.id = "onlineRoomMiniStep12";
+      badge.className = "online-room-mini-step12";
+      row.appendChild(badge);
+    }
+    badge.textContent = online.roomId ? `Room: ${online.roomId}` : "Online game";
+  }
+
+  function simplifyOnlineLabelsStep12() {
+    if (!isOnlineGameActiveStep12()) return;
+    if (state?.gameMode === "bid") {
+      if (els.turnEyebrow) els.turnEyebrow.textContent = state.onlineBidMode === "live" ? "Live auction" : "Blind bidding";
+      if (els.currentUserLabel) els.currentUserLabel.textContent = currentCandidate ? "Make your bid" : "Online bidding";
+    } else {
+      if (els.turnEyebrow) els.turnEyebrow.textContent = "Online draft";
+    }
+  }
+
+  function refreshOnlineUiStep12() {
+    injectOnlineRefreshStylesStep12();
+    setOnlineBodyClassStep12();
+    addOnlineRoomBadgeStep12();
+    simplifyOnlineLabelsStep12();
+  }
+
+  const previousRenderStep12 = render;
+  render = function (...args) {
+    const result = previousRenderStep12.apply(this, args);
+    refreshOnlineUiStep12();
+    return result;
+  };
+
+  const previousApplyRemoteDataStep12 = applyRemoteData;
+  applyRemoteData = function (...args) {
+    const result = previousApplyRemoteDataStep12.apply(this, args);
+    refreshOnlineUiStep12();
+    return result;
+  };
+
+  const previousRenderOnlineBidControlsStep12 = renderOnlineBidControlsV38;
+  renderOnlineBidControlsV38 = function (...args) {
+    const result = previousRenderOnlineBidControlsStep12.apply(this, args);
+    refreshOnlineUiStep12();
+    return result;
+  };
+
+  const previousResetStep12 = resetGame;
+  resetGame = function (...args) {
+    const result = previousResetStep12.apply(this, args);
+    document.body.classList.remove("online-game-active-step12");
+    const badge = $("onlineRoomMiniStep12");
+    if (badge) badge.remove();
+    return result;
+  };
+
+  injectOnlineRefreshStylesStep12();
+  refreshOnlineUiStep12();
+})();
