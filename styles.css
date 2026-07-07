@@ -437,3 +437,34 @@ select, input[type="text"], input[type="number"] { width: 100%; padding: 13px 14
     text-align: left;
   }
 }
+
+
+.homepage-how-it-works{margin:24px 0;padding:26px;border-radius:24px;background:rgba(255,255,255,.96);border:1px solid rgba(37,99,235,.12);box-shadow:0 12px 30px rgba(15,23,42,.08)}
+.how-header{text-align:center;margin-bottom:20px}.how-header h3{margin:0 0 6px}.how-header p{margin:0;color:#64748b}
+.how-row{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:12px;align-items:center}
+.how-box{text-align:center;padding:18px;background:#f8fafc;border-radius:18px;border:1px solid rgba(37,99,235,.08);height:100%}
+.how-icon{font-size:1.8rem;font-weight:900;color:#2563eb;margin-bottom:8px}
+.how-box h4{margin:0 0 6px}.how-box p{margin:0;color:#64748b;font-size:.92rem;line-height:1.4}
+.how-arrow{font-size:2rem;color:#2563eb;font-weight:900}
+@media(max-width:900px){.how-row{grid-template-columns:1fr}.how-arrow{display:none}}
+
+
+.landing-how-it-works-premium{margin:28px 0;padding:28px;border-radius:28px;background:rgba(255,255,255,.96);box-shadow:0 20px 40px rgba(15,23,42,.12)}
+.landing-how-header{text-align:center;margin-bottom:22px}.landing-how-header p{color:#64748b;margin:6px 0 0}
+.landing-how-grid{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:12px;align-items:center}
+.landing-step{background:#f8fafc;border:1px solid rgba(37,99,235,.08);border-radius:20px;padding:20px;text-align:center;height:100%}
+.landing-step-icon{font-size:2rem;margin-bottom:8px}.landing-step h4{margin:0 0 8px}.landing-step p{margin:0;color:#64748b;line-height:1.45}
+.landing-step-arrow{font-size:2rem;font-weight:900;color:#2563eb}
+@media(max-width:900px){.landing-how-grid{grid-template-columns:1fr}.landing-step-arrow{display:none}}
+
+
+/* Front page How to Play */
+.landing-how-play-inline{margin-top:80px;text-align:center}
+.landing-how-play-inline h3{color:#fff;margin-bottom:14px;font-size: 1.75rem;font-weight: 700}
+.landing-how-inline-row{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:12px;align-items:center}
+.inline-step{padding:8px 6px;color:#fff}
+.inline-step span{display:block;font-size:1.8rem;margin-bottom:6px}
+.inline-step strong{display:block;margin-bottom:4px}
+.inline-step small{display:block;color:#cbd5e1;font-size:.9rem}
+.inline-arrow{color:#60a5fa;font-size:1.8rem;font-weight:900}
+@media(max-width:900px){.landing-how-inline-row{grid-template-columns:1fr}.inline-arrow{display:none}}

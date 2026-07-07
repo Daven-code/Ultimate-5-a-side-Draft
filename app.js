@@ -495,7 +495,7 @@ function injectEntryPanel() {
 
   entry.innerHTML = `
     <div class="game-entry-heading">
-      <h2>Choose how to play</h2>
+      <h2>Choose Game Mode</h2>
       <p>Start a quick local game, or create/join an online room with friends.</p>
     </div>
 
@@ -528,6 +528,19 @@ function injectEntryPanel() {
 
         <button id="startLocalGameBtn" type="button" class="btn btn-primary">Set up local game</button>
       </article>
+    </div>
+
+    <div class="landing-how-play-inline">
+      <h3>⚽ How to Play</h3>
+      <div class="landing-how-inline-row">
+        <div class="inline-step"><span>🎮</span><strong>Choose Mode</strong><small>Solo Challenge or Online Play</small></div>
+        <div class="inline-arrow">→</div>
+        <div class="inline-step"><span>👤</span><strong>Pick Players</strong><small>Accept, decline or bid</small></div>
+        <div class="inline-arrow">→</div>
+        <div class="inline-step"><span>⚽</span><strong>Build Team</strong><small>Fill all 5 positions</small></div>
+        <div class="inline-arrow">→</div>
+        <div class="inline-step"><span>🏆</span><strong>Reveal Ratings</strong><small>Highest score wins</small></div>
+      </div>
     </div>
   `;
 
