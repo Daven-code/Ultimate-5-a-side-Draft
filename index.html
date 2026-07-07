@@ -18,7 +18,10 @@
       <p class="header-subtitle">Build your ultimate five-a-side team.</p>
     </div>
     </div>
-    <button id="resetBtn" class="btn btn-secondary" style="display: none;">Reset game</button>
+    <div class="header-actions">
+      <button id="leaderboardBtn" class="btn btn-primary" type="button">🏆 Leaderboard</button>
+      <button id="resetBtn" class="btn btn-secondary" style="display: none;">Reset game</button>
+    </div>
   </header>
 
   <main class="app-shell">
@@ -131,6 +134,27 @@
       </div>
     </section>
 
+
+    <section id="leaderboardPanel" class="card results-card leaderboard-panel hidden">
+      <div class="section-title-row">
+        <div>
+          <p class="eyebrow">Global rankings</p>
+          <h2>🏆 Leaderboards</h2>
+        </div>
+        <button id="leaderboardBackBtn" class="btn btn-secondary" type="button">Back to game</button>
+      </div>
+
+      <div class="leaderboard-tabs" aria-label="Leaderboard filters">
+        <button type="button" class="leaderboard-tab active" data-leaderboard-filter="all">All Time</button>
+        <button type="button" class="leaderboard-tab" data-leaderboard-filter="Solo Challenge">Solo Challenge</button>
+        <button type="button" class="leaderboard-tab" data-leaderboard-filter="Ultimate Draft">Ultimate Draft</button>
+        <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Blind Bidding">Blind Bidding</button>
+        <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Live Auction">Live Auction</button>
+      </div>
+
+      <div id="leaderboardList" class="leaderboard-list">Loading leaderboard...</div>
+    </section>
+
     <section id="resultsPanel" class="card results-card hidden">
       <div class="section-title-row">
         <div>
@@ -153,6 +177,6 @@
     <p>Player names, club names, ratings and related data are used for informational, descriptive and gameplay purposes only. No official logos, crests, player images, likenesses or other official branding are used. All trademarks, trade names, player-related rights, ratings, data and other intellectual property rights remain the property of their respective owners.</p>
   </footer>
 
-  <script src="app.js?v=64-logo"></script>
+  <script src="app.js?v=66-leaderboard-page"></script>
 </body>
 </html>

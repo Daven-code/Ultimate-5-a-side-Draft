@@ -7833,3 +7833,132 @@ init();
     };
   }
 })();
+
+
+// --- step20 dedicated leaderboard page and tabs ---
+// Adds the header Leaderboard button, a dedicated leaderboard page, and tabs for game modes.
+(function () {
+  let activeLeaderboardFilterStep20 = "all";
+
+  function escapeHtmlStep20(value) {
+    return String(value ?? "").replace(/[&<>'"]/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      '"': "&quot;"
+    }[char]));
+  }
+
+  function normaliseModeStep20(mode) {
+    return String(mode || "Unknown").trim() || "Unknown";
+  }
+
+  function hideMainPanelsStep20() {
+    show($("gameEntryPanel"), false);
+    show(els?.setupPanel, false);
+    show(els?.gamePanel, false);
+    show(els?.resultsPanel, false);
+  }
+
+  async function loadLeaderboardStep20(filter = activeLeaderboardFilterStep20) {
+    const list = $("leaderboardList");
+    if (!list) return;
+
+    list.innerHTML = `<div class="leaderboard-empty">Loading leaderboard...</div>`;
+
+    try {
+      await ensureFirebase();
+      const snapshot = await firebase.database().ref("leaderboard").once("value");
+
+      if (!snapshot.exists()) {
+        list.innerHTML = `<div class="leaderboard-empty">No scores submitted yet.</div>`;
+        return;
+      }
+
+      let entries = Object.values(snapshot.val() || {});
+
+      entries = entries
+        .filter(entry => Number.isFinite(Number(entry.score)))
+        .map(entry => ({
+          username: String(entry.username || "Player").trim() || "Player",
+          score: Number(entry.score || 0),
+          gameMode: normaliseModeStep20(entry.gameMode),
+          timestamp: Number(entry.timestamp || 0)
+        }));
+
+      if (filter && filter !== "all") {
+        entries = entries.filter(entry => entry.gameMode === filter);
+      }
+
+      entries.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return b.timestamp - a.timestamp;
+      });
+
+      const top20 = entries.slice(0, 20);
+
+      if (!top20.length) {
+        list.innerHTML = `<div class="leaderboard-empty">No scores yet for this leaderboard.</div>`;
+        return;
+      }
+
+      list.innerHTML = top20.map((entry, index) => `
+        <div class="leaderboard-row">
+          <span class="leaderboard-rank">#${index + 1}</span>
+          <span class="leaderboard-name">${escapeHtmlStep20(entry.username)}</span>
+          <span class="leaderboard-score">${entry.score}</span>
+          <span class="leaderboard-mode">${escapeHtmlStep20(entry.gameMode)}</span>
+        </div>
+      `).join("");
+    } catch (error) {
+      list.innerHTML = `<div class="leaderboard-error">Could not load leaderboard. ${escapeHtmlStep20(error.message || error)}</div>`;
+    }
+  }
+
+  async function openLeaderboardStep20() {
+    hideMainPanelsStep20();
+    show($("leaderboardPanel"), true);
+    setActiveLeaderboardTabStep20(activeLeaderboardFilterStep20);
+    await loadLeaderboardStep20(activeLeaderboardFilterStep20);
+    setTimeout(() => $("leaderboardPanel")?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
+  }
+
+  function closeLeaderboardStep20() {
+    show($("leaderboardPanel"), false);
+    if (state) {
+      show(els?.gamePanel, true);
+      show(els?.resultsPanel, !!ratingsRevealed);
+    } else {
+      show($("gameEntryPanel"), true);
+      show(els?.setupPanel, false);
+    }
+  }
+
+  function setActiveLeaderboardTabStep20(filter) {
+    activeLeaderboardFilterStep20 = filter || "all";
+    document.querySelectorAll(".leaderboard-tab").forEach(tab => {
+      tab.classList.toggle("active", tab.dataset.leaderboardFilter === activeLeaderboardFilterStep20);
+    });
+  }
+
+  function wireLeaderboardPageStep20() {
+    $("leaderboardBtn")?.addEventListener("click", safe(openLeaderboardStep20));
+    $("leaderboardBackBtn")?.addEventListener("click", closeLeaderboardStep20);
+
+    document.querySelectorAll(".leaderboard-tab").forEach(tab => {
+      tab.addEventListener("click", safe(async () => {
+        setActiveLeaderboardTabStep20(tab.dataset.leaderboardFilter || "all");
+        await loadLeaderboardStep20(activeLeaderboardFilterStep20);
+      }));
+    });
+  }
+
+  const previousResetGameStep20 = resetGame;
+  resetGame = function (...args) {
+    show($("leaderboardPanel"), false);
+    return previousResetGameStep20.apply(this, args);
+  };
+
+  wireLeaderboardPageStep20();
+})();
