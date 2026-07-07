@@ -530,6 +530,43 @@ function injectEntryPanel() {
       </article>
     </div>
 
+
+
+    <div class="popular-challenges-v2">
+      <h3>🔥 Popular Challenges</h3>
+      <div class="challenge-grid-v2">
+
+        <button class="challenge-card-v2 active-challenge" data-challenge="ultimate">
+          <span class="challenge-badge">LIVE</span>
+          <h4>⭐ Ultimate Mode</h4>
+          <p>Full player database. No year filters. No league filters.</p>
+          <span class="challenge-action">Play Now →</span>
+        </button>
+
+        <button class="challenge-card-v2 active-challenge" data-challenge="easy">
+          <span class="challenge-badge">LIVE</span>
+          <h4>🎯 Easy Challenge</h4>
+          <p>Top players only. Keep year selection but use a simplified player pool.</p>
+          <span class="challenge-action">Play Now →</span>
+        </button>
+
+        <div class="challenge-card-v2 coming-soon">
+          <span class="challenge-badge coming">COMING SOON</span>
+          <h4>🌍 Monthly Challenges</h4>
+          <p>July 2026: World Cup 2026</p>
+          <small>Future archive: August, September, October...</small>
+        </div>
+
+        <div class="challenge-card-v2 coming-soon">
+          <span class="challenge-badge coming">COMING SOON</span>
+          <h4>⏪ Nostalgia Challenge</h4>
+          <p>Legendary players from 1994–2004.</p>
+        </div>
+
+      </div>
+    </div>
+
+
     <div class="landing-how-play-inline">
       <h3>⚽ How to Play</h3>
       <div class="landing-how-inline-row">
@@ -542,6 +579,29 @@ function injectEntryPanel() {
         <div class="inline-step"><span>🏆</span><strong>Reveal Ratings</strong><small>Highest score wins</small></div>
       </div>
     </div>
+
+    <div class="popular-challenges">
+      <h3>🔥 Popular Challenges</h3>
+      <div class="challenge-grid">
+        <div class="challenge-card">
+          <h4>Ultimate Mode</h4>
+          <p>Entire player database. No year filters. No league filters. Pure Ultimate 5-a-side.</p>
+        </div>
+        <div class="challenge-card">
+          <h4>Monthly Challenge</h4>
+          <p><strong>World Cup 2026</strong><br>World Cup player pool. Monthly leaderboard under Challenges.</p>
+        </div>
+        <div class="challenge-card">
+          <h4>Easy Challenge</h4>
+          <p>Top players only. Great for new players and quick games.</p>
+        </div>
+        <div class="challenge-card challenge-coming-soon">
+          <h4>Nostalgia Challenge</h4>
+          <p>Coming soon: legendary players from 1994–2004.</p>
+        </div>
+      </div>
+    </div>
+
   `;
 
   shell.insertBefore(entry, els.setupPanel || shell.firstChild);
@@ -7975,3 +8035,15 @@ init();
 
   wireLeaderboardPageStep20();
 })();
+
+
+window.challengePreset = 'standard';
+
+document.addEventListener('click', function(e){
+ const card=e.target.closest('.active-challenge');
+ if(!card) return;
+ window.challengePreset=card.dataset.challenge;
+ alert(card.dataset.challenge==='ultimate' ?
+ 'Ultimate Mode selected. Start a Solo or Online game.' :
+ 'Easy Challenge selected. Start a Solo or Online game.');
+});
