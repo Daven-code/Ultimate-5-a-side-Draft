@@ -530,6 +530,43 @@ function injectEntryPanel() {
       </article>
     </div>
 
+
+
+    <div class="popular-challenges-v2">
+      <h3>🔥 Popular Challenges</h3>
+      <div class="challenge-grid-v2">
+
+        <button class="challenge-card-v2 active-challenge" data-challenge="ultimate">
+          <span class="challenge-badge">LIVE</span>
+          <h4>⭐ Ultimate Solo Mode</h4>
+          <p>Full player database. No year filters. No league filters.</p>
+          <span class="challenge-action">Play Now →</span>
+        </button>
+
+        <button class="challenge-card-v2 active-challenge" data-challenge="easy">
+          <span class="challenge-badge">LIVE</span>
+          <h4>🎯 Easy Solo Challenge</h4>
+          <p>Top players only. Keep year selection but use a simplified player pool.</p>
+          <span class="challenge-action">Play Now →</span>
+        </button>
+
+        <div class="challenge-card-v2 coming-soon">
+          <span class="challenge-badge coming">COMING SOON</span>
+          <h4>🌍 Monthly Challenges</h4>
+          <p>July 2026: World Cup 2026</p>
+          <small>Future archive: August, September, October...</small>
+        </div>
+
+        <div class="challenge-card-v2 coming-soon">
+          <span class="challenge-badge coming">COMING SOON</span>
+          <h4>⏪ Nostalgia Challenge</h4>
+          <p>Legendary players from 1994–2004.</p>
+        </div>
+
+      </div>
+    </div>
+
+
     <div class="landing-how-play-inline">
       <h3>⚽ How to Play</h3>
       <div class="landing-how-inline-row">
@@ -542,6 +579,8 @@ function injectEntryPanel() {
         <div class="inline-step"><span>🏆</span><strong>Reveal Ratings</strong><small>Highest score wins</small></div>
       </div>
     </div>
+
+
   `;
 
   shell.insertBefore(entry, els.setupPanel || shell.firstChild);
@@ -5261,6 +5300,7 @@ init();
 
   const previousResetGameStep3 = resetGame;
   resetGame = function (...args) {
+    window.challengePreset = "standard";
     const result = previousResetGameStep3.apply(this, args);
     hideResetButtonStep3();
     return result;
@@ -5310,7 +5350,7 @@ init();
 
   function filteredCountTextStep4(range) {
     const count = filteredPlayersForRangeStep4(range).length;
-    return `${count} player${count === 1 ? "" : "s"} in pool`;
+    
   }
 
   function setSliderVisualStep4(prefix, range) {
@@ -5342,7 +5382,7 @@ init();
         <div class="year-slicer-head-step4">
           <div>
             <label>${escapeHtml(title)}</label>
-            <p class="muted year-slicer-help-step4">Choose which player years are included before the game starts.</p>
+            <p class="muted year-slicer-help-step4">Choose the years which you want the players to be included from.</p>
           </div>
           <div class="year-slicer-summary-step4">
             <strong id="${prefix}YearLabelStep4">${r.start} - ${r.end}</strong>
@@ -5659,8 +5699,72 @@ init();
   }
 
   function filteredPlayersStep5() {
-    return (Array.isArray(players) ? players : []).filter(playerInActiveYearRangeStep5);
-  }
+
+    const filtered =
+        (Array.isArray(players) ? players : [])
+            .filter(playerInActiveYearRangeStep5);
+
+    // Ultimate Solo Mode = all players
+    if (window.challengePreset === "ultimate") {
+        return filtered;
+    }
+
+    // Easy Solo Challenge
+    // Top 5 rated players per position per year
+    if (window.challengePreset === "easy") {
+
+        const grouped = {};
+
+        filtered.forEach(player => {
+
+            const key =
+                `${player.year}_${player.mainPosition}`;
+
+            if (!grouped[key]) {
+                grouped[key] = [];
+            }
+
+            grouped[key].push(player);
+
+        });
+
+        if (window.challengePreset === "easy") {
+
+    const grouped = {};
+
+    filtered.forEach(player => {
+
+        const key =
+            `${player.year}_${player.mainPosition}`;
+
+        if (!grouped[key]) {
+            grouped[key] = [];
+        }
+
+        grouped[key].push(player);
+
+    });
+
+    return Object.entries(grouped)
+        .flatMap(([key, group]) => {
+
+            const position =
+                key.split("_")[1];
+
+            const limit =
+                position === "MID" ? 10 : 5;
+
+            return group
+                .sort((a, b) => b.rating - a.rating)
+                .slice(0, limit);
+
+        });
+}
+    }
+
+    // Standard Solo Challenge
+    return filtered;
+}
 
   async function withFilteredPlayersAsyncStep5(fn) {
     const originalPlayers = players;
@@ -5805,9 +5909,14 @@ init();
     const heading = localCard.querySelector("h3");
     const copy = localCard.querySelector("p");
     const button = $("startLocalGameBtn");
-    if (heading) heading.textContent = "Solo Challenge";
+    if (heading)
+    heading.textContent =
+    "Solo Challenge";
+
+    if (button)
+    button.textContent =
+    "Set up Solo Challenge";
     if (copy) copy.textContent = "Play a quick single-player draft on this device. Pick, accept or decline players and build your best 5-a-side team.";
-    if (button) button.textContent = "Set up Solo Challenge";
   }
 
   function configureSoloSetupStep7() {
@@ -5817,9 +5926,184 @@ init();
     const heroEyebrow = document.querySelector("#setupPanel .setup-copy .eyebrow");
     const heroTitle = document.querySelector("#setupPanel .setup-copy h2");
     const heroLead = document.querySelector("#setupPanel .setup-copy .setup-lead");
-    if (heroEyebrow) heroEyebrow.textContent = "Solo Challenge";
-    if (heroTitle) heroTitle.textContent = "Build your ultimate 5-a-side team";
-    if (heroLead) heroLead.textContent = "Choose your year range, then draft a single-player team using the normal pick, accept and decline rules.";
+    if (window.challengePreset === "ultimate") {
+
+    if (heroEyebrow)
+        heroEyebrow.textContent =
+            "⭐ Ultimate Solo Mode";
+
+    if (heroTitle)
+        heroTitle.textContent =
+            "Ultimate Solo Mode";
+
+    if (heroLead)
+        heroLead.textContent =
+            "Full player database unlocked. Every year is included, and the year range filter is ignored.";
+
+    if (els.startBtn)
+        els.startBtn.textContent =
+            "Start Ultimate Solo Mode";
+
+    setTimeout(() => {
+
+    const yearCard =
+        document.getElementById("localYearSlicerHolderStep4");
+
+    const sliders =
+        document.querySelectorAll('input[id*="Year"][type="range"]');
+
+    if (yearCard) {
+        yearCard.style.opacity = "0.4";
+        yearCard.style.pointerEvents = "none";
+    }
+
+    sliders.forEach(slider => {
+        slider.disabled = true;
+    });
+
+    const label =
+        document.querySelector("#localYearSlicerHolderStep4 label");
+
+    if (label) {
+        label.textContent =
+            "Player pool locked to all years";
+    }
+
+    const values =
+    document.querySelector("#localYearSlicerHolderStep4 .year-slicer-values-step4");
+
+    if (values) {
+        values.innerHTML =
+            "<span style='width:100%;text-align:center;'>All years active</span>";
+    }
+
+    const help =
+    document.querySelector("#localYearSlicerHolderStep4 .year-slicer-help-step4");
+
+    if (help) {
+        help.textContent =
+            "";
+    }
+
+    const soloIntro =
+    document.getElementById("soloSetupIntroStep7");
+
+    if (soloIntro) {
+        soloIntro.style.display = "none";
+    }
+
+}, 0);
+
+} else if (window.challengePreset === "easy") {
+
+    if (heroEyebrow)
+        heroEyebrow.textContent =
+            "🎯 Easy Solo Challenge";
+
+    if (heroTitle)
+        heroTitle.textContent =
+            "Easy Solo Challenge";
+
+    if (heroLead)
+        heroLead.textContent =
+            "Only the elite players are available. Choose a year range and build your dream team.";
+
+    if (els.startBtn)
+        els.startBtn.textContent =
+            "Start Easy Solo Challenge";
+
+    setTimeout(() => {
+
+    const yearCard =
+        document.getElementById("localYearSlicerHolderStep4");
+
+    const sliders =
+        document.querySelectorAll('input[id*="Year"][type="range"]');
+
+    if (yearCard) {
+        yearCard.style.opacity = "";
+        yearCard.style.pointerEvents = "";
+    }
+
+    sliders.forEach(slider => {
+        slider.disabled = false;
+    });
+
+    const values =
+    document.querySelector("#localYearSlicerHolderStep4 .year-slicer-values-step4");
+
+    if (values) {
+        values.innerHTML = `
+            <span>From <strong id="localYearStartValueStep4">2005</strong></span>
+            <span>To <strong id="localYearEndValueStep4">2026</strong></span>
+        `;
+    }
+
+    const soloIntro =
+    document.getElementById("soloSetupIntroStep7");
+
+    if (soloIntro) {
+        soloIntro.style.display = "";
+    }
+
+}, 0);
+
+} else {
+
+    if (heroEyebrow)
+        heroEyebrow.textContent =
+            "Solo Challenge";
+
+    if (heroTitle)
+        heroTitle.textContent =
+            "Choose your 5-a-side challenge";
+
+    if (heroLead)
+        heroLead.textContent =
+            "Pick a game mode, add your players, then build the strongest five-a-side team from the top-rated players across the years.";
+
+    if (els.startBtn)
+        els.startBtn.textContent =
+            "Start Solo Challenge";
+
+    setTimeout(() => {
+
+    const yearCard =
+        document.getElementById("localYearSlicerHolderStep4");
+
+    const sliders =
+        document.querySelectorAll('input[id*="Year"][type="range"]');
+
+    if (yearCard) {
+        yearCard.style.opacity = "";
+        yearCard.style.pointerEvents = "";
+    }
+
+    sliders.forEach(slider => {
+        slider.disabled = false;
+    });
+
+    const values =
+    document.querySelector("#localYearSlicerHolderStep4 .year-slicer-values-step4");
+
+    if (values) {
+        values.innerHTML = `
+            <span>From <strong id="localYearStartValueStep4">2005</strong></span>
+            <span>To <strong id="localYearEndValueStep4">2026</strong></span>
+        `;
+    }
+
+    const soloIntro =
+    document.getElementById("soloSetupIntroStep7");
+
+    if (soloIntro) {
+        soloIntro.style.display = "";
+    }
+
+}, 0);
+
+}
+
 
     const setupPanelCard = document.querySelector(".setup-panel-card");
     if (setupPanelCard) {
@@ -5832,10 +6116,28 @@ init();
         if (firstLabel) setupPanelCard.insertBefore(soloIntro, firstLabel);
         else setupPanelCard.prepend(soloIntro);
       }
-      soloIntro.innerHTML = `
-        <h3>Solo Challenge</h3>
-        <p>Single-player draft mode. Complete a GK, DEF, MID, MID and FWD, then reveal your final rating.</p>
-      `;
+      if (window.challengePreset === "ultimate") {
+
+  soloIntro.innerHTML = `
+    <h3>Ultimate Solo Mode</h3>
+    <p>Full player database unlocked. All years are included and the year range filter is ignored.</p>
+  `;
+
+} else if (window.challengePreset === "easy") {
+
+  soloIntro.innerHTML = `
+    <h3>Easy Solo Challenge</h3>
+    <p>Elite player pool. Choose a year range and build your dream 5-a-side team.</p>
+  `;
+
+} else {
+
+  soloIntro.innerHTML = `
+    <h3>Solo Challenge</h3>
+    <p>Single-player draft mode. Complete a GK, DEF, MID, MID and FWD, then reveal your final rating.</p>
+  `;
+
+}
     }
 
     // Hide local-only multi-user / local-bidding controls.
@@ -5850,12 +6152,35 @@ init();
     if (els.excludeDeclines) els.excludeDeclines.checked = true;
 
     if (els.gameModeDescription) {
-      els.gameModeDescription.textContent = "Solo Challenge: accept or decline random players to complete your 5-a-side team.";
-    }
-    if (els.startBtn) {
-      els.startBtn.textContent = "Start Solo Challenge";
-    }
+
+  if (window.challengePreset === "ultimate") {
+    els.gameModeDescription.textContent =
+      "Ultimate Solo Mode: the full player database is unlocked. The year range filter is ignored.";
+  } else if (window.challengePreset === "easy") {
+    els.gameModeDescription.textContent =
+      "Easy Solo Challenge: only the top rated players in each position from every selected year are available.";
+  } else {
+    els.gameModeDescription.textContent =
+      "Solo Challenge: accept or decline random players to complete your 5-a-side team.";
   }
+
+}
+
+if (els.startBtn) {
+
+  if (window.challengePreset === "ultimate") {
+    els.startBtn.textContent =
+      "Start Ultimate Solo Mode";
+  } else if (window.challengePreset === "easy") {
+    els.startBtn.textContent =
+      "Start Easy Solo Challenge";
+  } else {
+    els.startBtn.textContent =
+      "Start Solo Challenge";
+  }
+
+}
+}
 
   function startSoloChallengeStep7() {
     selectedGameMode = "draft";
@@ -6554,7 +6879,19 @@ init();
   function updateActivePoolNoteStep11() {
     const range = state?.yearRange;
     const pill = document.getElementById("activeYearRangePillStep5");
-    if (range && pill) {
+    if (!pill) return;
+
+    if (window.challengePreset === "ultimate") {
+      pill.textContent = "Active player pool: All years (2005-2026)";
+      return;
+    }
+
+    if (window.challengePreset === "easy") {
+      pill.textContent = "Active player pool: Elite players only";
+      return;
+    }
+
+    if (range) {
       pill.textContent = `Active player pool: ${range.start} - ${range.end}`;
     }
   }
@@ -7726,8 +8063,19 @@ init();
 (function () {
   function leaderboardGameModeLabelStep19() {
     if (!state) return "Unknown";
-    if (!online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1) {
-      return "Solo Challenge";
+    if (!online.enabled &&
+    state.gameMode === "draft" &&
+    Number(state.userCount || 0) === 1) {
+
+    if (window.challengePreset === "ultimate") {
+        return "Ultimate Solo Mode";
+    }
+
+    if (window.challengePreset === "easy") {
+        return "Easy Solo Challenge";
+    }
+
+    return "Solo Challenge";
     }
     if (online.enabled && state.gameMode === "draft") {
       return "Online Ultimate Draft";
@@ -7852,6 +8200,7 @@ init();
 // Adds the header Leaderboard button, a dedicated leaderboard page, and tabs for game modes.
 (function () {
   let activeLeaderboardFilterStep20 = "all";
+  let activeSoloLeaderboardFilterStep20 = "solo";
 
   function escapeHtmlStep20(value) {
     return String(value ?? "").replace(/[&<>'"]/g, char => ({
@@ -7901,7 +8250,22 @@ init();
         }));
 
       if (filter && filter !== "all") {
-        entries = entries.filter(entry => entry.gameMode === filter);
+
+        if (filter === "solo") {
+
+          entries = entries.filter(entry =>
+            entry.gameMode === "Solo Challenge" ||
+            entry.gameMode === "Ultimate Solo Mode" ||
+            entry.gameMode === "Easy Solo Challenge"
+          );
+
+        } else {
+
+          entries = entries.filter(entry =>
+            entry.gameMode === filter
+          );
+
+        }
       }
 
       entries.sort((a, b) => {
@@ -7924,6 +8288,7 @@ init();
           <span class="leaderboard-mode">${escapeHtmlStep20(entry.gameMode)}</span>
         </div>
       `).join("");
+
     } catch (error) {
       list.innerHTML = `<div class="leaderboard-error">Could not load leaderboard. ${escapeHtmlStep20(error.message || error)}</div>`;
     }
@@ -7932,13 +8297,22 @@ init();
   async function openLeaderboardStep20() {
     hideMainPanelsStep20();
     show($("leaderboardPanel"), true);
+
     setActiveLeaderboardTabStep20(activeLeaderboardFilterStep20);
-    await loadLeaderboardStep20(activeLeaderboardFilterStep20);
+
+    if (activeLeaderboardFilterStep20 === "solo") {
+      setActiveSoloLeaderboardTabStep20(activeSoloLeaderboardFilterStep20);
+      await loadLeaderboardStep20(activeSoloLeaderboardFilterStep20);
+    } else {
+      await loadLeaderboardStep20(activeLeaderboardFilterStep20);
+    }
+
     setTimeout(() => $("leaderboardPanel")?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
   }
 
   function closeLeaderboardStep20() {
     show($("leaderboardPanel"), false);
+
     if (state) {
       show(els?.gamePanel, true);
       show(els?.resultsPanel, !!ratingsRevealed);
@@ -7950,8 +8324,33 @@ init();
 
   function setActiveLeaderboardTabStep20(filter) {
     activeLeaderboardFilterStep20 = filter || "all";
-    document.querySelectorAll(".leaderboard-tab").forEach(tab => {
-      tab.classList.toggle("active", tab.dataset.leaderboardFilter === activeLeaderboardFilterStep20);
+
+    document.querySelectorAll(".leaderboard-tab[data-leaderboard-filter]").forEach(tab => {
+      tab.classList.toggle(
+        "active",
+        tab.dataset.leaderboardFilter === activeLeaderboardFilterStep20
+      );
+    });
+
+    const soloSubTabs =
+      document.getElementById("soloLeaderboardSubTabs");
+
+    if (soloSubTabs) {
+      soloSubTabs.classList.toggle(
+        "hidden",
+        activeLeaderboardFilterStep20 !== "solo"
+      );
+    }
+  }
+
+  function setActiveSoloLeaderboardTabStep20(filter) {
+    activeSoloLeaderboardFilterStep20 = filter || "solo";
+
+    document.querySelectorAll(".solo-sub-tab").forEach(tab => {
+      tab.classList.toggle(
+        "active",
+        tab.dataset.soloLeaderboardFilter === activeSoloLeaderboardFilterStep20
+      );
     });
   }
 
@@ -7959,19 +8358,83 @@ init();
     $("leaderboardBtn")?.addEventListener("click", safe(openLeaderboardStep20));
     $("leaderboardBackBtn")?.addEventListener("click", closeLeaderboardStep20);
 
-    document.querySelectorAll(".leaderboard-tab").forEach(tab => {
+    document.querySelectorAll(".leaderboard-tab[data-leaderboard-filter]").forEach(tab => {
       tab.addEventListener("click", safe(async () => {
-        setActiveLeaderboardTabStep20(tab.dataset.leaderboardFilter || "all");
-        await loadLeaderboardStep20(activeLeaderboardFilterStep20);
+        const filter =
+          tab.dataset.leaderboardFilter || "all";
+
+        setActiveLeaderboardTabStep20(filter);
+
+        if (filter === "solo") {
+          activeSoloLeaderboardFilterStep20 = "solo";
+          setActiveSoloLeaderboardTabStep20("solo");
+          await loadLeaderboardStep20("solo");
+        } else {
+          await loadLeaderboardStep20(filter);
+        }
+      }));
+    });
+
+    document.querySelectorAll(".solo-sub-tab").forEach(tab => {
+      tab.addEventListener("click", safe(async () => {
+        const filter =
+          tab.dataset.soloLeaderboardFilter || "solo";
+
+        activeSoloLeaderboardFilterStep20 = filter;
+        setActiveSoloLeaderboardTabStep20(filter);
+        await loadLeaderboardStep20(filter);
       }));
     });
   }
 
   const previousResetGameStep20 = resetGame;
   resetGame = function (...args) {
+    window.challengePreset = "standard";
+    console.log("Challenge reset");
     show($("leaderboardPanel"), false);
     return previousResetGameStep20.apply(this, args);
   };
 
   wireLeaderboardPageStep20();
 })();
+
+document.addEventListener('click', function(e){
+
+    if (e.target.closest('#resetBtn')) {
+
+        window.challengePreset = "standard";
+
+        console.log(
+            "Challenge reset to standard"
+        );
+    }
+
+}, true);
+
+window.challengePreset = 'standard';
+
+document.addEventListener('click', function(e){
+
+    const card = e.target.closest('.active-challenge');
+
+    if (!card) return;
+
+    window.challengePreset =
+        card.dataset.challenge;
+
+    console.log(
+        "Selected:",
+        window.challengePreset
+    );
+
+    const localBtn =
+        document.getElementById(
+            'startLocalGameBtn'
+        );
+
+    if (localBtn) {
+        localBtn.click();
+    }
+
+});
+
