@@ -1,0 +1,10 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Remotion render output
+out/
+
+# Final exported videos (kept locally)
+Renders/
