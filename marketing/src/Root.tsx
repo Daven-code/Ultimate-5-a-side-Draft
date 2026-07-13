@@ -5,6 +5,7 @@ import { Logo, myCompSchema2 } from "./HelloWorld/Logo";
 
 // Main trailer (Version 3)
 import { LaunchTrailer } from "./videos/LaunchTrailer";
+import { LaunchTrailerPortrait } from "./videos/LaunchTrailerPortrait";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -61,6 +62,15 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1920}
         height={1080}
+      />
+
+      <Composition
+        id="LaunchTrailerPortrait"
+        component={LaunchTrailerPortrait}
+        durationInFrames={600}
+        fps={30}
+        width={1080}
+        height={1920}
       />
     </>
   );

@@ -1,66 +1,188 @@
-import React from "react";
+/******************************************************************************
+ * PlayerCard.tsx
+ * =============================================================================
+ *
+ * PURPOSE
+ * -------
+ * Premium football card used throughout the trailer.
+ *
+ * DESIGN
+ * ------
+ * • Blue gradient
+ * • Glass effect
+ * • Gold rating
+ * • Player name
+ * • Position badge
+ * • Blue glow
+ *
+ ******************************************************************************/
 
-interface Props {
-  overall: number;
+import React from "react";
+import {
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+
+interface PlayerCardProps {
+  player: string;
+  rating: number;
   position: string;
 }
 
-export const PlayerCard: React.FC<Props> = ({
-  overall,
+export const PlayerCard: React.FC<PlayerCardProps> = ({
+  player,
+  rating,
   position,
 }) => {
+
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+
+  const scale = spring({
+    fps,
+    frame,
+    config: {
+      damping: 11,
+      stiffness: 140,
+    },
+  });
+
   return (
+
     <div
       style={{
-        width: 180,
-        height: 250,
+        width: 225,
+        height: 310,
 
-        borderRadius: 20,
+        borderRadius: 22,
 
-        background:
-          "linear-gradient(180deg,#f8fafc,#dbeafe)",
-
-        border: "3px solid rgba(255,255,255,.4)",
-
-        boxShadow:
-          "0 15px 40px rgba(0,0,0,.35)",
+        overflow: "hidden",
 
         display: "flex",
-
         flexDirection: "column",
-
         justifyContent: "space-between",
 
         padding: 18,
+
+        color: "white",
+
+        transform: `scale(${0.88 + scale * 0.12})`,
+
+        background:
+          "linear-gradient(180deg,#60A5FA 0%,#2563EB 28%,#1E3A8A 70%,#172554 100%)",
+
+        border: "2px solid rgba(191,219,254,.65)",
+
+        boxShadow:
+          "0 0 35px rgba(59,130,246,.35), 0 18px 40px rgba(0,0,0,.45)",
+
+        backdropFilter: "blur(6px)",
+
+        fontFamily: "Bebas Neue",
       }}
     >
+
+      {/* --------------------------------------------------
+          Top Row
+      --------------------------------------------------- */}
+
       <div
         style={{
-          fontSize: 42,
-          fontWeight: 900,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        {overall}
+
+        <div
+          style={{
+            fontSize: 34,
+            letterSpacing: 2,
+          }}
+        >
+          {position}
+        </div>
+
+        <div
+          style={{
+            fontSize: 26,
+            opacity: .65,
+          }}
+        >
+          ★★★★★
+        </div>
+
       </div>
+
+      {/* --------------------------------------------------
+          Player Name
+      --------------------------------------------------- */}
+
+      <div
+        style={{
+          flex: 1,
+
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+
+          textAlign: "center",
+
+          fontSize: 30,
+
+          lineHeight: 1.15,
+
+          padding: "0 10px",
+
+          letterSpacing: 1,
+        }}
+      >
+        {player}
+      </div>
+
+      {/* --------------------------------------------------
+          Rating
+      --------------------------------------------------- */}
 
       <div
         style={{
           textAlign: "center",
-          fontSize: 24,
-          color: "#555",
+
+          fontSize: 82,
+
+          color: "#FACC15",
+
+          textShadow:
+            "0 0 24px rgba(250,204,21,.55)",
+
+          lineHeight: 1,
         }}
       >
-        ★★★★★
+        {rating}
       </div>
+
+      {/* --------------------------------------------------
+          Accent Line
+      --------------------------------------------------- */}
 
       <div
         style={{
-          textAlign: "center",
-          fontWeight: 700,
+          marginTop: 10,
+
+          height: 7,
+
+          borderRadius: 999,
+
+          background:
+            "linear-gradient(90deg,#60A5FA,#FFFFFF,#60A5FA)",
+
+          opacity: .9,
         }}
-      >
-        {position}
-      </div>
+      />
+
     </div>
+
   );
+
 };

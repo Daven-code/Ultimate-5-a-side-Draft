@@ -1,51 +1,116 @@
 /******************************************************************************
- * Intro Scene
+ * Intro.tsx
+ * =============================================================================
+ *
+ * PURPOSE
+ * -------
+ * Creates the opening cinematic.
+ *
+ * Timeline
+ * --------
+ *
+ * 0-1 sec
+ * Darkness
+ *
+ * 1-2 sec
+ * Logo fades in
+ *
+ * 2-3 sec
+ * Stadium lights
+ *
+ * 3 sec
+ * Hook appears
+ *
  ******************************************************************************/
 
 import React from "react";
-import {AbsoluteFill} from "remotion";
+
+import {
+    AbsoluteFill,
+    interpolate,
+    spring,
+    useCurrentFrame,
+    useVideoConfig,
+} from "remotion";
 
 import {Background} from "../components/Background";
 import {Floodlights} from "../components/Floodlights";
-import {Particles} from "../components/Particles";
 import {FootballPitch} from "../components/FootballPitch";
-import { Logo } from "../components/Logo";
-import {AnimatedText} from "../components/AnimatedText";
-import {Brand} from "../core/Brand";
+import {Particles} from "../components/Particles";
+import {Logo} from "../components/Logo";
 import {LightRays} from "../components/LightRays";
 import {Vignette} from "../components/Vignette";
+import {AnimatedText} from "../components/AnimatedText";
+import {Brand} from "../core/Brand";
 
-export const Intro=()=>{
+export const Intro: React.FC = () => {
 
-return(
+    const frame = useCurrentFrame();
 
-<AbsoluteFill
-  style={{
-    justifyContent: "center",
-    alignItems: "center",
-  }}
->
-  <Background />
+    const {fps} = useVideoConfig();
 
-  <Floodlights />
+    /*
+     * Smooth logo zoom.
+     */
+    const zoom = spring({
+        fps,
+        frame,
+        config: {
+            stiffness: 70,
+            damping: 15,
+        },
+    });
 
-  <LightRays />
+    /*
+     * Fade entire scene in.
+     */
+    const opacity = interpolate(
+        frame,
+        [0, 25],
+        [0, 1],
+        {
+            extrapolateRight: "clamp",
+        }
+    );
 
-  <Particles />
+    return (
 
-  <FootballPitch />
+        <AbsoluteFill
+            style={{
+                justifyContent: "center",
+                alignItems: "center",
+                opacity,
+            }}
+        >
 
-  <Logo />
+            <Background/>
 
-  <AnimatedText
-    text={Brand.hook}
-    top={770}
-    size={72}
-  />
+            <Floodlights/>
 
-  <Vignette />
-</AbsoluteFill>
+            <LightRays/>
 
-);
+            <Particles/>
+
+            <FootballPitch/>
+
+            <div
+                style={{
+                    transform: `scale(${0.85 + zoom * 0.15})`,
+                }}
+            >
+                <Logo/>
+            </div>
+
+            <AnimatedText
+                text={Brand.hook}
+                top={770}
+                size={72}
+            />
+
+            <Vignette/>
+
+        </AbsoluteFill>
+
+    );
 
 };

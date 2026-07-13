@@ -3,5 +3,8 @@ dist
 .DS_Store
 .env
 
-# Ignore the output video from Git but not videos you import into src/.
-out
+# Remotion render output
+out/
+
+# Final exported videos (kept locally)
+Renders/

@@ -1,13 +1,8 @@
 /******************************************************************************
- * LaunchTrailer.tsx
- * =============================================================================
+ * LaunchTrailerPortrait.tsx
+ * ============================================================================
  *
- * FINAL TRAILER
- *
- * 0-4 sec   Intro
- * 4-9 sec   Pick • Build • Compete
- * 9-15 sec  Build Team
- * 15-20 sec Outro
+ * Portrait version of the Ultimate 5-a-side launch trailer.
  ******************************************************************************/
 
 import React from "react";
@@ -15,14 +10,14 @@ import {Sequence} from "remotion";
 
 import {AudioTrack} from "../components/AudioTrack";
 
-import {Intro} from "../scenes/Intro";
-import {HowToPlay} from "../scenes/HowToPlay";
-import {BuildTeamScene} from "../scenes/BuildTeamScene";
-import {Outro} from "../scenes/Outro";
+import {IntroPortrait} from "../scenes/IntroPortrait";
+import {HowToPlayPortrait} from "../scenes/HowToPlayPortrait";
+import {BuildTeamScenePortrait} from "../scenes/BuildTeamScenePortrait";
+import {OutroPortrait} from "../scenes/OutroPortrait";
 
-export const LaunchTrailer: React.FC = () => {
+export const LaunchTrailerPortrait: React.FC = () => {
 
-  return(
+  return (
 
     <>
 
@@ -32,28 +27,28 @@ export const LaunchTrailer: React.FC = () => {
         from={0}
         durationInFrames={120}
       >
-        <Intro/>
+        <IntroPortrait/>
       </Sequence>
 
       <Sequence
         from={120}
         durationInFrames={150}
       >
-        <HowToPlay/>
+        <HowToPlayPortrait/>
       </Sequence>
 
       <Sequence
         from={270}
         durationInFrames={180}
       >
-        <BuildTeamScene/>
+        <BuildTeamScenePortrait/>
       </Sequence>
 
       <Sequence
         from={450}
         durationInFrames={150}
       >
-        <Outro/>
+        <OutroPortrait/>
       </Sequence>
 
     </>
