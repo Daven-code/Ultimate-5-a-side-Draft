@@ -4,15 +4,12 @@
  *
  * PURPOSE
  * -------
- * Portrait team reveal.
- *
- * Five legendary players appear in a 2-1-2 formation that is
- * optimised for TikTok / Reels / Shorts.
+ * Reusable portrait team reveal.
  *
  ******************************************************************************/
 
 import React from "react";
-import {AbsoluteFill} from "remotion";
+import {AbsoluteFill, useVideoConfig} from "remotion";
 
 import {Background} from "../components/Background";
 import {FootballPitch} from "../components/FootballPitch";
@@ -20,11 +17,72 @@ import {Particles} from "../components/Particles";
 import {LightRays} from "../components/LightRays";
 import {Vignette} from "../components/Vignette";
 import {AnimatedText} from "../components/AnimatedText";
+import {PLAYER_CARD_WIDTH} from "../components/PlayerCard";
 
-import {PlayerFlyIn} from "../components/PlayerFlyIn";
+import {
+  Player,
+  PlayerFlyIn,
+} from "../components/PlayerFlyIn";
+
 import {ScoreReveal} from "../components/ScoreReveal";
 
-export const BuildTeamScenePortrait: React.FC = () => {
+interface Props {
+  title?: string;
+  team?: Player[];
+  score?: number;
+}
+
+const defaultTeam: Player[] = [
+  {
+    player: "Buffon (2005)",
+    position: "GK",
+    rating: 97,
+  },
+  {
+    player: "Sergio Ramos (2018)",
+    position: "DEF",
+    rating: 90,
+  },
+  {
+    player: "Ronaldinho (2006)",
+    position: "MID",
+    rating: 95,
+  },
+  {
+    player: "Kevin De Bruyne (2022)",
+    position: "MID",
+    rating: 91,
+  },
+  {
+    player: "Lionel Messi (2012)",
+    position: "ST",
+    rating: 94,
+  },
+];
+
+export const BuildTeamScenePortrait: React.FC<Props> = ({
+  title = "BUILD YOUR DREAM TEAM",
+  team = defaultTeam,
+  score = 467,
+}) => {
+
+  const {width} = useVideoConfig();
+
+  const goalkeeper = team.find((p) => p.position === "GK");
+  const defender = team.find((p) => p.position === "DEF");
+  const midfielders = team.filter((p) => p.position === "MID");
+  const striker = team.find((p) => p.position === "ST");
+
+  /*
+   * Automatically centre the formation based on the
+   * composition width and player card size.
+   */
+  const centreX = (width - PLAYER_CARD_WIDTH) / 2;
+
+  const midfieldSpacing = 270;
+
+  const leftMidX = centreX - midfieldSpacing;
+  const rightMidX = centreX + midfieldSpacing;
 
   return (
 
@@ -44,73 +102,67 @@ export const BuildTeamScenePortrait: React.FC = () => {
       <FootballPitch/>
 
       <AnimatedText
-        text="BUILD YOUR DREAM TEAM"
-        top={110}
+        text={title}
+        top={120}
         size={56}
       />
 
-      {/* ======================================================
-          STRIKER
-      ======================================================= */}
+      {/* ---------------- STRIKER ---------------- */}
 
-      <PlayerFlyIn
-        delay={0}
-        x={430}
-        y={260}
-        player="Lionel Messi (2012)"
-        rating={94}
-        position="ST"
+      {striker && (
+        <PlayerFlyIn
+          delay={72}
+          x={centreX}
+          y={350}
+          player={striker}
+        />
+      )}
+
+      {/* ---------------- MIDFIELD ---------------- */}
+
+      {midfielders[0] && (
+        <PlayerFlyIn
+          delay={36}
+          x={leftMidX}
+          y={620}
+          player={midfielders[0]}
+        />
+      )}
+
+      {midfielders[1] && (
+        <PlayerFlyIn
+          delay={54}
+          x={rightMidX}
+          y={620}
+          player={midfielders[1]}
+        />
+      )}
+
+      {/* ---------------- DEFENDER ---------------- */}
+
+      {defender && (
+        <PlayerFlyIn
+          delay={18}
+          x={centreX}
+          y={900}   // moved up 30px
+          player={defender}
+        />
+      )}
+
+      {/* ---------------- GOALKEEPER ---------------- */}
+
+      {goalkeeper && (
+        <PlayerFlyIn
+          delay={0}
+          x={centreX}
+          y={1250}  // moved down 10px
+          player={goalkeeper}
+        />
+      )}
+
+      <ScoreReveal
+        score={score}
       />
-
-      {/* ======================================================
-          MIDFIELD
-      ======================================================= */}
-
-      <PlayerFlyIn
-        delay={18}
-        x={120}
-        y={590}
-        player="Ronaldinho (2006)"
-        rating={95}
-        position="MID"
-      />
-
-      <PlayerFlyIn
-        delay={36}
-        x={740}
-        y={590}
-        player="Kevin De Bruyne (2022)"
-        rating={91}
-        position="MID"
-      />
-
-      {/* ======================================================
-          DEFENDER
-      ======================================================= */}
-
-      <PlayerFlyIn
-        delay={54}
-        x={430}
-        y={950}
-        player="Sergio Ramos (2018)"
-        rating={90}
-        position="DEF"
-      />
-
-      {/* ======================================================
-          GOALKEEPER
-      ======================================================= */}
-
-      <PlayerFlyIn
-        delay={72}
-        x={430}
-        y={1310}
-        player="Buffon (2005)"
-        rating={97}
-        position="GK"
-      />
-
-      <ScoreReveal/>
 
       <Vignette/>
 

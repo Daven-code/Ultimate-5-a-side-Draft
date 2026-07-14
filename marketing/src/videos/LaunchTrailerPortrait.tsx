@@ -21,7 +21,10 @@ export const LaunchTrailerPortrait: React.FC = () => {
 
     <>
 
-      <AudioTrack/>
+      <AudioTrack
+      music="Sport.mp3"
+      musicStart={120}
+    />
 
       <Sequence
         from={0}

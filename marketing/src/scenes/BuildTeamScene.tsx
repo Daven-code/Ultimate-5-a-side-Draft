@@ -4,9 +4,13 @@
  *
  * PURPOSE
  * -------
- * Landscape team reveal.
+ * Reusable landscape team reveal.
  *
- * Five legendary players fly into position before the team rating is revealed.
+ * Used by:
+ * • Launch Trailer
+ * • Easy Solo Challenge
+ * • Monthly Challenge
+ * • Future marketing videos
  *
  ******************************************************************************/
 
@@ -20,10 +24,70 @@ import {LightRays} from "../components/LightRays";
 import {Vignette} from "../components/Vignette";
 import {AnimatedText} from "../components/AnimatedText";
 
-import {PlayerFlyIn} from "../components/PlayerFlyIn";
+import {
+  Player,
+  PlayerFlyIn,
+} from "../components/PlayerFlyIn";
+
 import {ScoreReveal} from "../components/ScoreReveal";
 
-export const BuildTeamScene: React.FC = () => {
+interface Props {
+
+  title?: string;
+
+  team?: Player[];
+
+  score?: number;
+
+}
+
+/*
+ * Default team used by the Launch Trailer.
+ */
+
+const defaultTeam: Player[] = [
+
+  {
+    player: "Buffon (2005)",
+    position: "GK",
+    rating: 97,
+  },
+
+  {
+    player: "Sergio Ramos (2018)",
+    position: "DEF",
+    rating: 90,
+  },
+
+  {
+    player: "Ronaldinho (2006)",
+    position: "MID",
+    rating: 95,
+  },
+
+  {
+    player: "Kevin De Bruyne (2022)",
+    position: "MID",
+    rating: 91,
+  },
+
+  {
+    player: "Lionel Messi (2012)",
+    position: "ST",
+    rating: 94,
+  },
+
+];
+
+export const BuildTeamScene: React.FC<Props> = ({
+
+  title = "BUILD YOUR TEAM",
+
+  team = defaultTeam,
+
+  score = 467,
+
+}) => {
 
   return (
 
@@ -34,88 +98,60 @@ export const BuildTeamScene: React.FC = () => {
       }}
     >
 
-      <Background />
+      <Background/>
 
-      <LightRays />
+      <LightRays/>
 
-      <Particles />
+      <Particles/>
 
-      <FootballPitch />
+      <FootballPitch/>
 
       <AnimatedText
-        text="BUILD YOUR DREAM TEAM"
+        text={title}
         top={70}
-        size={58}
+        size={60}
       />
-
-      {/* --------------------------------------------------
-          Goalkeeper
-      --------------------------------------------------- */}
 
       <PlayerFlyIn
         delay={0}
-        x={180}
-        y={300}
-        player="Buffon (2005)"
-        rating={97}
-        position="GK"
+        x={250}
+        y={320}
+        player={team[0]}
       />
-
-      {/* --------------------------------------------------
-          Defender
-      --------------------------------------------------- */}
 
       <PlayerFlyIn
         delay={15}
-        x={510}
-        y={300}
-        player="Sergio Ramos (2018)"
-        rating={90}
-        position="DEF"
+        x={560}
+        y={320}
+        player={team[1]}
       />
-
-      {/* --------------------------------------------------
-          Midfielder
-      --------------------------------------------------- */}
 
       <PlayerFlyIn
         delay={30}
-        x={840}
-        y={300}
-        player="Ronaldinho (2006)"
-        rating={95}
-        position="MID"
+        x={870}
+        y={320}
+        player={team[2]}
       />
-
-      {/* --------------------------------------------------
-          Midfielder
-      --------------------------------------------------- */}
 
       <PlayerFlyIn
         delay={45}
-        x={1170}
-        y={300}
-        player="Kevin De Bruyne (2022)"
-        rating={91}
-        position="MID"
+        x={1180}
+        y={320}
+        player={team[3]}
       />
-
-      {/* --------------------------------------------------
-          Striker
-      --------------------------------------------------- */}
 
       <PlayerFlyIn
         delay={60}
-        x={1500}
-        y={300}
-        player="Lionel Messi (2012)"
-        rating={94}
-        position="ST"
+        x={1490}
+        y={320}
+        player={team[4]}
       />
 
-      <ScoreReveal />
+      <ScoreReveal
+        score={score}
+      />
 
-      <Vignette />
+      <Vignette/>
 
     </AbsoluteFill>
 

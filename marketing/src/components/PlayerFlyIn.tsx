@@ -6,32 +6,36 @@
  * -------
  * Animates a PlayerCard onto the screen.
  *
- * Animation
- * ---------
- * • Slides in from the left
- * • Slight overshoot
- * • Settles into place
- * • Blue glow pulse as it lands
- *
  ******************************************************************************/
 
 import React from "react";
 import {
+  Audio,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
 
 import {PlayerCard} from "./PlayerCard";
 
-interface PlayerFlyInProps {
+/**
+ * Player model used throughout the marketing videos.
+ */
+export interface Player {
 
   player: string;
 
   rating: number;
 
   position: string;
+
+}
+
+interface PlayerFlyInProps {
+
+  player: Player;
 
   delay: number;
 
@@ -43,8 +47,6 @@ interface PlayerFlyInProps {
 
 export const PlayerFlyIn: React.FC<PlayerFlyInProps> = ({
   player,
-  rating,
-  position,
   delay,
   x,
   y,
@@ -56,10 +58,6 @@ export const PlayerFlyIn: React.FC<PlayerFlyInProps> = ({
 
   const localFrame = frame - delay;
 
-  /*
-   * Controls the movement.
-   * Overshoots slightly before settling.
-   */
   const progress = spring({
     fps,
     frame: localFrame,
@@ -70,9 +68,6 @@ export const PlayerFlyIn: React.FC<PlayerFlyInProps> = ({
     },
   });
 
-  /*
-   * Fade in.
-   */
   const opacity = interpolate(
     localFrame,
     [0, 10],
@@ -83,9 +78,6 @@ export const PlayerFlyIn: React.FC<PlayerFlyInProps> = ({
     }
   );
 
-  /*
-   * Landing glow.
-   */
   const glow = interpolate(
     localFrame,
     [15, 25, 40],
@@ -96,37 +88,69 @@ export const PlayerFlyIn: React.FC<PlayerFlyInProps> = ({
     }
   );
 
-  /*
-   * Start off-screen.
-   */
   const startX = x - 700;
+
+  /*
+   * Only play whooshes for key cards.
+   */
+  const playWhoosh =
+    delay === 72 ||
+    delay === 54 ||
+    delay === 0;
+
+  const whooshOffset =
+    delay === 72
+      ? 0
+      : delay === 54
+      ? 4
+      : 8;
+
+  /*
+   * Cinematic hit on the first player.
+   */
+  const playHit = delay === 0;
 
   return (
 
-    <div
-      style={{
+    <>
 
-        position: "absolute",
+      {playWhoosh && (
+        <Audio
+          src={staticFile("sfx/whoosh.mp3")}
+          startFrom={whooshOffset}
+          endAt={whooshOffset + 18}
+          volume={0.42}
+        />
+      )}
 
-        left: startX + (700 * progress),
+      {playHit && (
+        <Audio
+          src={staticFile("sfx/cinematic hit.mp3")}
+          startFrom={2}
+          volume={0.9}
+        />
+      )}
 
-        top: y,
+      <div
+        style={{
+          position: "absolute",
+          left: startX + (700 * progress),
+          top: y,
+          opacity,
+          filter:
+            `drop-shadow(0 0 ${30 * glow}px rgba(59,130,246,.8))`,
+        }}
+      >
 
-        opacity,
+        <PlayerCard
+          player={player.player}
+          rating={player.rating}
+          position={player.position}
+        />
 
-        filter:
-          `drop-shadow(0 0 ${30 * glow}px rgba(59,130,246,.8))`,
+      </div>
 
-      }}
-    >
-
-      <PlayerCard
-        player={player}
-        rating={rating}
-        position={position}
-      />
-
-    </div>
+    </>
 
   );
 

@@ -6,15 +6,6 @@
  * -------
  * Premium football card used throughout the trailer.
  *
- * DESIGN
- * ------
- * • Blue gradient
- * • Glass effect
- * • Gold rating
- * • Player name
- * • Position badge
- * • Blue glow
- *
  ******************************************************************************/
 
 import React from "react";
@@ -23,6 +14,9 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+
+export const PLAYER_CARD_WIDTH = 225;
+export const PLAYER_CARD_HEIGHT = 310;
 
 interface PlayerCardProps {
   player: string;
@@ -52,8 +46,8 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
 
     <div
       style={{
-        width: 225,
-        height: 310,
+        width: PLAYER_CARD_WIDTH,
+        height: PLAYER_CARD_HEIGHT,
 
         borderRadius: 22,
 
@@ -83,10 +77,6 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
       }}
     >
 
-      {/* --------------------------------------------------
-          Top Row
-      --------------------------------------------------- */}
-
       <div
         style={{
           display: "flex",
@@ -115,68 +105,42 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
 
       </div>
 
-      {/* --------------------------------------------------
-          Player Name
-      --------------------------------------------------- */}
-
       <div
         style={{
           flex: 1,
-
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-
           textAlign: "center",
-
           fontSize: 30,
-
           lineHeight: 1.15,
-
           padding: "0 10px",
-
           letterSpacing: 1,
         }}
       >
         {player}
       </div>
 
-      {/* --------------------------------------------------
-          Rating
-      --------------------------------------------------- */}
-
       <div
         style={{
           textAlign: "center",
-
           fontSize: 82,
-
           color: "#FACC15",
-
           textShadow:
             "0 0 24px rgba(250,204,21,.55)",
-
           lineHeight: 1,
         }}
       >
         {rating}
       </div>
 
-      {/* --------------------------------------------------
-          Accent Line
-      --------------------------------------------------- */}
-
       <div
         style={{
           marginTop: 10,
-
           height: 7,
-
           borderRadius: 999,
-
           background:
             "linear-gradient(90deg,#60A5FA,#FFFFFF,#60A5FA)",
-
           opacity: .9,
         }}
       />
