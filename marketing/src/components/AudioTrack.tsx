@@ -4,30 +4,52 @@
  *
  * PURPOSE
  * -------
- * Plays the background music for the trailer.
- *
- * NOTES
- * -----
- * Sport.mp3 is much longer than the trailer.
- * We therefore:
- *
- * • Skip the quieter introduction.
- * • Use roughly 20 seconds.
- * • Fade out at the end.
+ * Reusable background music and ambience.
  *
  ******************************************************************************/
 
 import React from "react";
-import {Audio, interpolate, staticFile, useCurrentFrame} from "remotion";
+import {
+  Audio,
+  interpolate,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 
-export const AudioTrack: React.FC = () => {
+interface Props {
+  music?: string;
+  musicStart?: number;
+}
+
+export const AudioTrack: React.FC<Props> = ({
+  music = "Sport.mp3",
+  musicStart = 0,
+}) => {
 
   const frame = useCurrentFrame();
 
-  // Fade music during the final 45 frames
-  const volume = interpolate(
+  const {durationInFrames, fps} = useVideoConfig();
+
+  /*
+   * Fade music in during the first second.
+   */
+  const fadeIn = interpolate(
     frame,
-    [555, 600],
+    [0, fps],
+    [0, 1],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    }
+  );
+
+  /*
+   * Fade music out during the final 2 seconds.
+   */
+  const fadeOut = interpolate(
+    frame,
+    [durationInFrames - (fps * 2), durationInFrames],
     [1, 0],
     {
       extrapolateLeft: "clamp",
@@ -35,22 +57,25 @@ export const AudioTrack: React.FC = () => {
     }
   );
 
+  const musicVolume = fadeIn * fadeOut;
+
   return (
-    <Audio
-      src={staticFile("music/Sport.mp3")}
 
-      /*
-       * Skip the slower intro.
-       * Adjust later if you find a better section.
-       */
-      startFrom={120}
+    <>
 
-      /*
-       * Only use ~20 seconds of audio.
-       */
-      endAt={720}
+      <Audio
+        src={staticFile(`music/${music}`)}
+        startFrom={musicStart}
+        volume={musicVolume}
+      />
 
-      volume={volume}
-    />
+      <Audio
+        src={staticFile("sfx/Stadium crowd.mp3")}
+        volume={0.22}
+      />
+
+    </>
+
   );
+
 };

@@ -4,14 +4,7 @@
  *
  * PURPOSE
  * -------
- * Dramatic Team Score reveal.
- *
- * Animation
- * ---------
- * • Counts from 0 → 447
- * • Blue glow
- * • Small landing pulse
- * • Subtitle
+ * Animated Team Score reveal.
  *
  ******************************************************************************/
 
@@ -24,20 +17,23 @@ import {
   useVideoConfig,
 } from "remotion";
 
-export const ScoreReveal: React.FC = () => {
+interface ScoreRevealProps {
+  score: number;
+}
+
+export const ScoreReveal: React.FC<ScoreRevealProps> = ({
+  score,
+}) => {
 
   const frame = useCurrentFrame();
 
   const {fps} = useVideoConfig();
 
-  /*
-   * Number counts up over roughly 2 seconds.
-   */
-  const score = Math.round(
+  const animatedScore = Math.round(
     interpolate(
       frame,
       [45, 105],
-      [0, 467],
+      [0, score],
       {
         extrapolateLeft: "clamp",
         extrapolateRight: "clamp",
@@ -45,9 +41,6 @@ export const ScoreReveal: React.FC = () => {
     )
   );
 
-  /*
-   * Small pulse once the score lands.
-   */
   const pulse = spring({
     fps,
     frame: frame - 95,
@@ -57,9 +50,6 @@ export const ScoreReveal: React.FC = () => {
     },
   });
 
-  /*
-   * Fade in.
-   */
   const opacity = interpolate(
     frame,
     [25, 40],
@@ -70,9 +60,6 @@ export const ScoreReveal: React.FC = () => {
     }
   );
 
-  /*
-   * Blue glow increases as the score settles.
-   */
   const glow = interpolate(
     frame,
     [70, 110],
@@ -94,52 +81,29 @@ export const ScoreReveal: React.FC = () => {
       }}
     >
 
-      {/* ----------------------------------------------------------
-          Score
-      ----------------------------------------------------------- */}
-
       <div
         style={{
           opacity,
-
-          transform:
-            `scale(${1 + pulse * 0.08})`,
-
+          transform: `scale(${1 + pulse * 0.08})`,
           fontFamily: "Bebas Neue",
-
           fontSize: 140,
-
           fontWeight: 700,
-
-          color: "#FFFFFF",
-
+          color: "white",
           lineHeight: 1,
-
-          textShadow:
-            `0 0 ${40 * glow}px rgba(37,99,235,.9)`,
-
           letterSpacing: 4,
+          textShadow: `0 0 ${40 * glow}px rgba(37,99,235,.9)`,
         }}
       >
-        {score}
+        {animatedScore}
       </div>
-
-      {/* ----------------------------------------------------------
-          Subtitle
-      ----------------------------------------------------------- */}
 
       <div
         style={{
           marginTop: 6,
-
           fontFamily: "Bebas Neue",
-
           fontSize: 44,
-
           letterSpacing: 8,
-
           color: "#60A5FA",
-
           opacity,
         }}
       >
