@@ -8438,3 +8438,589 @@ document.addEventListener('click', function(e){
 
 });
 
+
+
+/* =====================================================================
+   ULTIMATE 5-A-SIDE ONLINE BIDDING FIXES - VERSION 2
+   ---------------------------------------------------------------------
+   Targeted fixes only:
+   - Solo modes are left untouched.
+   - Online Blind Bidding: skip/life counters are forced to persist and
+     zero bids always cost exactly one skip for eligible users.
+   - Online Live Auction: rewritten as a strict turn-based auction.
+     The first bidder rotates each player, users act in order, and a pass
+     costs one skip only if that user has not already bid on that player.
+   ===================================================================== */
+(function onlineBiddingFixV2(){
+  const SAVE_DELAY_MS_V2 = 1800;
+
+  function clampSkipV2(n){ return Math.min(BID_SKIPS_ALLOWED, Math.max(0, Math.floor(Number(n || 0)))); }
+  function keyV2(value){ return safeKey(typeof value === 'string' ? value : value?.name); }
+  function meV2(){
+    if (!online.enabled || !state?.users) return null;
+    v29SafeState();
+    return state.users.find(u => keyV2(u) === keyV2(online.myName)) || null;
+  }
+  function usedSkipsV2(user){ return clampSkipV2(user?.bidSkips); }
+  function leftSkipsV2(user){ return Math.max(0, BID_SKIPS_ALLOWED - usedSkipsV2(user)); }
+  function incSkipV2(user){ if (user) user.bidSkips = clampSkipV2(usedSkipsV2(user) + 1); }
+  onlineBidSkipsUsedV44 = usedSkipsV2;
+  onlineBidSkipsLeftV44 = leftSkipsV2;
+  onlineIncrementSkipV44 = incSkipV2;
+
+  function maxBidV2(user, candidate=currentCandidate){
+    if (typeof onlineMaxBidForCandidateV45 === 'function') return onlineMaxBidForCandidateV45(user, candidate);
+    return Math.max(0, Math.floor(Number(user?.budget || 0)));
+  }
+  function eligibleForCandidateV2(candidate=currentCandidate){
+    if (!state || !candidate) return [];
+    v29SafeState();
+    return state.users.filter(u => getNeededPositions(u).includes(candidate.mainPosition) && maxBidV2(u, candidate) > 0);
+  }
+  function allNeededPositionsV2(){
+    const s = new Set();
+    (state?.users || []).forEach(u => getNeededPositions(u).forEach(p => s.add(p)));
+    return s;
+  }
+  function ensureBidMetaV2(){
+    if (!state) return;
+    if (!Array.isArray(state.onlineBidOrderBaseV2) || state.onlineBidOrderBaseV2.length !== state.users.length) {
+      state.onlineBidOrderBaseV2 = shuffleArray([...Array(state.users.length).keys()]).map(i => keyV2(state.users[i]));
+    }
+    state.onlineBidRoundV2 = Math.max(0, Math.floor(Number(state.onlineBidRoundV2 || 0)));
+  }
+  function rotatingOrderV2(eligible){
+    ensureBidMetaV2();
+    const eligibleKeys = new Set(eligible.map(keyV2));
+    let base = state.onlineBidOrderBaseV2.filter(k => state.users.some(u => keyV2(u) === k));
+    state.users.forEach(u => { const k=keyV2(u); if (!base.includes(k)) base.push(k); });
+    const raw = base.filter(k => eligibleKeys.has(k));
+    if (!raw.length) return [];
+    const shift = state.onlineBidRoundV2 % raw.length;
+    return raw.slice(shift).concat(raw.slice(0, shift));
+  }
+  function initLiveAuctionV2(candidate=currentCandidate){
+    const eligible = eligibleForCandidateV2(candidate);
+    const order = rotatingOrderV2(eligible);
+    state.liveAuction = {
+      v2: true,
+      orderKeys: order,
+      turnKey: order[0] || '',
+      highestKey: '',
+      highestName: '',
+      highestBid: 0,
+      passedKeys: {},
+      bidKeys: {},
+      skipPenaltyKeys: {},
+      autoOutKeys: {},
+      outcome: null,
+      openedAt: Date.now()
+    };
+    return state.liveAuction;
+  }
+  function auctionV2(){
+    if (!state.liveAuction || !state.liveAuction.v2) return initLiveAuctionV2();
+    const a = state.liveAuction;
+    a.orderKeys ||= [];
+    a.turnKey ||= '';
+    a.highestKey ||= '';
+    a.highestName ||= '';
+    a.highestBid = Math.max(0, Math.floor(Number(a.highestBid || 0)));
+    a.passedKeys ||= {};
+    a.bidKeys ||= {};
+    a.skipPenaltyKeys ||= {};
+    a.autoOutKeys ||= {};
+    a.outcome ||= null;
+    return a;
+  }
+  function userByKeyV2(key){ return (state?.users || []).find(u => keyV2(u) === key) || null; }
+  function activeKeysV2(candidate=currentCandidate, a=auctionV2()){
+    return eligibleForCandidateV2(candidate).map(keyV2).filter(k => !a.passedKeys[k] && !a.autoOutKeys[k]);
+  }
+  function canBeatCurrentV2(user, a=auctionV2(), candidate=currentCandidate){
+    return maxBidV2(user, candidate) >= Math.max(1, a.highestBid + 1);
+  }
+  function advanceTurnV2(){
+    const a = auctionV2();
+    const order = a.orderKeys.length ? a.orderKeys : rotatingOrderV2(eligibleForCandidateV2());
+    a.orderKeys = order;
+    if (!order.length) { a.turnKey = ''; return; }
+    let start = Math.max(0, order.indexOf(a.turnKey));
+    for (let step=1; step<=order.length; step++) {
+      const k = order[(start + step) % order.length];
+      const u = userByKeyV2(k);
+      if (!u || a.passedKeys[k] || a.autoOutKeys[k]) continue;
+      if (a.highestKey && k === a.highestKey) continue;
+      if (!canBeatCurrentV2(u, a)) { a.autoOutKeys[k] = true; continue; }
+      a.turnKey = k;
+      return;
+    }
+    a.turnKey = '';
+  }
+  function shouldResolveV2(){
+    const a = auctionV2();
+    const active = activeKeysV2();
+    if (!active.length) return true;
+    if (a.highestBid <= 0) return active.every(k => !!a.passedKeys[k] || !!a.autoOutKeys[k]);
+    return active.every(k => k === a.highestKey || !!a.passedKeys[k] || !!a.autoOutKeys[k] || !canBeatCurrentV2(userByKeyV2(k), a));
+  }
+
+  async function drawBlindCandidateV2(){
+    await ensurePlayersReady();
+    v29SafeState();
+    if (isGameComplete()) { completeGame(); render(); await saveOnlineState('Bidding complete. Reveal ratings to see the winner.'); return; }
+    const needed = allNeededPositionsV2();
+    const sourcePlayers = (typeof window.getUltimate5AsideFilteredPlayersForCurrentGame === 'function' && state?.yearRange)
+      ? window.getUltimate5AsideFilteredPlayersForCurrentGame()
+      : players;
+    const pool = sourcePlayers.filter(p => needed.has(p.mainPosition) && !state.acceptedPlayerNames.has(p.player));
+    if (!pool.length) { completeGame(); render(); await saveOnlineState('No more eligible players. Reveal ratings to see the winner.'); return; }
+    currentCandidate = pool[Math.floor(Math.random()*pool.length)];
+    state.blindBids = {};
+    state.bidOutcome = null;
+    state.bidSubmittingLocked = false;
+    renderCandidate(currentCandidate);
+    renderOnlineBidControlsV38();
+    await saveOnlineState(`Blind bidding open for ${currentCandidate.player}.`);
+  }
+
+  async function drawLiveCandidateV2(){
+    await ensurePlayersReady();
+    v29SafeState();
+    state.onlineBidMode = 'live';
+    if (isGameComplete()) { completeGame(); render(); await saveOnlineState('Bidding complete. Reveal ratings to see the winner.'); return; }
+    const needed = allNeededPositionsV2();
+    const sourcePlayers = (typeof window.getUltimate5AsideFilteredPlayersForCurrentGame === 'function' && state?.yearRange)
+      ? window.getUltimate5AsideFilteredPlayersForCurrentGame()
+      : players;
+    const pool = sourcePlayers.filter(p => needed.has(p.mainPosition) && !state.acceptedPlayerNames.has(p.player));
+    if (!pool.length) { completeGame(); render(); await saveOnlineState('No more eligible players. Reveal ratings to see the winner.'); return; }
+    currentCandidate = pool[Math.floor(Math.random()*pool.length)];
+    initLiveAuctionV2(currentCandidate);
+    renderCandidate(currentCandidate);
+    renderOnlineBidControlsV38();
+    await saveOnlineState(`Live auction open for ${currentCandidate.player}.`);
+  }
+
+  function selectedOnlineBidModeFromLobbyV2(){
+    const selected = document.querySelector('#onlineBidModeSelectorStep2 .online-bid-mode-card-step2.selected');
+    return selected?.dataset?.onlineBidMode === 'live' ? 'live' : 'blind';
+  }
+
+  startOnlineGameFromLobby = async function startOnlineGameFromLobbyV2(){
+    if (!online.enabled || !online.isHost || !online.ref) return;
+    await ensurePlayersReady();
+    const snap = await online.ref.child('participants').once('value');
+    const names = participantNamesFromObject(snap.val()).slice(0, 4);
+    if (names.length < (selectedGameMode === 'bid' ? 2 : 1)) {
+      throw new Error(selectedGameMode === 'bid' ? 'Bid mode needs at least 2 players.' : 'At least 1 player is needed.');
+    }
+    startNewGame(selectedGameMode, names, true);
+    if (selectedGameMode !== 'bid') { await saveOnlineState('Online game started.'); return; }
+    ensureBidMetaV2();
+    state.onlineBidMode = selectedOnlineBidModeFromLobbyV2();
+    if (state.onlineBidMode === 'live') await drawLiveCandidateV2();
+    else await drawBlindCandidateV2();
+  };
+
+  drawOnlineBlindBidCandidateV38 = async function drawOnlineBidCandidateRouterV2(){
+    if (online.enabled && state?.gameMode === 'bid' && state?.onlineBidMode === 'live') return drawLiveCandidateV2();
+    return drawBlindCandidateV2();
+  };
+
+  function renderBlindV2(){
+    initialiseBlindBidStateV38();
+    v29SafeState();
+    show(els.draftControls, false); show(els.bidControls, true); show(els.declinesPill, false); show(els.budgetPill, false);
+    if (els.bidPickBtn) els.bidPickBtn.classList.add('hidden');
+    if (els.awardBidBtn) els.awardBidBtn.classList.add('hidden');
+    if (els.skipBidBtn) els.skipBidBtn.classList.add('hidden');
+    const me = meV2();
+    const eligible = eligibleForCandidateV2();
+    const eligibleKeys = new Set(eligible.map(keyV2));
+    const myKey = keyV2(online.myName);
+    const myBid = state.blindBids?.[myKey];
+    const submittedCount = eligible.filter(u => state.blindBids?.[keyV2(u)]?.submitted).length;
+    if (els.bidOrderDisplay) els.bidOrderDisplay.innerHTML = `<div class="bid-status-summary"><strong>Blind bidding</strong><span>${submittedCount}/${eligible.length} eligible bids submitted</span></div>`;
+    if (!els.bidInputs) return;
+    if (!currentCandidate && isGameComplete()) { els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`; syncRevealButtonV37?.(); return; }
+    if (!currentCandidate && !state.bidOutcome) { els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`; return; }
+    if (state.bidOutcome) {
+      const o = state.bidOutcome;
+      els.bidInputs.innerHTML = `<div class="bid-order-card"><p class="eyebrow">Bids revealed</p><h3>${escapeHtml(o.player?.player || 'Player')}</h3><p class="message">${o.winnerName ? `${escapeHtml(o.winnerName)} wins ${escapeHtml(o.player?.player || 'the player')} for £${o.winningBid}m${o.tie ? ' after a tied highest bid' : ''}.` : `No valid bids above £0m. ${escapeHtml(o.player?.player || 'The player')} was skipped.`}</p>${(o.bids||[]).map(r=>`<div class="bid-row"><label>${escapeHtml(r.name)}</label><div class="bid-submit-status submitted">£${Number(r.bid||0)}m</div></div>`).join('')}${o.zeroBidNames?.length ? `<p class="muted">${escapeHtml(o.zeroBidNames.join(', '))} ${o.zeroBidNames.length===1?'loses':'lose'} one skip for bidding £0m.</p>`:''}<p class="muted">Next player loading...</p></div>`;
+      return;
+    }
+    const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
+    const myBudget = Number(me?.budget || 0);
+    const myMax = me ? maxBidV2(me) : 0;
+    const mySkips = leftSkipsV2(me);
+    const draft = typeof getBlindBidDraftV39 === 'function' ? getBlindBidDraftV39('0') : '0';
+    const submitBox = canSubmit ? `<div class="bid-order-card"><p class="eyebrow">Your blind bid</p><h3>${escapeHtml(currentCandidate.player)}</h3><p class="muted">Enter your bid privately. You must leave enough money to complete your remaining squad slots.</p><div class="bid-row"><label for="onlineBlindBidInput">Your bid<span class="bid-help">Budget left: £${myBudget}m • Max bid: £${myMax}m • Skips left: ${mySkips}/${BID_SKIPS_ALLOWED}${mySkips<=0 ? ' • must bid above £0m' : ''}</span></label><input id="onlineBlindBidInput" type="number" min="0" max="${myMax}" step="1" value="${escapeHtml(draft)}" /></div><button id="submitBlindBidBtn" class="btn btn-primary" type="button">Submit blind bid</button></div>` : `<div class="bid-order-card"><p class="eyebrow">Your blind bid</p><p class="muted">${myBid?.submitted ? 'Your bid has been submitted. Waiting for everyone else.' : eligibleKeys.has(myKey) ? 'Bidding is locked while results are being calculated.' : 'You are not eligible for this player because your team does not need this position, or you do not have enough budget.'}</p></div>`;
+    const statusRows = state.users.map(u=>{ const k=keyV2(u); const elig=eligibleKeys.has(k); const sub=!!state.blindBids?.[k]?.submitted; return `<div class="bid-row"><label>${escapeHtml(u.name)}<span class="bid-help">Budget left: £${Number(u.budget||0)}m • Max bid: £${elig?maxBidV2(u):0}m • Skips left: ${leftSkipsV2(u)}/${BID_SKIPS_ALLOWED}</span></label><div class="bid-submit-status ${sub?'submitted':'waiting'}">${elig ? (sub?'Bid submitted ✅':(leftSkipsV2(u)<=0?'Must bid above £0m':'Waiting for bid')) : 'Not eligible for this position'}</div></div>`; }).join('');
+    els.bidInputs.innerHTML = submitBox + `<div class="bid-order-card"><p class="eyebrow">Submission status</p>${statusRows}</div>`;
+    const inp=$('onlineBlindBidInput'); if (inp && typeof setBlindBidDraftV39 === 'function') { inp.addEventListener('input', e=>setBlindBidDraftV39(e.target.value)); inp.addEventListener('change', e=>setBlindBidDraftV39(e.target.value)); }
+    $('submitBlindBidBtn')?.addEventListener('click', safe(submitBlindBidV2));
+  }
+
+  async function submitBlindBidV2(){
+    if (!online.enabled || !state || state.gameMode !== 'bid' || state.onlineBidMode === 'live' || !currentCandidate) return;
+    initialiseBlindBidStateV38(); v29SafeState();
+    const me = meV2(); if (!me) throw new Error('You are not listed in this online game.');
+    const myKey = keyV2(me);
+    const eligibleKeys = new Set(eligibleForCandidateV2().map(keyV2));
+    if (!eligibleKeys.has(myKey)) throw new Error('You are not eligible to bid for this player.');
+    if (state.blindBids?.[myKey]?.submitted) return;
+    const bid = Math.max(0, Math.floor(Number($('onlineBlindBidInput')?.value || (typeof getBlindBidDraftV39 === 'function' ? getBlindBidDraftV39('0') : 0))));
+    if (!Number.isFinite(bid)) throw new Error('Enter a valid bid.');
+    const maxBid = maxBidV2(me);
+    if (bid > maxBid) throw new Error(`Your maximum bid is £${maxBid}m because you need to keep enough money to complete your team.`);
+    if (bid <= 0 && leftSkipsV2(me) <= 0) throw new Error('You have used all 3 skips and must bid above £0m.');
+    state.blindBids[myKey] = { name: me.name, bid, submitted: true, submittedAt: Date.now() };
+    if (typeof clearBlindBidDraftV39 === 'function') clearBlindBidDraftV39();
+    const eligible = eligibleForCandidateV2();
+    if (eligible.every(u => state.blindBids?.[keyV2(u)]?.submitted)) await resolveBlindV2();
+    else { renderBlindV2(); await saveOnlineState(`${me.name} submitted a blind bid.`); }
+  }
+
+  async function resolveBlindV2(){
+    if (!currentCandidate) return;
+    state.bidSubmittingLocked = true;
+    const candidate = v29NormalisePlayer(currentCandidate);
+    const eligible = eligibleForCandidateV2(candidate);
+    const bids = eligible.map(u => ({ name:u.name, bid:Math.max(0, Math.floor(Number(state.blindBids?.[keyV2(u)]?.bid || 0))), budget:Number(u.budget||0), maxBid:maxBidV2(u,candidate) }));
+    const zeroBidNames=[];
+    bids.forEach(r => { if (r.bid <= 0) { const u=userByKeyV2(keyV2(r.name)); if (u) { incSkipV2(u); zeroBidNames.push(u.name); } } });
+    const valid = bids.filter(r => r.bid > 0 && r.bid <= r.budget && r.bid <= r.maxBid).sort((a,b)=>b.bid-a.bid || a.name.localeCompare(b.name));
+    let winnerName=null, winningBid=0, tie=false;
+    if (valid.length) {
+      const high=valid[0].bid; const tied=valid.filter(r=>r.bid===high); tie=tied.length>1; const win=tied[Math.floor(Math.random()*tied.length)];
+      winnerName=win.name; winningBid=win.bid;
+      const winner=userByKeyV2(keyV2(winnerName));
+      if (winner) { winner.team.push({...candidate, price:winningBid}); winner.budget=Math.max(0, Number(winner.budget||0)-winningBid); winner.spent=Number(winner.spent||0)+winningBid; state.acceptedPlayerNames.add(candidate.player); }
+    }
+    state.bidOutcome = { player:candidate, bids, winnerName, winningBid, tie, zeroBidNames, resolvedAt:Date.now() };
+    currentCandidate=null; renderOnlineBidControlsV38(); renderTeams();
+    await saveOnlineState(winnerName ? `${winnerName} won ${candidate.player} for £${winningBid}m.${zeroBidNames.length ? ' ' + zeroBidNames.join(', ') + ' ' + (zeroBidNames.length===1?'loses':'lose') + ' one skip.' : ''}` : `${candidate.player} was skipped.${zeroBidNames.length ? ' ' + zeroBidNames.join(', ') + ' ' + (zeroBidNames.length===1?'loses':'lose') + ' one skip.' : ''}`);
+    setTimeout(async()=>{ if (isGameComplete()) { completeGame(); render(); await saveOnlineState('Bidding complete. Reveal ratings to see the winner.'); } else await drawBlindCandidateV2(); }, SAVE_DELAY_MS_V2);
+  }
+
+  function renderLiveV2(){
+    v29SafeState();
+    const a = auctionV2();
+    show(els.draftControls, false); show(els.bidControls, true); show(els.declinesPill, false); show(els.budgetPill, false);
+    if (els.bidPickBtn) els.bidPickBtn.classList.add('hidden');
+    if (els.awardBidBtn) els.awardBidBtn.classList.add('hidden');
+    if (els.skipBidBtn) els.skipBidBtn.classList.add('hidden');
+    if (els.bidOrderDisplay) els.bidOrderDisplay.innerHTML = `<div class="bid-status-summary"><strong>Live auction</strong><span>${a.highestBid>0 ? `Highest bid: £${a.highestBid}m by ${escapeHtml(a.highestName)}` : 'No bids yet'}${a.turnKey ? ` • Turn: ${escapeHtml(userByKeyV2(a.turnKey)?.name || '')}` : ''}</span></div>`;
+    if (!els.bidInputs) return;
+    if (!currentCandidate && isGameComplete()) { els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`; syncRevealButtonV37?.(); return; }
+    if (a.outcome) {
+      els.bidInputs.innerHTML = `<div class="bid-order-card"><p class="eyebrow">Auction result</p><h3>${escapeHtml(a.outcome.player?.player || 'Player')}</h3><p class="message">${a.outcome.type==='awarded' ? `${escapeHtml(a.outcome.winnerName)} wins ${escapeHtml(a.outcome.player?.player || 'the player')} for £${a.outcome.amount}m.` : `${escapeHtml(a.outcome.player?.player || 'The player')} was skipped.`}</p>${a.outcome.skipPenaltyNames?.length ? `<p class="muted">${escapeHtml(a.outcome.skipPenaltyNames.join(', '))} ${a.outcome.skipPenaltyNames.length===1?'loses':'lose'} one skip for passing without bidding.</p>`:''}<p class="muted">Next player loading...</p></div>`; return;
+    }
+    if (!currentCandidate) { els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`; return; }
+    const me=meV2(); const myKey=keyV2(online.myName); const isMyTurn=a.turnKey===myKey; const eligibleKeys=new Set(eligibleForCandidateV2().map(keyV2));
+    const minBid=Math.max(1, a.highestBid+1); const myMax=me?maxBidV2(me):0; const mySkips=leftSkipsV2(me); const alreadyBid=!!a.bidKeys[myKey]; const canBid=!!me && isMyTurn && eligibleKeys.has(myKey) && !a.passedKeys[myKey] && myMax>=minBid; const passCostsSkip=!alreadyBid; const canPass=!!me && isMyTurn && eligibleKeys.has(myKey) && !a.passedKeys[myKey] && (!passCostsSkip || mySkips>0 || !canBid);
+    const actionBox = isMyTurn && (canBid || canPass) ? `<div class="bid-order-card live-auction-panel-step2"><div class="live-auction-top-step2"><div><p class="eyebrow">Your action</p><h3>${escapeHtml(currentCandidate.player)}</h3><p class="muted">${a.highestBid>0 ? `Bid more than £${a.highestBid}m or pass.` : 'Make the first bid or pass.'} ${passCostsSkip ? 'Passing before you have bid costs one skip.' : 'You have already bid for this player, so passing is free.'}</p></div><div class="live-highest-step2">${a.highestBid>0 ? `£${a.highestBid}m<br><span class="muted">${escapeHtml(a.highestName)}</span>` : 'No bids yet'}</div></div><div class="live-auction-actions-step2"><div class="bid-row"><label for="onlineLiveBidInput">Your bid<span class="bid-help">Budget: £${Number(me?.budget||0)}m • Max bid: £${myMax}m • Skips left: ${mySkips}/${BID_SKIPS_ALLOWED}</span></label><input id="onlineLiveBidInput" type="number" min="${minBid}" max="${myMax}" step="1" value="${Math.min(myMax,minBid)}" ${canBid?'':'disabled'} /></div><button id="submitLiveBidBtnStep2" class="btn btn-primary" type="button" ${canBid?'':'disabled'}>Bid</button><button id="passLiveBidBtnStep2" class="btn btn-danger" type="button" ${canPass?'':'disabled'}>No / Pass</button></div></div>` : `<div class="bid-order-card"><p class="eyebrow">Your action</p><p class="muted">${eligibleKeys.has(myKey) ? (a.passedKeys[myKey] ? 'You have passed on this player. Waiting for the auction to finish.' : a.highestKey===myKey ? 'You are currently the highest bidder. Waiting for the others.' : `Waiting for ${escapeHtml(userByKeyV2(a.turnKey)?.name || 'the current player')}.`) : 'You are not eligible for this player because your team does not need this position, or you do not have enough budget.'}</p></div>`;
+    const statusRows = state.users.map(u=>{ const k=keyV2(u); let status='Not eligible', cls=''; if(a.highestKey===k){status=`Highest £${a.highestBid}m`;cls='highest';} else if(a.passedKeys[k]){status=a.skipPenaltyKeys[k]?'Passed - skip used':'Passed';cls='passed';} else if(a.autoOutKeys[k]){status='Cannot beat bid';cls='passed';} else if(eligibleKeys.has(k)){status=(a.turnKey===k?'Your go':'Waiting');cls='ready';} return `<div class="live-status-row-step2"><div><strong>${escapeHtml(u.name)}</strong><div class="bid-help">Budget: £${Number(u.budget||0)}m • Max: £${maxBidV2(u)}m • Skips left: ${leftSkipsV2(u)}/${BID_SKIPS_ALLOWED}${a.bidKeys[k]?' • has bid':''}</div></div><span class="live-status-pill-step2 ${cls}">${escapeHtml(status)}</span></div>`; }).join('');
+    els.bidInputs.innerHTML = actionBox + `<div class="bid-order-card"><p class="eyebrow">Auction status</p><div class="live-status-list-step2">${statusRows}</div></div>`;
+    $('submitLiveBidBtnStep2')?.addEventListener('click', safe(submitLiveBidV2));
+    $('passLiveBidBtnStep2')?.addEventListener('click', safe(passLiveBidV2));
+  }
+
+  async function submitLiveBidV2(){
+    if (!online.enabled || !state || state.gameMode !== 'bid' || state.onlineBidMode !== 'live' || !currentCandidate) return;
+    v29SafeState(); const a=auctionV2(); const me=meV2(); if(!me) throw new Error('You are not listed in this online game.'); const k=keyV2(me);
+    if (a.turnKey !== k) throw new Error('It is not your turn.');
+    if (a.passedKeys[k]) throw new Error('You have already passed on this player.');
+    const bid=Math.max(0, Math.floor(Number($('onlineLiveBidInput')?.value || 0))); const min=Math.max(1, a.highestBid+1); const max=maxBidV2(me);
+    if (!Number.isFinite(bid) || bid < min) throw new Error(`Your bid must be at least £${min}m.`);
+    if (bid > max) throw new Error(`Your maximum bid is £${max}m because you need to keep enough money to complete your team.`);
+    a.highestKey=k; a.highestName=me.name; a.highestBid=bid; a.bidKeys[k]=true;
+    advanceTurnV2();
+    if (shouldResolveV2()) await resolveLiveV2();
+    else { renderLiveV2(); await saveOnlineState(`${me.name} bid £${bid}m for ${currentCandidate.player}.`); }
+  }
+  async function passLiveBidV2(){
+    if (!online.enabled || !state || state.gameMode !== 'bid' || state.onlineBidMode !== 'live' || !currentCandidate) return;
+    v29SafeState(); const a=auctionV2(); const me=meV2(); if(!me) throw new Error('You are not listed in this online game.'); const k=keyV2(me);
+    if (a.turnKey !== k) throw new Error('It is not your turn.');
+    if (a.passedKeys[k]) return;
+    const alreadyBid=!!a.bidKeys[k];
+    const canBid=canBeatCurrentV2(me,a);
+    if (!alreadyBid && canBid) {
+      if (leftSkipsV2(me) <= 0) throw new Error('You have used all 3 skips and must bid above £0m.');
+      incSkipV2(me); a.skipPenaltyKeys[k]=true;
+    }
+    a.passedKeys[k]=true;
+    advanceTurnV2();
+    if (shouldResolveV2()) await resolveLiveV2();
+    else { renderLiveV2(); await saveOnlineState(`${me.name} passed on ${currentCandidate.player}${!alreadyBid && canBid ? ' and used one skip' : ''}.`); }
+  }
+  async function resolveLiveV2(){
+    const a=auctionV2(); const candidate=v29NormalisePlayer(currentCandidate); if(!candidate) return;
+    const penaltyNames = Object.keys(a.skipPenaltyKeys||{}).map(k=>userByKeyV2(k)?.name).filter(Boolean);
+    if (a.highestBid > 0 && a.highestKey) {
+      const winner=userByKeyV2(a.highestKey);
+      if (winner) { winner.team.push({...candidate, price:a.highestBid}); winner.budget=Math.max(0, Number(winner.budget||0)-a.highestBid); winner.spent=Number(winner.spent||0)+a.highestBid; state.acceptedPlayerNames.add(candidate.player); }
+      a.outcome={type:'awarded', player:candidate, winnerName:winner?.name || a.highestName, amount:a.highestBid, skipPenaltyNames:penaltyNames, resolvedAt:Date.now()};
+    } else {
+      a.outcome={type:'skipped', player:candidate, skipPenaltyNames:penaltyNames, resolvedAt:Date.now()};
+    }
+    currentCandidate=null; renderLiveV2(); renderTeams();
+    const msg=a.outcome.type==='awarded' ? `${a.outcome.winnerName} won ${candidate.player} for £${a.outcome.amount}m.` : `${candidate.player} was skipped.`;
+    await saveOnlineState(`${msg}${penaltyNames.length ? ' ' + penaltyNames.join(', ') + ' ' + (penaltyNames.length===1?'loses':'lose') + ' one skip.' : ''}`);
+    state.onlineBidRoundV2 = Math.max(0, Math.floor(Number(state.onlineBidRoundV2 || 0))) + 1;
+    setTimeout(async()=>{ if(isGameComplete()){ completeGame(); render(); await saveOnlineState('Bidding complete. Reveal ratings to see the winner.'); } else await drawLiveCandidateV2(); }, SAVE_DELAY_MS_V2);
+  }
+
+  renderOnlineBidControlsV38 = function renderOnlineBidControlsV2(){
+    if (!online.enabled || !state || state.gameMode !== 'bid') return;
+    if (state.onlineBidMode === 'live') return renderLiveV2();
+    return renderBlindV2();
+  };
+
+  const prevRenderV2 = render;
+  render = function renderWrappedV2(...args){
+    const result = prevRenderV2.apply(this,args);
+    if (online.enabled && state?.gameMode === 'bid') renderOnlineBidControlsV38();
+    return result;
+  };
+  const prevApplyRemoteV2 = applyRemoteData;
+  applyRemoteData = function applyRemoteWrappedV2(data){
+    const result = prevApplyRemoteV2.call(this,data);
+    if (online.enabled && state?.gameMode === 'bid' && !ratingsRevealed) renderOnlineBidControlsV38();
+    return result;
+  };
+})();
+
+
+/* =====================================================================
+   ULTIMATE 5-A-SIDE ONLINE BIDDING FIXES - VERSION 3
+   ---------------------------------------------------------------------
+   - Removes the incorrect bottom orange turn/waiting box (#turnLockNote).
+   - Ensures online blind bidding and live auction candidate pools respect
+     the host's selected year range.
+   ===================================================================== */
+(function onlineBiddingFixV3(){
+  function removeIncorrectTurnBoxV3(){
+    const note = document.getElementById('turnLockNote');
+    if (note) note.remove();
+  }
+
+  // Hide it immediately via CSS as well, so it never flashes during Firebase updates.
+  if (!document.getElementById('removeTurnLockNoteV3Styles')) {
+    const style = document.createElement('style');
+    style.id = 'removeTurnLockNoteV3Styles';
+    style.textContent = '#turnLockNote{display:none!important;}';
+    document.head.appendChild(style);
+  }
+
+  // Keep existing button-permission logic, but remove the incorrect message box afterwards.
+  if (typeof applyOnlinePermissions === 'function') {
+    const previousApplyOnlinePermissionsV3 = applyOnlinePermissions;
+    applyOnlinePermissions = function(...args){
+      const result = previousApplyOnlinePermissionsV3.apply(this,args);
+      removeIncorrectTurnBoxV3();
+      return result;
+    };
+  }
+
+  // Also remove after every render/remote update because older wrappers can recreate it.
+  if (typeof render === 'function') {
+    const previousRenderV3 = render;
+    render = function(...args){
+      const result = previousRenderV3.apply(this,args);
+      removeIncorrectTurnBoxV3();
+      return result;
+    };
+  }
+
+  if (typeof applyRemoteData === 'function') {
+    const previousApplyRemoteDataV3 = applyRemoteData;
+    applyRemoteData = function(...args){
+      const result = previousApplyRemoteDataV3.apply(this,args);
+      removeIncorrectTurnBoxV3();
+      return result;
+    };
+  }
+
+  // Belt-and-braces observer for Firebase/browser timing cases.
+  if (!window.ultimate5AsideTurnBoxObserverV3) {
+    window.ultimate5AsideTurnBoxObserverV3 = new MutationObserver(removeIncorrectTurnBoxV3);
+    window.ultimate5AsideTurnBoxObserverV3.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // Expose a reliable filtered online pool helper for any later online draw code.
+  window.getUltimate5AsideOnlineFilteredPoolV3 = function(){
+    if (typeof window.getUltimate5AsideFilteredPlayersForCurrentGame === 'function' && state?.yearRange) {
+      return window.getUltimate5AsideFilteredPlayersForCurrentGame();
+    }
+    if (state?.yearRange) {
+      const r = state.yearRange;
+      return (Array.isArray(players) ? players : []).filter(p => Number(p.year || p.Game_Year || 0) >= Number(r.start) && Number(p.year || p.Game_Year || 0) <= Number(r.end));
+    }
+    return Array.isArray(players) ? players : [];
+  };
+
+  // Re-wrap the public online candidate router so blind bidding definitely uses the filtered pool.
+  // Live auction v2 draws were also directly edited above, but this keeps future routes safe.
+  if (typeof drawOnlineBlindBidCandidateV38 === 'function') {
+    const previousDrawOnlineBidCandidateV3 = drawOnlineBlindBidCandidateV38;
+    drawOnlineBlindBidCandidateV38 = async function(...args){
+      const originalPlayers = players;
+      if (state?.yearRange) players = window.getUltimate5AsideOnlineFilteredPoolV3();
+      try {
+        return await previousDrawOnlineBidCandidateV3.apply(this,args);
+      } finally {
+        players = originalPlayers;
+        removeIncorrectTurnBoxV3();
+      }
+    };
+  }
+
+  removeIncorrectTurnBoxV3();
+})();
+
+
+/* =====================================================================
+   ULTIMATE 5-A-SIDE SOLO MODE FIX - VERSION 4
+   ---------------------------------------------------------------------
+   Fix: Ultimate Solo Mode must always use the full all-years player pool.
+   If a user previously changed the Solo Challenge year filter, the locked
+   Ultimate Solo Mode slider is now reset to the full range before setup
+   and before the game starts.
+   ===================================================================== */
+(function ultimateSoloFullRangeFixV4(){
+  function allYearsRangeV4(){
+    const years = (Array.isArray(players) ? players : [])
+      .map(p => Number(p.year || p.Game_Year || 0))
+      .filter(Boolean)
+      .sort((a,b) => a-b);
+    const min = years.length ? years[0] : 2005;
+    const max = years.length ? years[years.length - 1] : 2026;
+    return { start:min, end:max, min, max };
+  }
+
+  function setTextV4(id, value){
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(value);
+  }
+
+  function resetLocalYearSliderToAllYearsV4(){
+    const r = allYearsRangeV4();
+    const start = document.getElementById('localYearStartStep4');
+    const end = document.getElementById('localYearEndStep4');
+    if (start) {
+      start.min = String(r.min);
+      start.max = String(r.max);
+      start.value = String(r.start);
+      start.disabled = true;
+    }
+    if (end) {
+      end.min = String(r.min);
+      end.max = String(r.max);
+      end.value = String(r.end);
+      end.disabled = true;
+    }
+    setTextV4('localYearLabelStep4', `${r.start} - ${r.end}`);
+    setTextV4('localYearStartValueStep4', r.start);
+    setTextV4('localYearEndValueStep4', r.end);
+    const count = document.getElementById('localYearCountStep4');
+    if (count) count.textContent = '';
+    const fill = document.getElementById('localYearFillStep4');
+    if (fill) {
+      fill.style.left = '0%';
+      fill.style.right = '0%';
+    }
+    const holder = document.getElementById('localYearSlicerHolderStep4');
+    if (holder) {
+      holder.style.opacity = '0.4';
+      holder.style.pointerEvents = 'none';
+      const label = holder.querySelector('label');
+      if (label) label.textContent = 'Player pool locked to all years';
+      const values = holder.querySelector('.year-slicer-values-step4');
+      if (values) values.innerHTML = `<span style="width:100%;text-align:center;">All years active (${r.start} - ${r.end})</span>`;
+      const help = holder.querySelector('.year-slicer-help-step4');
+      if (help) help.textContent = '';
+    }
+    return r;
+  }
+
+  function unlockLocalYearSliderIfNotUltimateV4(){
+    if (window.challengePreset === 'ultimate') return;
+    document.querySelectorAll('#localYearSlicerHolderStep4 input[type="range"]').forEach(input => input.disabled = false);
+    const holder = document.getElementById('localYearSlicerHolderStep4');
+    if (holder) {
+      holder.style.opacity = '';
+      holder.style.pointerEvents = '';
+    }
+  }
+
+  function applyUltimateSetupV4(){
+    if (window.challengePreset === 'ultimate') {
+      resetLocalYearSliderToAllYearsV4();
+    } else {
+      unlockLocalYearSliderIfNotUltimateV4();
+    }
+  }
+
+  // When entering the setup screen, force the Ultimate Solo slider back to all years.
+  if (typeof configureSoloSetupStep7 === 'function') {
+    const previousConfigureSoloSetupV4 = configureSoloSetupStep7;
+    configureSoloSetupStep7 = function(...args){
+      const result = previousConfigureSoloSetupV4.apply(this,args);
+      setTimeout(applyUltimateSetupV4, 0);
+      setTimeout(applyUltimateSetupV4, 50);
+      return result;
+    };
+  }
+
+  // Before the game starts, set the actual DOM slider values to all years so the existing
+  // Step 4 lockRangeBeforeStart logic stores the correct range in state.yearRange.
+  if (typeof startNewGame === 'function') {
+    const previousStartNewGameV4 = startNewGame;
+    startNewGame = function(gameMode, names, isOnlineGame){
+      let fullRange = null;
+      if (!isOnlineGame && window.challengePreset === 'ultimate') {
+        fullRange = resetLocalYearSliderToAllYearsV4();
+      }
+      const result = previousStartNewGameV4.apply(this, arguments);
+      if (!isOnlineGame && window.challengePreset === 'ultimate' && state) {
+        state.yearRange = fullRange || allYearsRangeV4();
+      }
+      return result;
+    };
+  }
+
+  // Make the globally exposed filtered-pool helper return the full database for Ultimate Solo.
+  const previousFilteredPoolV4 = window.getUltimate5AsideFilteredPlayersForCurrentGame;
+  window.getUltimate5AsideFilteredPlayersForCurrentGame = function(){
+    if (window.challengePreset === 'ultimate') {
+      return Array.isArray(players) ? players : [];
+    }
+    if (typeof previousFilteredPoolV4 === 'function') return previousFilteredPoolV4();
+    return Array.isArray(players) ? players : [];
+  };
+
+  // Keep the in-game note honest if it appears.
+  if (typeof render === 'function') {
+    const previousRenderV4 = render;
+    render = function(...args){
+      const result = previousRenderV4.apply(this,args);
+      if (window.challengePreset === 'ultimate' && state) {
+        const r = allYearsRangeV4();
+        state.yearRange = { start:r.start, end:r.end };
+        const pill = document.getElementById('activeYearRangePillStep5');
+        if (pill) pill.textContent = `Active player pool: All years (${r.start} - ${r.end})`;
+      }
+      return result;
+    };
+  }
+
+  document.addEventListener('click', function(e){
+    const card = e.target.closest('.active-challenge[data-challenge="ultimate"]');
+    if (!card) return;
+    setTimeout(applyUltimateSetupV4, 0);
+    setTimeout(applyUltimateSetupV4, 100);
+  }, true);
+})();

@@ -8067,6 +8067,10 @@ if (els.startBtn) {
     state.gameMode === "draft" &&
     Number(state.userCount || 0) === 1) {
 
+    if (window.challengePreset === "worldcup2026") {
+        return "World Cup 2026 Challenge";
+    }
+
     if (window.challengePreset === "ultimate") {
         return "Ultimate Solo Mode";
     }
@@ -8256,7 +8260,8 @@ if (els.startBtn) {
           entries = entries.filter(entry =>
             entry.gameMode === "Solo Challenge" ||
             entry.gameMode === "Ultimate Solo Mode" ||
-            entry.gameMode === "Easy Solo Challenge"
+            entry.gameMode === "Easy Solo Challenge" ||
+            entry.gameMode === "World Cup 2026 Challenge"
           );
 
         } else {
@@ -9023,4 +9028,275 @@ document.addEventListener('click', function(e){
     setTimeout(applyUltimateSetupV4, 0);
     setTimeout(applyUltimateSetupV4, 100);
   }, true);
+})();
+
+
+/* =====================================================================
+   MONTHLY CHALLENGE - JULY 2026 WORLD CUP 2026
+   Adds a Monthly Challenges page, makes July live, loads the dedicated
+   players_worldcup2026.json pool, and reuses Solo Challenge gameplay.
+   ===================================================================== */
+(function monthlyWorldCup2026ChallengeV1(){
+  const WC_PRESET = "worldcup2026";
+  const WC_MODE_LABEL = "World Cup 2026 Challenge";
+  let worldCupPlayers = [];
+  let worldCupPlayersPromise = null;
+
+  function isWorldCupChallenge(){
+    return window.challengePreset === WC_PRESET;
+  }
+
+  function normaliseWorldCupRows(data){
+    const rows = Array.isArray(data) ? data : [];
+    return rows.map((p, idx) => {
+      const position = p.Position ?? p.position ?? p.POS ?? p.pos ?? "";
+      const main = p.Main_Position ?? p.mainPosition ?? p.MainPosition ?? p.main_position ?? "";
+      return {
+        id: `wc2026-${idx + 1}`,
+        player: String(p.Player ?? p.player ?? p.Name ?? p.name ?? "").trim(),
+        year: Number(p.Game_Year ?? p.year ?? p.Year ?? p.gameYear ?? 2026),
+        rating: Number(p.Rating_OVR ?? p.rating ?? p.OVR ?? p.ovr ?? p.Rating ?? 0),
+        position: String(position || main || "").trim(),
+        mainPosition: normalisePosition(main, position),
+        club: String(p.Club ?? p.club ?? "").trim(),
+        nation: String(p.Nation ?? p.nation ?? p.Squad_Nation ?? "").trim(),
+        squadNation: String(p.Squad_Nation ?? p.squadNation ?? p.Nation ?? "").trim(),
+        challengeMode: String(p.Challenge_Mode ?? p.challengeMode ?? "WC2026").trim()
+      };
+    }).filter(p => p.player && p.rating > 0 && TEAM_SHAPE.includes(p.mainPosition));
+  }
+
+  async function loadWorldCupPlayers(){
+    if (worldCupPlayersPromise) return worldCupPlayersPromise;
+    worldCupPlayersPromise = (async () => {
+      const response = await fetch("players_worldcup2026.json", { cache: "no-store" });
+      if (!response.ok) throw new Error(`Could not load players_worldcup2026.json - HTTP ${response.status}`);
+      worldCupPlayers = normaliseWorldCupRows(await response.json());
+      if (!worldCupPlayers.length) throw new Error("players_worldcup2026.json loaded but no valid World Cup players were found.");
+      console.log(`Loaded ${worldCupPlayers.length} World Cup 2026 challenge players`);
+      return worldCupPlayers;
+    })();
+    return worldCupPlayersPromise;
+  }
+
+  window.loadWorldCup2026Players = loadWorldCupPlayers;
+  window.getWorldCup2026Players = () => worldCupPlayers.slice();
+
+  async function withWorldCupPool(fn){
+    if (!isWorldCupChallenge()) return await fn();
+    await loadWorldCupPlayers();
+    await loadPlayers();
+    const originalPlayers = players;
+    players = worldCupPlayers.slice();
+    try { return await fn(); }
+    finally { players = originalPlayers; }
+  }
+
+  function ensureMonthlyPanel(){
+    let panel = document.getElementById("monthlyChallengesPanel");
+    if (panel) return panel;
+    const shell = document.querySelector(".app-shell") || document.body;
+    panel = document.createElement("section");
+    panel.id = "monthlyChallengesPanel";
+    panel.className = "card monthly-challenges-panel hidden";
+    panel.innerHTML = `
+      <div class="section-title-row monthly-title-row">
+        <div>
+          <p class="eyebrow">Monthly Challenges</p>
+          <h2>Monthly Challenges</h2>
+          <p class="muted monthly-lead">Play limited-time solo challenges with special player pools. More months will be added here.</p>
+        </div>
+        <button id="monthlyChallengesBackBtn" class="btn btn-secondary" type="button">Back</button>
+      </div>
+      <div class="monthly-challenge-grid">
+        <button type="button" class="monthly-challenge-card live" id="playWorldCup2026ChallengeBtn">
+          <span class="challenge-badge">LIVE</span>
+          <h3>July 2026: World Cup 2026</h3>
+          <p>Draft your solo 5-a-side team from the dedicated World Cup 2026 player pool. No year filter. No normal player-pool data.</p>
+          <span class="challenge-action">Play Now &rarr;</span>
+        </button>
+      </div>
+    `;
+    const leaderboard = document.getElementById("leaderboardPanel");
+    if (leaderboard) shell.insertBefore(panel, leaderboard);
+    else shell.appendChild(panel);
+    document.getElementById("monthlyChallengesBackBtn")?.addEventListener("click", function(){
+      show(panel, false);
+      show(document.getElementById("gameEntryPanel"), true);
+    });
+    document.getElementById("playWorldCup2026ChallengeBtn")?.addEventListener("click", safe(openWorldCupSetup));
+    return panel;
+  }
+
+  function hideAllMainPanelsForMonthly(){
+    show(document.getElementById("gameEntryPanel"), false);
+    show(els?.setupPanel, false);
+    show(els?.gamePanel, false);
+    show(els?.resultsPanel, false);
+    show(document.getElementById("leaderboardPanel"), false);
+    show(ensureLobby?.(), false);
+  }
+
+  function openMonthlyChallenges(){
+    ensureMonthlyPanel();
+    hideAllMainPanelsForMonthly();
+    show(document.getElementById("monthlyChallengesPanel"), true);
+    setTimeout(() => document.getElementById("monthlyChallengesPanel")?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
+  }
+
+  async function openWorldCupSetup(){
+    window.challengePreset = WC_PRESET;
+    online.enabled = false;
+    await loadWorldCupPlayers();
+    show(document.getElementById("monthlyChallengesPanel"), false);
+    hideEntryPanel();
+    show(els.setupPanel, true);
+    if (typeof updateSetupForMode === "function") updateSetupForMode();
+    setTimeout(applyWorldCupSetupUi, 0);
+    setTimeout(applyWorldCupSetupUi, 80);
+  }
+
+  function clearWorldCupSetupUi(){
+    document.querySelectorAll(".worldcup-year-hidden").forEach(el => el.classList.remove("worldcup-year-hidden"));
+  }
+
+  function applyWorldCupSetupUi(){
+    if (!isWorldCupChallenge()) { clearWorldCupSetupUi(); return; }
+    const heroEyebrow = document.querySelector("#setupPanel .setup-copy .eyebrow");
+    const heroTitle = document.querySelector("#setupPanel .setup-copy h2");
+    const heroLead = document.querySelector("#setupPanel .setup-copy .setup-lead");
+    if (heroEyebrow) heroEyebrow.textContent = "July Monthly Challenge";
+    if (heroTitle) heroTitle.textContent = "World Cup 2026 Challenge";
+    if (heroLead) heroLead.textContent = "Solo Challenge rules with a dedicated World Cup 2026 player pool. The usual year filter is disabled for this challenge.";
+    if (els.startBtn) els.startBtn.textContent = "Start World Cup 2026 Challenge";
+
+    const soloIntro = document.getElementById("soloSetupIntroStep7");
+    if (soloIntro) {
+      soloIntro.style.display = "";
+      soloIntro.innerHTML = `<h3>World Cup 2026 Challenge</h3><p>July monthly challenge. Draft from the World Cup 2026 player pool only. No year filter.</p>`;
+    }
+
+    const yearCard = document.getElementById("localYearSlicerHolderStep4");
+    if (yearCard) yearCard.classList.add("worldcup-year-hidden");
+
+    if (els.gameModeDescription) {
+      els.gameModeDescription.textContent = "World Cup 2026 Challenge: solo draft using only the dedicated World Cup 2026 player pool.";
+      els.gameModeDescription.classList.remove("solo-local-hidden-step7");
+    }
+  }
+
+  function patchEntryPanel(){
+    const panel = document.getElementById("gameEntryPanel");
+    if (!panel || panel.dataset.worldCupMonthlyPatched === "1") return;
+    const cards = [...panel.querySelectorAll(".challenge-card-v2")];
+    const monthly = cards.find(card => /monthly challenges/i.test(card.textContent || ""));
+    if (monthly) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "challenge-card-v2 monthly-challenges-entry active-monthly-challenge";
+      button.innerHTML = `<span class="challenge-badge">LIVE</span><h4>Monthly Challenges</h4><p>July 2026: World Cup 2026</p><span class="challenge-action">Play Now &rarr;</span>`;
+      monthly.replaceWith(button);
+      button.addEventListener("click", openMonthlyChallenges);
+      panel.dataset.worldCupMonthlyPatched = "1";
+    }
+  }
+
+  if (typeof injectEntryPanel === "function") {
+    const previousInjectEntryPanelWC = injectEntryPanel;
+    injectEntryPanel = function(...args){
+      const result = previousInjectEntryPanelWC.apply(this, args);
+      ensureMonthlyPanel();
+      patchEntryPanel();
+      return result;
+    };
+  }
+
+  if (typeof updateSetupForMode === "function") {
+    const previousUpdateSetupForModeWC = updateSetupForMode;
+    updateSetupForMode = function(...args){
+      const result = previousUpdateSetupForModeWC.apply(this, args);
+      setTimeout(applyWorldCupSetupUi, 0);
+      return result;
+    };
+  }
+
+  if (typeof startNewGame === "function") {
+    const previousStartNewGameWC = startNewGame;
+    startNewGame = function(gameMode, names, isOnlineGame){
+      const wasWorldCup = !isOnlineGame && isWorldCupChallenge();
+      const result = previousStartNewGameWC.apply(this, arguments);
+      if (wasWorldCup && state) {
+        state.yearRange = null;
+        state.challengePreset = WC_PRESET;
+        state.challengeName = WC_MODE_LABEL;
+        document.body.classList.add("worldcup-challenge-active");
+      }
+      return result;
+    };
+  }
+
+  if (typeof pickRandomPlayer === "function") {
+    const previousPickRandomPlayerWC = pickRandomPlayer;
+    pickRandomPlayer = async function(...args){
+      return await withWorldCupPool(() => previousPickRandomPlayerWC.apply(this, args));
+    };
+  }
+
+  document.addEventListener("click", function(event){
+    if (!isWorldCupChallenge()) return;
+    if (event.target?.closest?.("#startBtn") && !online.enabled && !els.setupPanel?.classList.contains("hidden")) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      safe(async function(){
+        await loadWorldCupPlayers();
+        selectedGameMode = "draft";
+        online.enabled = false;
+        startNewGame("draft", ["You"], false);
+      })();
+    }
+    if (event.target?.closest?.("#pickBtn")) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      safe(function(){ return pickRandomPlayer(); })();
+    }
+  }, true);
+
+  if (typeof render === "function") {
+    const previousRenderWC = render;
+    render = function(...args){
+      const result = previousRenderWC.apply(this, args);
+      patchEntryPanel();
+      ensureMonthlyPanel();
+      if (isWorldCupChallenge() && state) {
+        if (els.turnEyebrow) els.turnEyebrow.textContent = "World Cup 2026 Challenge";
+        let pill = document.getElementById("activeWorldCupPillV1");
+        if (!pill && els.message) {
+          pill = document.createElement("div");
+          pill.id = "activeWorldCupPillV1";
+          pill.className = "turn-lock-note worldcup-lock-note";
+          els.message.insertAdjacentElement("afterend", pill);
+        }
+        if (pill) pill.textContent = `Active monthly challenge: World Cup 2026 player pool (${worldCupPlayers.length || "World Cup"} players). Year filter disabled.`;
+      }
+      return result;
+    };
+  }
+
+  if (typeof resetGame === "function") {
+    const previousResetGameWC = resetGame;
+    resetGame = function(...args){
+      document.body.classList.remove("worldcup-challenge-active");
+      document.getElementById("activeWorldCupPillV1")?.remove();
+      clearWorldCupSetupUi();
+      return previousResetGameWC.apply(this, args);
+    };
+  }
+
+  document.addEventListener("click", function(event){
+    const otherChallenge = event.target?.closest?.(".active-challenge:not([data-challenge='worldcup2026'])");
+    if (otherChallenge) clearWorldCupSetupUi();
+  }, true);
+
+  ensureMonthlyPanel();
+  patchEntryPanel();
 })();
