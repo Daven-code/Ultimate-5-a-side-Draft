@@ -1,34 +1,24 @@
-# Ultimate 5-a-side - Online Bidding Fix v2
+# Ultimate 5-a-side - Online Bidding Fix v3
 
-This package keeps the existing working solo modes and front-end structure, but adds a targeted Version 2 override at the bottom of `app.js`.
+This is the full v3 package based on the latest files.
 
-## What changed
+## New fixes in v3
 
-- **Online Blind Bidding**
-  - Eligible users who submit `£0m` lose exactly one skip.
-  - Skip counters are clamped between `0/3` and `3/3` and persisted in Firebase state.
-  - Users with no skips left cannot submit `£0m`.
-  - Maximum bid still respects the reserve needed to complete the remaining squad slots.
+1. Removed the incorrect bottom turn/waiting box (`#turnLockNote`) from online games.
+2. Fixed the online bidding year filter so Online Blind Bidding and Online Live Auction draw players only from the selected year range.
 
-- **Online Live Auction**
-  - Rewritten as a strict turn-based auction.
-  - The first turn is randomised, then rotated for the next player to keep it fair.
-  - Only the current online player can bid/pass.
-  - Passing costs one skip only if that user has not already bid for the current player.
-  - If a user has already bid once for that player, passing is free.
-  - Users who cannot fill the player position, or cannot afford a valid next bid, are not penalised.
+## Previous v2 fixes retained
+
+- Online Blind Bidding skip counters persist properly.
+- Online Live Auction is turn-based, rotates the starting user, and only charges a skip when passing before bidding for that player.
 
 ## Deployment
 
-Upload/replace these files on the site:
+Upload/replace:
 
 - `index.html`
 - `styles.css`
 - `players.json`
 - `app.js`
 
-Then clear Cloudflare cache / hard refresh. The script tag has been cache-busted to `app.js?v=ultimate-online-v2`.
-
-## Note
-
-I have deliberately kept this as a targeted patch rather than a full module split, because the solo game modes are currently working and a full refactor would increase regression risk.
+The script tag has been cache-busted to `app.js?v=ultimate-online-v3`. Clear Cloudflare cache after uploading.

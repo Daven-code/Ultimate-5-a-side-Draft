@@ -8570,7 +8570,10 @@ document.addEventListener('click', function(e){
     v29SafeState();
     if (isGameComplete()) { completeGame(); render(); await saveOnlineState('Bidding complete. Reveal ratings to see the winner.'); return; }
     const needed = allNeededPositionsV2();
-    const pool = players.filter(p => needed.has(p.mainPosition) && !state.acceptedPlayerNames.has(p.player));
+    const sourcePlayers = (typeof window.getUltimate5AsideFilteredPlayersForCurrentGame === 'function' && state?.yearRange)
+      ? window.getUltimate5AsideFilteredPlayersForCurrentGame()
+      : players;
+    const pool = sourcePlayers.filter(p => needed.has(p.mainPosition) && !state.acceptedPlayerNames.has(p.player));
     if (!pool.length) { completeGame(); render(); await saveOnlineState('No more eligible players. Reveal ratings to see the winner.'); return; }
     currentCandidate = pool[Math.floor(Math.random()*pool.length)];
     state.blindBids = {};
@@ -8587,7 +8590,10 @@ document.addEventListener('click', function(e){
     state.onlineBidMode = 'live';
     if (isGameComplete()) { completeGame(); render(); await saveOnlineState('Bidding complete. Reveal ratings to see the winner.'); return; }
     const needed = allNeededPositionsV2();
-    const pool = players.filter(p => needed.has(p.mainPosition) && !state.acceptedPlayerNames.has(p.player));
+    const sourcePlayers = (typeof window.getUltimate5AsideFilteredPlayersForCurrentGame === 'function' && state?.yearRange)
+      ? window.getUltimate5AsideFilteredPlayersForCurrentGame()
+      : players;
+    const pool = sourcePlayers.filter(p => needed.has(p.mainPosition) && !state.acceptedPlayerNames.has(p.player));
     if (!pool.length) { completeGame(); render(); await saveOnlineState('No more eligible players. Reveal ratings to see the winner.'); return; }
     currentCandidate = pool[Math.floor(Math.random()*pool.length)];
     initLiveAuctionV2(currentCandidate);
@@ -8785,4 +8791,92 @@ document.addEventListener('click', function(e){
     if (online.enabled && state?.gameMode === 'bid' && !ratingsRevealed) renderOnlineBidControlsV38();
     return result;
   };
+})();
+
+
+/* =====================================================================
+   ULTIMATE 5-A-SIDE ONLINE BIDDING FIXES - VERSION 3
+   ---------------------------------------------------------------------
+   - Removes the incorrect bottom orange turn/waiting box (#turnLockNote).
+   - Ensures online blind bidding and live auction candidate pools respect
+     the host's selected year range.
+   ===================================================================== */
+(function onlineBiddingFixV3(){
+  function removeIncorrectTurnBoxV3(){
+    const note = document.getElementById('turnLockNote');
+    if (note) note.remove();
+  }
+
+  // Hide it immediately via CSS as well, so it never flashes during Firebase updates.
+  if (!document.getElementById('removeTurnLockNoteV3Styles')) {
+    const style = document.createElement('style');
+    style.id = 'removeTurnLockNoteV3Styles';
+    style.textContent = '#turnLockNote{display:none!important;}';
+    document.head.appendChild(style);
+  }
+
+  // Keep existing button-permission logic, but remove the incorrect message box afterwards.
+  if (typeof applyOnlinePermissions === 'function') {
+    const previousApplyOnlinePermissionsV3 = applyOnlinePermissions;
+    applyOnlinePermissions = function(...args){
+      const result = previousApplyOnlinePermissionsV3.apply(this,args);
+      removeIncorrectTurnBoxV3();
+      return result;
+    };
+  }
+
+  // Also remove after every render/remote update because older wrappers can recreate it.
+  if (typeof render === 'function') {
+    const previousRenderV3 = render;
+    render = function(...args){
+      const result = previousRenderV3.apply(this,args);
+      removeIncorrectTurnBoxV3();
+      return result;
+    };
+  }
+
+  if (typeof applyRemoteData === 'function') {
+    const previousApplyRemoteDataV3 = applyRemoteData;
+    applyRemoteData = function(...args){
+      const result = previousApplyRemoteDataV3.apply(this,args);
+      removeIncorrectTurnBoxV3();
+      return result;
+    };
+  }
+
+  // Belt-and-braces observer for Firebase/browser timing cases.
+  if (!window.ultimate5AsideTurnBoxObserverV3) {
+    window.ultimate5AsideTurnBoxObserverV3 = new MutationObserver(removeIncorrectTurnBoxV3);
+    window.ultimate5AsideTurnBoxObserverV3.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // Expose a reliable filtered online pool helper for any later online draw code.
+  window.getUltimate5AsideOnlineFilteredPoolV3 = function(){
+    if (typeof window.getUltimate5AsideFilteredPlayersForCurrentGame === 'function' && state?.yearRange) {
+      return window.getUltimate5AsideFilteredPlayersForCurrentGame();
+    }
+    if (state?.yearRange) {
+      const r = state.yearRange;
+      return (Array.isArray(players) ? players : []).filter(p => Number(p.year || p.Game_Year || 0) >= Number(r.start) && Number(p.year || p.Game_Year || 0) <= Number(r.end));
+    }
+    return Array.isArray(players) ? players : [];
+  };
+
+  // Re-wrap the public online candidate router so blind bidding definitely uses the filtered pool.
+  // Live auction v2 draws were also directly edited above, but this keeps future routes safe.
+  if (typeof drawOnlineBlindBidCandidateV38 === 'function') {
+    const previousDrawOnlineBidCandidateV3 = drawOnlineBlindBidCandidateV38;
+    drawOnlineBlindBidCandidateV38 = async function(...args){
+      const originalPlayers = players;
+      if (state?.yearRange) players = window.getUltimate5AsideOnlineFilteredPoolV3();
+      try {
+        return await previousDrawOnlineBidCandidateV3.apply(this,args);
+      } finally {
+        players = originalPlayers;
+        removeIncorrectTurnBoxV3();
+      }
+    };
+  }
+
+  removeIncorrectTurnBoxV3();
 })();
