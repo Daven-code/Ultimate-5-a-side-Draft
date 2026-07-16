@@ -5,6 +5,8 @@ import { LaunchTrailer } from "./videos/LaunchTrailer";
 import { LaunchTrailerPortrait } from "./videos/LaunchTrailerPortrait";
 import {EasySoloChallenge} from "./videos/EasySoloChallenge";
 import {EasySoloChallengePortrait} from "./videos/EasySoloChallengePortrait";
+import {WorldCup2026Challenge} from "./videos/WorldCup2026Challenge";
+import {WorldCup2026ChallengePortrait} from "./videos/WorldCup2026ChallengePortrait";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -46,6 +48,24 @@ export const RemotionRoot: React.FC = () => {
         id="EasySoloChallengePortrait"
         component={EasySoloChallengePortrait}
         durationInFrames={450}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+
+      <Composition
+        id="WorldCup2026Challenge"
+        component={WorldCup2026Challenge}
+        durationInFrames={420}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+
+      <Composition
+        id="WorldCup2026ChallengePortrait"
+        component={WorldCup2026ChallengePortrait}
+        durationInFrames={420}
         fps={30}
         width={1080}
         height={1920}
