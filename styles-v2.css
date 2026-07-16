@@ -1,0 +1,288 @@
+
+/**********************************************************************
+ * Ultimate 5-a-side Draft
+ * Version : 2.0.0-alpha1
+ * File    : styles-v2.css
+ * Batch   : 1 - Part 2A
+ **********************************************************************/
+
+:root{
+  --bg:#07111f;
+  --card:rgba(255,255,255,.96);
+  --text:#0f172a;
+  --muted:#64748b;
+  --primary:#2563eb;
+  --primary-dark:#1d4ed8;
+  --success:#16a34a;
+  --danger:#dc2626;
+  --secondary:#475569;
+  --soft:#f8fafc;
+  --border:#e2e8f0;
+  --line:rgba(255,255,255,.72);
+  --gold:#f59e0b;
+  --radius:24px;
+  --shadow:0 22px 70px rgba(0,0,0,.28);
+  --header-height:96px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+
+body{
+ font-family:Inter,Arial,Helvetica,sans-serif;
+ color:var(--text);
+ min-height:100vh;
+ overflow-x:hidden;
+ background:
+ radial-gradient(circle at top left,#1e3a8a 0,transparent 30%),
+ linear-gradient(145deg,#020617,#0f172a 45%,#111827);
+}
+
+.hidden{display:none!important}
+.active{display:block}
+
+.background-glow{
+ position:fixed;
+ width:360px;
+ height:360px;
+ border-radius:50%;
+ filter:blur(80px);
+ opacity:.35;
+ pointer-events:none;
+ z-index:-1;
+}
+
+.glow-one{
+ background:#22c55e;
+ top:10%;
+ right:-120px;
+}
+
+.glow-two{
+ background:#3b82f6;
+ bottom:-120px;
+ left:-120px;
+}
+
+#app{
+ max-width:1460px;
+ margin:auto;
+ min-height:100vh;
+ display:flex;
+ flex-direction:column;
+}
+
+.app-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:20px;
+ padding:22px;
+ color:#fff;
+}
+
+.header-left{
+ display:flex;
+ align-items:center;
+ gap:18px;
+}
+
+.app-logo{
+ width:72px;
+ height:72px;
+ object-fit:contain;
+}
+
+.app-header h1{
+ font-size:clamp(2rem,5vw,3.5rem);
+ line-height:.95;
+}
+
+.header-subtitle{
+ margin-top:8px;
+ color:#cbd5e1;
+ font-weight:700;
+}
+
+.header-right{
+ display:flex;
+ gap:12px;
+ align-items:center;
+}
+
+#mainContent{
+ flex:1;
+ padding:0 22px 34px;
+}
+
+.screen{
+ display:none;
+ animation:fadeIn .25s ease;
+}
+
+.screen.active{
+ display:block;
+}
+
+.app-footer{
+ padding:20px;
+ text-align:center;
+ color:#cbd5e1;
+ font-weight:700;
+}
+
+@keyframes fadeIn{
+ from{opacity:0;transform:translateY(8px)}
+ to{opacity:1;transform:none}
+}
+
+
+
+/**********************************************************************
+ * Ultimate 5-a-side Draft
+ * Version : 2.0.0-alpha1
+ * File    : styles-v2.css
+ * Batch   : 1 - Part 2B
+ **********************************************************************/
+
+/* ==========================================================
+   CARDS
+========================================================== */
+
+.card{
+    background:var(--card);
+    border:1px solid rgba(255,255,255,.35);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:24px;
+    backdrop-filter:blur(12px);
+}
+
+.setup-card{
+    max-width:1100px;
+    margin:40px auto;
+}
+
+/* ==========================================================
+   BUTTONS
+========================================================== */
+
+.btn{
+    border:none;
+    border-radius:14px;
+    padding:12px 18px;
+    font-size:1rem;
+    font-weight:800;
+    cursor:pointer;
+    transition:.18s;
+    color:#fff;
+}
+
+.btn:hover{
+    transform:translateY(-2px);
+}
+
+.btn:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    transform:none;
+}
+
+.btn-primary{
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+}
+
+.btn-secondary{
+    background:linear-gradient(135deg,#64748b,#334155);
+}
+
+.btn-success{
+    background:linear-gradient(135deg,#22c55e,#15803d);
+}
+
+.btn-danger{
+    background:linear-gradient(135deg,#ef4444,#b91c1c);
+}
+
+/* ==========================================================
+   LAYOUT HELPERS
+========================================================== */
+
+.grid-2{
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:24px;
+}
+
+.flex-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.flex-between{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+}
+
+/* ==========================================================
+   PLAYER CARD
+========================================================== */
+
+.player-card{
+    background:linear-gradient(160deg,#f8fafc,#e0f2fe);
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:22px;
+    min-height:240px;
+}
+
+.player-name{
+    font-size:2rem;
+    font-weight:900;
+    margin-bottom:10px;
+}
+
+.badge-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+}
+
+.badge{
+    padding:6px 10px;
+    border-radius:999px;
+    background:#dbeafe;
+    color:#1e40af;
+    font-weight:800;
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width:900px){
+
+    .app-header{
+        flex-direction:column;
+        text-align:center;
+    }
+
+    .header-left{
+        flex-direction:column;
+    }
+
+    .grid-2{
+        grid-template-columns:1fr;
+    }
+
+    .header-right{
+        flex-wrap:wrap;
+        justify-content:center;
+    }
+
+}

@@ -145,12 +145,19 @@
       </div>
 
       <div class="leaderboard-tabs" aria-label="Leaderboard filters">
-        <button type="button" class="leaderboard-tab active" data-leaderboard-filter="all">All Time</button>
-        <button type="button" class="leaderboard-tab" data-leaderboard-filter="Solo Challenge">Solo Challenge</button>
-        <button type="button" class="leaderboard-tab" data-leaderboard-filter="Ultimate Draft">Ultimate Draft</button>
-        <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Blind Bidding">Blind Bidding</button>
-        <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Live Auction">Live Auction</button>
-      </div>
+  <button type="button" class="leaderboard-tab active" data-leaderboard-filter="all">All Time</button>
+  <button type="button" class="leaderboard-tab" data-leaderboard-filter="solo">Solo Mode</button>
+  <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Ultimate Draft">Online Ultimate Draft</button>
+  <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Blind Bidding">Online Blind Bidding</button>
+  <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Live Auction">Online Live Auction</button>
+</div>
+
+<div id="soloLeaderboardSubTabs" class="leaderboard-tabs solo-leaderboard-subtabs hidden" aria-label="Solo leaderboard filters">
+  <button type="button" class="leaderboard-tab solo-sub-tab active" data-solo-leaderboard-filter="solo">All Solo</button>
+  <button type="button" class="leaderboard-tab solo-sub-tab" data-solo-leaderboard-filter="Solo Challenge">Standard Solo</button>
+  <button type="button" class="leaderboard-tab solo-sub-tab" data-solo-leaderboard-filter="Ultimate Solo Mode">Ultimate Solo</button>
+  <button type="button" class="leaderboard-tab solo-sub-tab" data-solo-leaderboard-filter="Easy Solo Challenge">Easy Solo</button>
+</div>
 
       <div id="leaderboardList" class="leaderboard-list">Loading leaderboard...</div>
     </section>
