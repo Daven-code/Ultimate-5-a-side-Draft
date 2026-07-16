@@ -8880,3 +8880,147 @@ document.addEventListener('click', function(e){
 
   removeIncorrectTurnBoxV3();
 })();
+
+
+/* =====================================================================
+   ULTIMATE 5-A-SIDE SOLO MODE FIX - VERSION 4
+   ---------------------------------------------------------------------
+   Fix: Ultimate Solo Mode must always use the full all-years player pool.
+   If a user previously changed the Solo Challenge year filter, the locked
+   Ultimate Solo Mode slider is now reset to the full range before setup
+   and before the game starts.
+   ===================================================================== */
+(function ultimateSoloFullRangeFixV4(){
+  function allYearsRangeV4(){
+    const years = (Array.isArray(players) ? players : [])
+      .map(p => Number(p.year || p.Game_Year || 0))
+      .filter(Boolean)
+      .sort((a,b) => a-b);
+    const min = years.length ? years[0] : 2005;
+    const max = years.length ? years[years.length - 1] : 2026;
+    return { start:min, end:max, min, max };
+  }
+
+  function setTextV4(id, value){
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(value);
+  }
+
+  function resetLocalYearSliderToAllYearsV4(){
+    const r = allYearsRangeV4();
+    const start = document.getElementById('localYearStartStep4');
+    const end = document.getElementById('localYearEndStep4');
+    if (start) {
+      start.min = String(r.min);
+      start.max = String(r.max);
+      start.value = String(r.start);
+      start.disabled = true;
+    }
+    if (end) {
+      end.min = String(r.min);
+      end.max = String(r.max);
+      end.value = String(r.end);
+      end.disabled = true;
+    }
+    setTextV4('localYearLabelStep4', `${r.start} - ${r.end}`);
+    setTextV4('localYearStartValueStep4', r.start);
+    setTextV4('localYearEndValueStep4', r.end);
+    const count = document.getElementById('localYearCountStep4');
+    if (count) count.textContent = '';
+    const fill = document.getElementById('localYearFillStep4');
+    if (fill) {
+      fill.style.left = '0%';
+      fill.style.right = '0%';
+    }
+    const holder = document.getElementById('localYearSlicerHolderStep4');
+    if (holder) {
+      holder.style.opacity = '0.4';
+      holder.style.pointerEvents = 'none';
+      const label = holder.querySelector('label');
+      if (label) label.textContent = 'Player pool locked to all years';
+      const values = holder.querySelector('.year-slicer-values-step4');
+      if (values) values.innerHTML = `<span style="width:100%;text-align:center;">All years active (${r.start} - ${r.end})</span>`;
+      const help = holder.querySelector('.year-slicer-help-step4');
+      if (help) help.textContent = '';
+    }
+    return r;
+  }
+
+  function unlockLocalYearSliderIfNotUltimateV4(){
+    if (window.challengePreset === 'ultimate') return;
+    document.querySelectorAll('#localYearSlicerHolderStep4 input[type="range"]').forEach(input => input.disabled = false);
+    const holder = document.getElementById('localYearSlicerHolderStep4');
+    if (holder) {
+      holder.style.opacity = '';
+      holder.style.pointerEvents = '';
+    }
+  }
+
+  function applyUltimateSetupV4(){
+    if (window.challengePreset === 'ultimate') {
+      resetLocalYearSliderToAllYearsV4();
+    } else {
+      unlockLocalYearSliderIfNotUltimateV4();
+    }
+  }
+
+  // When entering the setup screen, force the Ultimate Solo slider back to all years.
+  if (typeof configureSoloSetupStep7 === 'function') {
+    const previousConfigureSoloSetupV4 = configureSoloSetupStep7;
+    configureSoloSetupStep7 = function(...args){
+      const result = previousConfigureSoloSetupV4.apply(this,args);
+      setTimeout(applyUltimateSetupV4, 0);
+      setTimeout(applyUltimateSetupV4, 50);
+      return result;
+    };
+  }
+
+  // Before the game starts, set the actual DOM slider values to all years so the existing
+  // Step 4 lockRangeBeforeStart logic stores the correct range in state.yearRange.
+  if (typeof startNewGame === 'function') {
+    const previousStartNewGameV4 = startNewGame;
+    startNewGame = function(gameMode, names, isOnlineGame){
+      let fullRange = null;
+      if (!isOnlineGame && window.challengePreset === 'ultimate') {
+        fullRange = resetLocalYearSliderToAllYearsV4();
+      }
+      const result = previousStartNewGameV4.apply(this, arguments);
+      if (!isOnlineGame && window.challengePreset === 'ultimate' && state) {
+        state.yearRange = fullRange || allYearsRangeV4();
+      }
+      return result;
+    };
+  }
+
+  // Make the globally exposed filtered-pool helper return the full database for Ultimate Solo.
+  const previousFilteredPoolV4 = window.getUltimate5AsideFilteredPlayersForCurrentGame;
+  window.getUltimate5AsideFilteredPlayersForCurrentGame = function(){
+    if (window.challengePreset === 'ultimate') {
+      return Array.isArray(players) ? players : [];
+    }
+    if (typeof previousFilteredPoolV4 === 'function') return previousFilteredPoolV4();
+    return Array.isArray(players) ? players : [];
+  };
+
+  // Keep the in-game note honest if it appears.
+  if (typeof render === 'function') {
+    const previousRenderV4 = render;
+    render = function(...args){
+      const result = previousRenderV4.apply(this,args);
+      if (window.challengePreset === 'ultimate' && state) {
+        const r = allYearsRangeV4();
+        state.yearRange = { start:r.start, end:r.end };
+        const pill = document.getElementById('activeYearRangePillStep5');
+        if (pill) pill.textContent = `Active player pool: All years (${r.start} - ${r.end})`;
+      }
+      return result;
+    };
+  }
+
+  document.addEventListener('click', function(e){
+    const card = e.target.closest('.active-challenge[data-challenge="ultimate"]');
+    if (!card) return;
+    setTimeout(applyUltimateSetupV4, 0);
+    setTimeout(applyUltimateSetupV4, 100);
+  }, true);
+})();

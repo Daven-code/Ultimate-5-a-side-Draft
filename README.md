@@ -1,24 +1,21 @@
-# Ultimate 5-a-side - Online Bidding Fix v3
+# Ultimate 5-a-side - Ultimate Solo Mode Fix v4
 
-This is the full v3 package based on the latest files.
+This package includes all previous online bidding fixes and the new Ultimate Solo Mode year-filter fix.
 
-## New fixes in v3
+## New in v4
 
-1. Removed the incorrect bottom turn/waiting box (`#turnLockNote`) from online games.
-2. Fixed the online bidding year filter so Online Blind Bidding and Online Live Auction draw players only from the selected year range.
-
-## Previous v2 fixes retained
-
-- Online Blind Bidding skip counters persist properly.
-- Online Live Auction is turn-based, rotates the starting user, and only charges a skip when passing before bidding for that player.
+- Ultimate Solo Mode now always resets the year range to the full player database range when selected.
+- If the user previously changed the Solo Challenge or Easy Solo Challenge year filter, Ultimate Solo Mode no longer inherits that old range.
+- The locked Ultimate Solo Mode year-filter UI now displays all years active.
+- The game state is forced to the full range before starting Ultimate Solo Mode.
 
 ## Deployment
 
-Upload/replace:
+Replace the current files with:
 
 - `index.html`
 - `styles.css`
 - `players.json`
 - `app.js`
 
-The script tag has been cache-busted to `app.js?v=ultimate-online-v3`. Clear Cloudflare cache after uploading.
+The script tag has been cache-busted to `app.js?v=ultimate-online-v4`. Clear Cloudflare cache after uploading.
