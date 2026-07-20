@@ -12,41 +12,41 @@
  */
 
 export const worldCup2026Challenge = {
-  title: "WORLD CUP 2026",
-  subtitle: "LAST 16 DRAFT CHALLENGE",
+  title: "WORLD CUP 2026 CHALLENGE",
+  subtitle: "OUT NOW",
 
-  buildTitle: "DRAFT YOUR WORLD CUP FIVE",
-  outroHeadline: "CAN YOU TOP THE WORLD CUP LEADERBOARD?",
+  buildTitle: "DRAFT YOUR BEST WORLD CUP FIVE",
+  outroHeadline: "CAN YOU TOP THE LEADERBOARD?",
   website: "ultimate5aside.app",
   buttonText: "PLAY FREE NOW",
 
-  score: 470,
+  score: 446,
 
   team: [
     {
-      player: "World Cup GK",
+      player: "Thibaut Courtois",
       position: "GK",
-      rating: 91,
+      rating: 90,
     },
     {
-      player: "Elite Defender",
+      player: "William Saliba",
       position: "DEF",
-      rating: 93,
+      rating: 88,
     },
     {
-      player: "Midfield Maestro",
+      player: "Vitinha",
       position: "MID",
-      rating: 94,
+      rating: 90,
     },
     {
-      player: "Creative Winger",
+      player: "Luiz Diaz",
       position: "MID",
-      rating: 95,
+      rating: 87,
     },
     {
-      player: "Tournament Striker",
+      player: "Erling Haaland",
       position: "ST",
-      rating: 97,
+      rating: 91,
     },
   ],
 };
