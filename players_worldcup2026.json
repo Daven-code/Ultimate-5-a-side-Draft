@@ -401,7 +401,7 @@
     "Rating_OVR": 79,
     "Position": "CM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "Flamengo",
     "Nation": "Brazil",
     "Squad_Nation": "Brazil",
     "Challenge_Mode": "WC2026"
@@ -434,7 +434,7 @@
     "Rating_OVR": 83,
     "Position": "CAM",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "\tSantos",
     "Nation": "Brazil",
     "Squad_Nation": "Brazil",
     "Challenge_Mode": "WC2026"
@@ -544,7 +544,7 @@
     "Rating_OVR": 73,
     "Position": "RB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "Dynamo Moscow",
     "Nation": "Paraguay",
     "Squad_Nation": "Paraguay",
     "Challenge_Mode": "WC2026"
@@ -555,7 +555,7 @@
     "Rating_OVR": 74,
     "Position": "CB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "\tGrêmio",
     "Nation": "Paraguay",
     "Squad_Nation": "Paraguay",
     "Challenge_Mode": "WC2026"
@@ -566,7 +566,7 @@
     "Rating_OVR": 74,
     "Position": "CB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "\tAtlanta United",
     "Nation": "Paraguay",
     "Squad_Nation": "Paraguay",
     "Challenge_Mode": "WC2026"
@@ -588,7 +588,7 @@
     "Rating_OVR": 78,
     "Position": "CB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "\tPalmeiras",
     "Nation": "Paraguay",
     "Squad_Nation": "Paraguay",
     "Challenge_Mode": "WC2026"
@@ -599,7 +599,7 @@
     "Rating_OVR": 74,
     "Position": "LM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "\tPalmeiras",
     "Nation": "Paraguay",
     "Squad_Nation": "Paraguay",
     "Challenge_Mode": "WC2026"
@@ -632,7 +632,7 @@
     "Rating_OVR": 76,
     "Position": "CAM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "\tPalmeiras",
     "Nation": "Paraguay",
     "Squad_Nation": "Paraguay",
     "Challenge_Mode": "WC2026"
@@ -654,7 +654,7 @@
     "Rating_OVR": 73,
     "Position": "CM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "São Paulo",
     "Nation": "Paraguay",
     "Squad_Nation": "Paraguay",
     "Challenge_Mode": "WC2026"
@@ -742,7 +742,7 @@
     "Rating_OVR": 70,
     "Position": "ST",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "Red Bull Bragantino\t",
     "Nation": "Paraguay",
     "Squad_Nation": "Paraguay",
     "Challenge_Mode": "WC2026"
@@ -764,7 +764,7 @@
     "Rating_OVR": 72,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "RS Berkane",
     "Nation": "Morocco",
     "Squad_Nation": "Morocco",
     "Challenge_Mode": "WC2026"
@@ -775,7 +775,7 @@
     "Rating_OVR": 70,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "AS FAR",
     "Nation": "Morocco",
     "Squad_Nation": "Morocco",
     "Challenge_Mode": "WC2026"
@@ -1545,7 +1545,7 @@
     "Rating_OVR": 76,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "\tGuadalajara",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1556,7 +1556,7 @@
     "Rating_OVR": 74,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "Santos Laguna",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1567,7 +1567,7 @@
     "Rating_OVR": 74,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "AEL Limassol",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1589,7 +1589,7 @@
     "Rating_OVR": 76,
     "Position": "CB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "\tLokomotiv Moscow\t",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1622,7 +1622,7 @@
     "Rating_OVR": 75,
     "Position": "RB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "\tAmérica",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1644,7 +1644,7 @@
     "Rating_OVR": 77,
     "Position": "LB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "\tToluca",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1655,7 +1655,7 @@
     "Rating_OVR": 75,
     "Position": "CDM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "\tCruz Azul",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1666,7 +1666,7 @@
     "Rating_OVR": 75,
     "Position": "CDM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "\tGuadalajara",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1710,7 +1710,7 @@
     "Rating_OVR": 73,
     "Position": "CAM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "Tijuana",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1721,7 +1721,7 @@
     "Rating_OVR": 76,
     "Position": "CM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "Dynamo Moscow",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1732,7 +1732,7 @@
     "Rating_OVR": 72,
     "Position": "CAM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "Guadalajara",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1754,7 +1754,7 @@
     "Rating_OVR": 78,
     "Position": "LW",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "\tToluca",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1776,7 +1776,7 @@
     "Rating_OVR": 74,
     "Position": "ST",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "Guadalajara",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1809,7 +1809,7 @@
     "Rating_OVR": 73,
     "Position": "ST",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "Pumas",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -1820,7 +1820,7 @@
     "Rating_OVR": 76,
     "Position": "RM",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "Guadalajara",
     "Nation": "Mexico",
     "Squad_Nation": "Mexico",
     "Challenge_Mode": "WC2026"
@@ -3338,7 +3338,7 @@
     "Rating_OVR": 74,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "\tAl Ahly",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3349,7 +3349,7 @@
     "Rating_OVR": 68,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "Zamalek SC",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3360,7 +3360,7 @@
     "Rating_OVR": 71,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "Al Ahly",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3371,7 +3371,7 @@
     "Rating_OVR": 60,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "\tEl Gouna",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3382,7 +3382,7 @@
     "Rating_OVR": 72,
     "Position": "CB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "Al Ahly",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3393,7 +3393,7 @@
     "Rating_OVR": 71,
     "Position": "RB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "Al Ahly",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3404,7 +3404,7 @@
     "Rating_OVR": 69,
     "Position": "CB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "\tLudogorets Razgrad\t",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3437,7 +3437,7 @@
     "Rating_OVR": 68,
     "Position": "LB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "Zamalek",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3448,7 +3448,7 @@
     "Rating_OVR": 70,
     "Position": "LB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "Pyramids",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3459,7 +3459,7 @@
     "Rating_OVR": 66,
     "Position": "RB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "ZED",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3470,7 +3470,7 @@
     "Rating_OVR": 75,
     "Position": "CAM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "Al Ahly",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3481,7 +3481,7 @@
     "Rating_OVR": 62,
     "Position": "LW",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "Pyramids",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3492,7 +3492,7 @@
     "Rating_OVR": 74,
     "Position": "CDM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "\tAl-Wakrah",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3503,7 +3503,7 @@
     "Rating_OVR": 70,
     "Position": "CDM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "Pyramids",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3525,7 +3525,7 @@
     "Rating_OVR": 74,
     "Position": "CDM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "Al Ahly",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3536,7 +3536,7 @@
     "Rating_OVR": 70,
     "Position": "CM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "\tPyramids",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3547,7 +3547,7 @@
     "Rating_OVR": 75,
     "Position": "LM",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "Al Ahly",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3558,7 +3558,7 @@
     "Rating_OVR": 60,
     "Position": "ST",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "\tBarcelona B",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3613,7 +3613,7 @@
     "Rating_OVR": 74,
     "Position": "RW",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "Al Ahly",
     "Nation": "Egypt",
     "Squad_Nation": "Egypt",
     "Challenge_Mode": "WC2026"
@@ -3888,7 +3888,7 @@
     "Rating_OVR": 79,
     "Position": "ST",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "\tPalmeiras",
     "Nation": "Argentina",
     "Squad_Nation": "Argentina",
     "Challenge_Mode": "WC2026"
@@ -3921,7 +3921,7 @@
     "Rating_OVR": 77,
     "Position": "GK",
     "Main_Position": "GK",
-    "Club": "Free Agent",
+    "Club": "Atlas",
     "Nation": "Colombia",
     "Squad_Nation": "Colombia",
     "Challenge_Mode": "WC2026"
@@ -3998,7 +3998,7 @@
     "Rating_OVR": 77,
     "Position": "CB",
     "Main_Position": "DEF",
-    "Club": "Free Agent",
+    "Club": "Cruz Azul",
     "Nation": "Colombia",
     "Squad_Nation": "Colombia",
     "Challenge_Mode": "WC2026"
@@ -4053,7 +4053,7 @@
     "Rating_OVR": 78,
     "Position": "CAM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "Flamengo",
     "Nation": "Colombia",
     "Squad_Nation": "Colombia",
     "Challenge_Mode": "WC2026"
@@ -4075,7 +4075,7 @@
     "Rating_OVR": 77,
     "Position": "RM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "\tPalmeiras",
     "Nation": "Colombia",
     "Squad_Nation": "Colombia",
     "Challenge_Mode": "WC2026"
@@ -4086,7 +4086,7 @@
     "Rating_OVR": 73,
     "Position": "CDM",
     "Main_Position": "MID",
-    "Club": "Free Agent",
+    "Club": "\tAthletico Paranaense",
     "Nation": "Colombia",
     "Squad_Nation": "Colombia",
     "Challenge_Mode": "WC2026"
@@ -4130,7 +4130,7 @@
     "Rating_OVR": 79,
     "Position": "ST",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "\tKrasnodar",
     "Nation": "Colombia",
     "Squad_Nation": "Colombia",
     "Challenge_Mode": "WC2026"
@@ -4174,7 +4174,7 @@
     "Rating_OVR": 73,
     "Position": "RM",
     "Main_Position": "FWD",
-    "Club": "Free Agent",
+    "Club": "Vasco da Gama",
     "Nation": "Colombia",
     "Squad_Nation": "Colombia",
     "Challenge_Mode": "WC2026"
