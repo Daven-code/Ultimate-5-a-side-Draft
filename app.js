@@ -1,5 +1,5 @@
 // Ultimate 5-a-side Draft
-// app.js v45
+// app.js v46
 // Fixes:
 // - Online/local split front screen
 // - Online room/lobby flow
@@ -9300,3 +9300,143 @@ document.addEventListener('click', function(e){
   ensureMonthlyPanel();
   patchEntryPanel();
 })();
+
+// --- v46 completed game stats tracking ---
+// Records one completed game to Firebase Realtime Database when all teams are complete.
+// This runs even if the user never submits to the leaderboard.
+(function completedGameStatsV46(){
+  const STATS_NODE_V46 = "stats";
+
+  function ukDateKeyV46(date = new Date()) {
+    try {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(date);
+    } catch (err) {
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  function statsModeLabelV46() {
+    if (!state) return "Unknown";
+
+    if (!online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1) {
+      if (window.challengePreset === "worldcup2026" || state.challengePreset === "worldcup2026") {
+        return "World Cup 2026 Challenge";
+      }
+      if (window.challengePreset === "ultimate" || state.challengePreset === "ultimate") {
+        return "Ultimate Solo Mode";
+      }
+      if (window.challengePreset === "easy" || state.challengePreset === "easy") {
+        return "Easy Solo Challenge";
+      }
+      return "Solo Challenge";
+    }
+
+    if (online.enabled && state.gameMode === "draft") return "Online Ultimate Draft";
+    if (online.enabled && state.gameMode === "bid" && state.onlineBidMode === "live") return "Online Live Auction";
+    if (online.enabled && state.gameMode === "bid") return "Online Blind Bidding";
+    if (!online.enabled && state.gameMode === "bid") return "Local Bidding";
+    if (!online.enabled && state.gameMode === "draft") return "Local Ultimate Draft";
+
+    return state.gameMode || "Unknown";
+  }
+
+  function statsModeKeyV46(label) {
+    return String(label || "unknown")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "unknown";
+  }
+
+  function highestScoreV46() {
+    try {
+      const scored = typeof getFinalScores === "function" ? getFinalScores() : [];
+      return Number(scored?.[0]?.total || 0);
+    } catch (err) {
+      return 0;
+    }
+  }
+
+  async function recordCompletedGameStatsV46() {
+    if (!state) return;
+
+    try {
+      await ensureFirebase();
+
+      const label = statsModeLabelV46();
+      const key = statsModeKeyV46(label);
+      const today = ukDateKeyV46();
+      const now = Date.now();
+      const increment = firebase.database.ServerValue.increment(1);
+
+      const updates = {};
+
+      // Overall totals.
+      updates[`${STATS_NODE_V46}/totals/all`] = increment;
+      updates[`${STATS_NODE_V46}/totals/byMode/${key}`] = increment;
+      updates[`${STATS_NODE_V46}/modeLabels/${key}`] = label;
+
+      // Daily counters, used for checking specific time periods.
+      updates[`${STATS_NODE_V46}/daily/${today}/total`] = increment;
+      updates[`${STATS_NODE_V46}/daily/${today}/byMode/${key}`] = increment;
+
+      // Useful lightweight metadata.
+      updates[`${STATS_NODE_V46}/lastCompletedAt`] = now;
+      updates[`${STATS_NODE_V46}/lastCompletedMode`] = label;
+      updates[`${STATS_NODE_V46}/daily/${today}/lastCompletedAt`] = now;
+
+      // Keep a small audit trail as well as the counters.
+      const recentRef = firebase.database().ref(`${STATS_NODE_V46}/recent`).push();
+      updates[`${STATS_NODE_V46}/recent/${recentRef.key}`] = {
+        mode: label,
+        modeKey: key,
+        online: !!online.enabled,
+        roomId: online.enabled ? (online.roomId || "") : "",
+        userCount: Number(state.userCount || (Array.isArray(state.users) ? state.users.length : 0) || 0),
+        topScore: highestScoreV46(),
+        challengePreset: state.challengePreset || window.challengePreset || "",
+        completedAt: now,
+        dateKey: today
+      };
+
+      await firebase.database().ref().update(updates);
+      console.log("Completed game stats recorded:", label);
+    } catch (err) {
+      // Never block the game/results screen if stats tracking fails.
+      console.warn("Could not record completed game stats", err);
+    }
+  }
+
+  if (typeof completeGame === "function") {
+    const previousCompleteGameStatsV46 = completeGame;
+
+    completeGame = function(...args) {
+      const shouldRecord = !!(
+        state &&
+        !state.statsRecorded &&
+        typeof isGameComplete === "function" &&
+        isGameComplete()
+      );
+
+      if (shouldRecord) {
+        state.statsRecorded = true;
+        state.statsRecordedAt = Date.now();
+        state.statsMode = statsModeLabelV46();
+      }
+
+      const result = previousCompleteGameStatsV46.apply(this, args);
+
+      if (shouldRecord) {
+        recordCompletedGameStatsV46();
+      }
+
+      return result;
+    };
+  }
+})();
+
