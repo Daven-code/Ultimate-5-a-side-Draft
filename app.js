@@ -9440,3 +9440,373 @@ document.addEventListener('click', function(e){
   }
 })();
 
+
+
+// --- v53 safe solo labels + cleaner saved/share pitch image ---
+// Minimal patch: does not alter leaderboard submit logic or reveal flow.
+(function safeResultsAndImageV53(){
+  function isSoloResultV53(){
+    return !!(
+      state &&
+      !online.enabled &&
+      state.gameMode === "draft" &&
+      Number(state.userCount || state.users?.length || 0) === 1
+    );
+  }
+
+  function modeLabelV53(){
+    if (!state) return "Ultimate 5-a-side Draft";
+    if (isSoloResultV53()) {
+      const preset = window.challengePreset || state.challengePreset || "";
+      if (preset === "worldcup2026") return "World Cup 2026 Challenge";
+      if (preset === "ultimate") return "Ultimate Solo Mode";
+      if (preset === "easy") return "Easy Solo Challenge";
+      return "Solo Challenge";
+    }
+    if (online.enabled && state.gameMode === "draft") return "Online Ultimate Draft";
+    if (online.enabled && state.gameMode === "bid" && state.onlineBidMode === "live") return "Online Live Auction";
+    if (online.enabled && state.gameMode === "bid") return "Online Blind Bidding";
+    if (!online.enabled && state.gameMode === "bid") return "Local Bidding";
+    return "Ultimate Draft";
+  }
+
+  function ordinalV53(index){
+    const n = index + 1;
+    const suffix = n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th";
+    return `${n}${suffix} place`;
+  }
+
+  function injectV53Styles(){
+    if (document.getElementById("safeResultsAndImageV53Styles")) return;
+    const style = document.createElement("style");
+    style.id = "safeResultsAndImageV53Styles";
+    style.textContent = `
+      #resultsPanel .solo-score-pill-v53 {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        width: fit-content;
+        margin-top: 8px;
+        padding: 12px 18px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #dcfce7, #dbeafe);
+        color: #0f172a;
+        font-weight: 950;
+        box-shadow: 0 14px 32px rgba(15,23,42,.10);
+      }
+      #resultsPanel .solo-score-pill-v53 strong {
+        color: #1d4ed8;
+        font-size: 1.25rem;
+      }
+      #resultsPanel .finished-team-card.solo-result-card-v53 {
+        border-color: rgba(37,99,235,.26) !important;
+        box-shadow: 0 18px 52px rgba(37,99,235,.12) !important;
+      }
+      #resultsPanel .finished-team-card.solo-result-card-v53 .finished-rank {
+        color: #1d4ed8;
+      }
+      #resultsPanel .finished-player-name {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        overflow-wrap: anywhere;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function polishSoloResultsDomV53(){
+    if (!isSoloResultV53()) return;
+    injectV53Styles();
+    const scored = getFinalScores();
+    const score = scored[0]?.total ?? 0;
+
+    const hero = document.querySelector("#resultsPanel .finished-hero");
+    if (hero) {
+      const eyebrow = hero.querySelector(".eyebrow");
+      const title = hero.querySelector("h2");
+      const intro = hero.querySelector(".muted");
+      const winner = hero.querySelector(".winner-badge-large");
+      if (eyebrow) eyebrow.textContent = modeLabelV53();
+      if (title) title.textContent = "Your final score";
+      if (intro) intro.textContent = "Ratings are revealed. Here is your completed 5-a-side score.";
+      if (winner) {
+        winner.className = "solo-score-pill-v53";
+        winner.innerHTML = `Score: <strong>${score}</strong>`;
+      }
+    }
+
+    const card = document.querySelector("#resultsPanel .finished-team-card");
+    if (card) {
+      card.classList.remove("winner");
+      card.classList.add("solo-result-card-v53");
+    }
+
+    const rank = document.querySelector("#resultsPanel .finished-rank");
+    if (rank) rank.textContent = "Final score";
+  }
+
+  const previousRenderResultsV53 = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResultsV53.apply(this, args);
+    polishSoloResultsDomV53();
+    return result;
+  };
+
+  function roundRectV53(ctx, x, y, w, h, r){
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
+
+  function fitTextV53(ctx, text, x, y, maxWidth, font, color){
+    ctx.font = font;
+    ctx.fillStyle = color || "#0f172a";
+    let output = String(text || "");
+    while (output.length > 3 && ctx.measureText(output).width > maxWidth) {
+      output = output.slice(0, -2) + "…";
+    }
+    ctx.fillText(output, x, y);
+  }
+
+  function wrapTextV53(ctx, text, x, y, maxWidth, lineHeight, maxLines){
+    const words = String(text || "").split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = "";
+    words.forEach(word => {
+      const test = line ? `${line} ${word}` : word;
+      if (!line || ctx.measureText(test).width <= maxWidth) {
+        line = test;
+      } else {
+        lines.push(line);
+        line = word;
+      }
+    });
+    if (line) lines.push(line);
+    const clipped = lines.slice(0, maxLines);
+    if (lines.length > maxLines && clipped.length) {
+      let last = clipped[clipped.length - 1];
+      while (last.length > 3 && ctx.measureText(`${last}…`).width > maxWidth) last = last.slice(0, -1);
+      clipped[clipped.length - 1] = `${last}…`;
+    }
+    clipped.forEach((ln, i) => ctx.fillText(ln, x, y + i * lineHeight));
+  }
+
+  function drawBrandV53(ctx){
+    const logo = document.querySelector('img[alt*="Ultimate 5-a-side"], img[src*="LOGO"]');
+    if (logo && logo.complete && logo.naturalWidth) {
+      try {
+        ctx.drawImage(logo, 74, 42, 106, 106);
+        return 204;
+      } catch (err) {}
+    }
+    const g = ctx.createLinearGradient(74, 42, 180, 148);
+    g.addColorStop(0, "#22c55e");
+    g.addColorStop(1, "#2563eb");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(127, 95, 53, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "950 30px Arial";
+    ctx.fillText("5", 117, 105);
+    return 204;
+  }
+
+  function teamSlotsV53(user){
+    const team = Array.isArray(user?.team) ? user.team : [];
+    const mids = team.filter(p => (p.mainPosition || p.position) === "MID");
+    return {
+      GK: team.find(p => (p.mainPosition || p.position) === "GK") || null,
+      DEF: team.find(p => (p.mainPosition || p.position) === "DEF") || null,
+      MID1: mids[0] || null,
+      MID2: mids[1] || null,
+      FWD: team.find(p => (p.mainPosition || p.position) === "FWD") || null
+    };
+  }
+
+  function drawPlayerCardV53(ctx, player, label, cx, cy, boxW, boxH){
+    ctx.save();
+    ctx.translate(cx - boxW / 2, cy - boxH / 2);
+
+    // More modern/punchy card: slim blue accent, position pill, compact text, circular rating.
+    ctx.fillStyle = "rgba(248,250,252,.985)";
+    roundRectV53(ctx, 0, 0, boxW, boxH, 20);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(147,197,253,.95)";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.fillStyle = "#2563eb";
+    roundRectV53(ctx, 0, 0, 9, boxH, 20);
+    ctx.fill();
+
+    ctx.fillStyle = "#0f172a";
+    roundRectV53(ctx, 20, 16, 58, 32, 14);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 15px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(label, 49, 38);
+    ctx.textAlign = "left";
+
+    if (!player) {
+      ctx.fillStyle = "#64748b";
+      ctx.font = "900 20px Arial";
+      ctx.fillText("Empty", 92, 43);
+      ctx.restore();
+      return;
+    }
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "900 18px Arial";
+    wrapTextV53(ctx, player.player || "", 92, 32, boxW - 172, 20, 2);
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "800 12.5px Arial";
+    const meta = `${shortenClub(player.club)}${player.year ? ` • ${player.year}` : ""}`;
+    fitTextV53(ctx, meta, 92, boxH - 17, boxW - 178, "800 12.5px Arial", "#64748b");
+
+    ctx.fillStyle = "#dbeafe";
+    ctx.beginPath();
+    ctx.arc(boxW - 39, 39, 27, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#1d4ed8";
+    ctx.font = "950 26px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(String(player.rating || ""), boxW - 39, 48);
+    ctx.restore();
+  }
+
+  function drawPitchV53(ctx, user, x, y, w, h){
+    const pitch = ctx.createLinearGradient(x, y, x + w, y + h);
+    pitch.addColorStop(0, "#166534");
+    pitch.addColorStop(.52, "#16a34a");
+    pitch.addColorStop(1, "#15803d");
+    ctx.fillStyle = pitch;
+    roundRectV53(ctx, x, y, w, h, 34);
+    ctx.fill();
+
+    ctx.save();
+    ctx.beginPath();
+    roundRectV53(ctx, x, y, w, h, 34);
+    ctx.clip();
+
+    for (let i = 0; i < 10; i += 1) {
+      ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,.045)" : "rgba(0,0,0,.035)";
+      ctx.fillRect(x + i * w / 10, y, w / 10, h);
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,.78)";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+
+    ctx.beginPath();
+    ctx.moveTo(x, y + h / 2);
+    ctx.lineTo(x + w, y + h / 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x + w / 2, y + h / 2, Math.min(78, h * .105), 0, Math.PI * 2);
+    ctx.stroke();
+
+    const penaltyW = w * .36;
+    const penaltyH = h * .16;
+    ctx.strokeRect(x + (w - penaltyW) / 2, y + 3, penaltyW, penaltyH);
+    ctx.strokeRect(x + (w - penaltyW) / 2, y + h - penaltyH - 3, penaltyW, penaltyH);
+
+    const goalW = w * .18;
+    const goalH = h * .055;
+    ctx.strokeRect(x + (w - goalW) / 2, y + 3, goalW, goalH);
+    ctx.strokeRect(x + (w - goalW) / 2, y + h - goalH - 3, goalW, goalH);
+    ctx.restore();
+
+    const slots = teamSlotsV53(user);
+    const cardW = Math.min(382, w * .335);
+    const cardH = 116;
+
+    drawPlayerCardV53(ctx, slots.FWD, "FWD", x + w / 2, y + h * .135, cardW, cardH);
+    drawPlayerCardV53(ctx, slots.MID1, "MID", x + w * .285, y + h * .385, cardW, cardH);
+    drawPlayerCardV53(ctx, slots.MID2, "MID", x + w * .715, y + h * .385, cardW, cardH);
+    drawPlayerCardV53(ctx, slots.DEF, "DEF", x + w / 2, y + h * .645, cardW, cardH);
+    drawPlayerCardV53(ctx, slots.GK, "GK", x + w / 2, y + h * .885, cardW, cardH);
+  }
+
+  createSummaryCanvas = function(){
+    const scored = getFinalScores();
+    const solo = isSoloResultV53();
+    const teamCount = Math.max(scored.length, 1);
+    const canvas = document.createElement("canvas");
+    canvas.width = 1600;
+
+    // Removed the duplicate top score strip. The score now appears once in each team card.
+    const headerH = 178;
+    const cardH = 940;
+    const gap = 38;
+    canvas.height = headerH + teamCount * cardH + Math.max(0, teamCount - 1) * gap + 82;
+    const ctx = canvas.getContext("2d");
+
+    const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    bg.addColorStop(0, "#052e16");
+    bg.addColorStop(.52, "#0f172a");
+    bg.addColorStop(1, "#1e3a8a");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "rgba(255,255,255,.07)";
+    for (let i = 0; i < 15; i += 1) {
+      ctx.beginPath();
+      ctx.arc(120 + i * 112, 94 + (i % 3) * 58, 62, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const titleX = drawBrandV53(ctx);
+    ctx.fillStyle = "#fff";
+    ctx.font = "950 58px Arial";
+    ctx.fillText("Ultimate 5-a-side Draft", titleX, 82);
+    ctx.font = "850 28px Arial";
+    ctx.fillStyle = "#d1fae5";
+    ctx.fillText(modeLabelV53(), titleX, 122);
+
+    let y = headerH;
+    const x = 70;
+    const cardW = 1460;
+    const top = scored[0]?.total ?? 0;
+
+    scored.forEach((row, index) => {
+      const isWinner = !solo && row.total === top;
+      ctx.fillStyle = solo ? "rgba(239,246,255,.98)" : (isWinner ? "rgba(254,243,199,.98)" : "rgba(255,255,255,.95)");
+      roundRectV53(ctx, x, y, cardW, cardH, 34);
+      ctx.fill();
+      ctx.strokeStyle = solo ? "#60a5fa" : (isWinner ? "#f59e0b" : "rgba(226,232,240,.95)");
+      ctx.lineWidth = solo || isWinner ? 6 : 2.5;
+      ctx.stroke();
+
+      ctx.fillStyle = solo ? "#1d4ed8" : (isWinner ? "#92400e" : "#475569");
+      ctx.font = "950 26px Arial";
+      ctx.fillText(solo ? "FINAL SCORE" : ordinalV53(index).toUpperCase(), x + 34, y + 54);
+      fitTextV53(ctx, row.user.name, x + 34, y + 104, 650, "950 40px Arial", "#0f172a");
+
+      ctx.fillStyle = "#1d4ed8";
+      ctx.font = "950 58px Arial";
+      ctx.textAlign = "right";
+      ctx.fillText(String(row.total), x + cardW - 40, y + 68);
+      ctx.font = "850 19px Arial";
+      ctx.fillStyle = "#64748b";
+      ctx.fillText("SCORE", x + cardW - 40, y + 98);
+      ctx.textAlign = "left";
+
+      drawPitchV53(ctx, row.user, x + 54, y + 152, cardW - 108, cardH - 205);
+      y += cardH + gap;
+    });
+
+    ctx.fillStyle = "rgba(255,255,255,.78)";
+    ctx.font = "850 22px Arial";
+    ctx.fillText("Generated from Ultimate 5-a-side Draft", 70, canvas.height - 38);
+    return canvas;
+  };
+})();
