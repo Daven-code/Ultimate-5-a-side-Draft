@@ -9,6 +9,8 @@ import {OnlineGameModes} from "./videos/OnlineGameModes";
 import {OnlineGameModesPortrait} from "./videos/OnlineGameModesPortrait";
 import {GuessThePlayer} from "./videos/GuessThePlayer";
 import {GuessThePlayerPortrait} from "./videos/GuessThePlayerPortrait";
+import {AcceptDeclineRonaldinho} from "./videos/AcceptDeclineRonaldinho";
+import {AcceptDeclineRonaldinhoPortrait} from "./videos/AcceptDeclineRonaldinhoPortrait";
 export const RemotionRoot: React.FC = () => (
   <>
     <Composition id="LaunchTrailer" component={LaunchTrailer} durationInFrames={600} fps={30} width={1920} height={1080} />
@@ -21,5 +23,7 @@ export const RemotionRoot: React.FC = () => (
     <Composition id="OnlineGameModesPortrait" component={OnlineGameModesPortrait} durationInFrames={1140} fps={30} width={1080} height={1920} />
     <Composition id="GuessThePlayer" component={GuessThePlayer} durationInFrames={1200} fps={30} width={1920} height={1080} />
     <Composition id="GuessThePlayerPortrait" component={GuessThePlayerPortrait} durationInFrames={1200} fps={30} width={1080} height={1920} />
+    <Composition id="AcceptDeclineRonaldinho" component={AcceptDeclineRonaldinho} durationInFrames={600} fps={30} width={1920} height={1080} />
+    <Composition id="AcceptDeclineRonaldinhoPortrait" component={AcceptDeclineRonaldinhoPortrait} durationInFrames={600} fps={30} width={1080} height={1920} />
   </>
 );
