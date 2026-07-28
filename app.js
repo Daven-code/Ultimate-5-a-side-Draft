@@ -10120,3 +10120,517 @@ document.addEventListener('click', function(e){
   ensureLeagueData().then(()=>{ addPopularCard(); if (window.challengePreset===PRESET) applySetup(); });
 })();
 
+// --- v53 Leaderboard metadata display ---
+// Shows selected leagues for League Challenge and selected year range for solo/year-filtered challenges.
+(function leaderboardMetadataV53(){
+  const SOLO_MODES_V53 = [
+    "Solo Challenge",
+    "Ultimate Solo Mode",
+    "Easy Solo Challenge",
+    "World Cup 2026 Challenge",
+    "League Challenge"
+  ];
+
+  function escV53(value){
+    return String(value ?? "").replace(/[&<>'\"]/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      "\"": "&quot;"
+    }[char]));
+  }
+
+  function modeV53(entry){
+    return String(entry?.gameMode || "Unknown").trim() || "Unknown";
+  }
+
+  function normaliseYearRangeV53(range){
+    if (!range || typeof range !== "object") return null;
+    const start = Number(range.start ?? range.from ?? range.min ?? 0);
+    const end = Number(range.end ?? range.to ?? range.max ?? 0);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || !start || !end) return null;
+    return { start: Math.min(start, end), end: Math.max(start, end) };
+  }
+
+  function leagueLabelsV53(entry){
+    const labels = entry?.leagueSelection?.labels;
+    if (Array.isArray(labels)) {
+      return labels.map(label => String(label || "").trim()).filter(Boolean);
+    }
+    if (typeof labels === "object" && labels) {
+      return Object.values(labels).map(label => String(label || "").trim()).filter(Boolean);
+    }
+    return [];
+  }
+
+  function metadataTextV53(entry){
+    const mode = modeV53(entry);
+
+    if (mode === "League Challenge") {
+      const labels = leagueLabelsV53(entry);
+      if (labels.length) return `Leagues: ${labels.join(", ")}`;
+      return "Leagues: selected leagues";
+    }
+
+    const range = normaliseYearRangeV53(entry?.yearRange);
+    if (range) {
+      if (range.start === range.end) return `Year: ${range.start}`;
+      return `Years: ${range.start} - ${range.end}`;
+    }
+
+    if (mode === "Ultimate Solo Mode") return "Years: all years";
+    if (mode === "World Cup 2026 Challenge") return "Player pool: World Cup 2026";
+
+    return "";
+  }
+
+  function ensureMetadataStylesV53(){
+    if (document.getElementById("leaderboardMetadataStylesV53")) return;
+    const style = document.createElement("style");
+    style.id = "leaderboardMetadataStylesV53";
+    style.textContent = `
+      .leaderboard-row.leaderboard-row-with-meta-v53 {
+        grid-template-columns: 54px minmax(0, 1fr) 80px minmax(160px, .8fr);
+        row-gap: 3px;
+      }
+      .leaderboard-meta-v53 {
+        grid-column: 2 / span 3;
+        color: #64748b;
+        font-size: .78rem;
+        font-weight: 850;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+      @media (max-width: 720px) {
+        .leaderboard-row.leaderboard-row-with-meta-v53 {
+          grid-template-columns: 44px minmax(0, 1fr) 72px;
+        }
+        .leaderboard-row.leaderboard-row-with-meta-v53 .leaderboard-mode {
+          grid-column: 2 / span 2;
+          text-align: left;
+        }
+        .leaderboard-meta-v53 {
+          grid-column: 2 / span 2;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  async function loadLeaderboardWithMetadataV53(filter){
+    const list = document.getElementById("leaderboardList");
+    if (!list) return;
+
+    ensureMetadataStylesV53();
+    list.innerHTML = `<div class="leaderboard-empty">Loading leaderboard...</div>`;
+
+    try {
+      await ensureFirebase();
+      const snapshot = await firebase.database().ref("leaderboard").once("value");
+
+      if (!snapshot.exists()) {
+        list.innerHTML = `<div class="leaderboard-empty">No scores submitted yet.</div>`;
+        return;
+      }
+
+      let entries = Object.values(snapshot.val() || {})
+        .filter(entry => Number.isFinite(Number(entry.score)))
+        .map(entry => ({
+          ...entry,
+          username: String(entry.username || "Player").trim() || "Player",
+          score: Number(entry.score || 0),
+          gameMode: modeV53(entry),
+          timestamp: Number(entry.timestamp || 0)
+        }));
+
+      if (filter && filter !== "all") {
+        if (filter === "solo") {
+          entries = entries.filter(entry => SOLO_MODES_V53.includes(entry.gameMode));
+        } else {
+          entries = entries.filter(entry => entry.gameMode === filter);
+        }
+      }
+
+      entries.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return b.timestamp - a.timestamp;
+      });
+
+      const top20 = entries.slice(0, 20);
+      if (!top20.length) {
+        list.innerHTML = `<div class="leaderboard-empty">No scores yet for this leaderboard.</div>`;
+        return;
+      }
+
+      list.innerHTML = top20.map((entry, index) => {
+        const meta = metadataTextV53(entry);
+        return `
+          <div class="leaderboard-row leaderboard-row-with-meta-v53">
+            <span class="leaderboard-rank">#${index + 1}</span>
+            <span class="leaderboard-name">${escV53(entry.username)}</span>
+            <span class="leaderboard-score">${entry.score}</span>
+            <span class="leaderboard-mode">${escV53(entry.gameMode)}</span>
+            ${meta ? `<span class="leaderboard-meta-v53">${escV53(meta)}</span>` : ""}
+          </div>
+        `;
+      }).join("");
+
+    } catch (error) {
+      list.innerHTML = `<div class="leaderboard-error">Could not load leaderboard. ${escV53(error.message || error)}</div>`;
+    }
+  }
+
+  function setMainActiveV53(filter){
+    document.querySelectorAll(".leaderboard-tab[data-leaderboard-filter]").forEach(tab => {
+      tab.classList.toggle("active", (tab.dataset.leaderboardFilter || "all") === filter);
+    });
+
+    const subTabs = document.getElementById("soloLeaderboardSubTabs");
+    if (subTabs) subTabs.classList.toggle("hidden", filter !== "solo");
+  }
+
+  function setSoloActiveV53(filter){
+    document.querySelectorAll(".solo-sub-tab").forEach(tab => {
+      tab.classList.toggle("active", (tab.dataset.soloLeaderboardFilter || "solo") === filter);
+    });
+  }
+
+  function ensureLeagueSubTabV53(){
+    const tabs = document.getElementById("soloLeaderboardSubTabs");
+    if (!tabs || tabs.querySelector('[data-solo-leaderboard-filter="League Challenge"]')) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "leaderboard-tab solo-sub-tab";
+    button.dataset.soloLeaderboardFilter = "League Challenge";
+    button.textContent = "League Challenge";
+    tabs.appendChild(button);
+  }
+
+  function removeWorldCupMainTabV53(){
+    document.querySelectorAll('.leaderboard-tab[data-leaderboard-filter="World Cup 2026 Challenge"]').forEach(tab => tab.remove());
+  }
+
+  document.addEventListener("click", function(event){
+    const mainTab = event.target?.closest?.(".leaderboard-tab[data-leaderboard-filter]");
+    if (!mainTab) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    removeWorldCupMainTabV53();
+    ensureLeagueSubTabV53();
+
+    const filter = mainTab.dataset.leaderboardFilter || "all";
+    setMainActiveV53(filter);
+
+    if (filter === "solo") {
+      setSoloActiveV53("solo");
+      loadLeaderboardWithMetadataV53("solo");
+    } else {
+      loadLeaderboardWithMetadataV53(filter);
+    }
+  }, true);
+
+  document.addEventListener("click", function(event){
+    const subTab = event.target?.closest?.(".solo-sub-tab[data-solo-leaderboard-filter]");
+    if (!subTab) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    removeWorldCupMainTabV53();
+    ensureLeagueSubTabV53();
+    setMainActiveV53("solo");
+
+    const filter = subTab.dataset.soloLeaderboardFilter || "solo";
+    setSoloActiveV53(filter);
+    loadLeaderboardWithMetadataV53(filter);
+  }, true);
+
+  document.addEventListener("click", function(event){
+    if (!event.target?.closest?.("#leaderboardBtn")) return;
+    setTimeout(() => {
+      removeWorldCupMainTabV53();
+      ensureLeagueSubTabV53();
+      ensureMetadataStylesV53();
+      const activeMain = document.querySelector(".leaderboard-tab[data-leaderboard-filter].active");
+      const filter = activeMain?.dataset?.leaderboardFilter || "all";
+      if (filter === "solo") {
+        const activeSub = document.querySelector(".solo-sub-tab.active");
+        loadLeaderboardWithMetadataV53(activeSub?.dataset?.soloLeaderboardFilter || "solo");
+      } else {
+        loadLeaderboardWithMetadataV53(filter);
+      }
+    }, 120);
+  }, true);
+
+  ensureMetadataStylesV53();
+  ensureLeagueSubTabV53();
+  removeWorldCupMainTabV53();
+})();
+
+// --- League Challenge leaderboard metadata hotfix ---
+// Append this block to the VERY END of your current app.js.
+// It must be after the existing League Challenge and leaderboard patches.
+(function leagueLeaderboardMetadataHotfixV54(){
+  const SOLO_MODES = [
+    "Solo Challenge",
+    "Ultimate Solo Mode",
+    "Easy Solo Challenge",
+    "World Cup 2026 Challenge",
+    "League Challenge"
+  ];
+
+  function esc(value){
+    return String(value ?? "").replace(/[&<>'\"]/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      "\"": "&quot;"
+    }[char]));
+  }
+
+  function mode(entry){
+    return String(entry?.gameMode || "Unknown").trim() || "Unknown";
+  }
+
+  function yearRangeText(entry){
+    const range = entry?.yearRange;
+    if (!range || typeof range !== "object") return "";
+
+    const start = Number(range.start ?? range.from ?? range.min ?? 0);
+    const end = Number(range.end ?? range.to ?? range.max ?? 0);
+
+    if (!Number.isFinite(start) || !Number.isFinite(end) || !start || !end) return "";
+
+    const a = Math.min(start, end);
+    const b = Math.max(start, end);
+
+    return a === b ? `Year: ${a}` : `Years: ${a} - ${b}`;
+  }
+
+  function leagueLabels(entry){
+    const labels = entry?.leagueSelection?.labels;
+
+    if (Array.isArray(labels)) {
+      return labels.map(label => String(label || "").trim()).filter(Boolean);
+    }
+
+    if (labels && typeof labels === "object") {
+      return Object.values(labels).map(label => String(label || "").trim()).filter(Boolean);
+    }
+
+    return [];
+  }
+
+  function metadataText(entry){
+    const gameMode = mode(entry);
+
+    if (gameMode === "League Challenge") {
+      const labels = leagueLabels(entry);
+      return labels.length ? `Leagues: ${labels.join(", ")}` : "Leagues: selected leagues";
+    }
+
+    const years = yearRangeText(entry);
+    if (years) return years;
+
+    if (gameMode === "Ultimate Solo Mode") return "Years: all years";
+    if (gameMode === "World Cup 2026 Challenge") return "Player pool: World Cup 2026";
+
+    return "";
+  }
+
+  function ensureStyles(){
+    if (document.getElementById("leaderboardMetadataHotfixStylesV54")) return;
+
+    const style = document.createElement("style");
+    style.id = "leaderboardMetadataHotfixStylesV54";
+    style.textContent = `
+      .leaderboard-row.leaderboard-row-with-meta-v54 {
+        grid-template-columns: 54px minmax(0, 1fr) 80px minmax(160px, .8fr);
+        row-gap: 3px;
+      }
+
+      .leaderboard-meta-v54 {
+        grid-column: 2 / span 3;
+        color: #64748b;
+        font-size: .78rem;
+        font-weight: 850;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+
+      @media (max-width: 720px) {
+        .leaderboard-row.leaderboard-row-with-meta-v54 {
+          grid-template-columns: 44px minmax(0, 1fr) 72px;
+        }
+
+        .leaderboard-row.leaderboard-row-with-meta-v54 .leaderboard-mode {
+          grid-column: 2 / span 2;
+          text-align: left;
+        }
+
+        .leaderboard-meta-v54 {
+          grid-column: 2 / span 2;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureLeagueSubTab(){
+    const tabs = document.getElementById("soloLeaderboardSubTabs");
+    if (!tabs || tabs.querySelector('[data-solo-leaderboard-filter="League Challenge"]')) return;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "leaderboard-tab solo-sub-tab";
+    button.dataset.soloLeaderboardFilter = "League Challenge";
+    button.textContent = "League Challenge";
+    tabs.appendChild(button);
+  }
+
+  function removeWorldCupMainTab(){
+    document.querySelectorAll('.leaderboard-tab[data-leaderboard-filter="World Cup 2026 Challenge"]').forEach(tab => tab.remove());
+  }
+
+  function setActiveMain(filter){
+    document.querySelectorAll(".leaderboard-tab[data-leaderboard-filter]").forEach(tab => {
+      tab.classList.toggle("active", (tab.dataset.leaderboardFilter || "all") === filter);
+    });
+
+    const subTabs = document.getElementById("soloLeaderboardSubTabs");
+    if (subTabs) subTabs.classList.toggle("hidden", filter !== "solo");
+  }
+
+  function setActiveSolo(filter){
+    document.querySelectorAll(".solo-sub-tab").forEach(tab => {
+      tab.classList.toggle("active", (tab.dataset.soloLeaderboardFilter || "solo") === filter);
+    });
+  }
+
+  async function loadLeaderboardWithMeta(filter){
+    const list = document.getElementById("leaderboardList");
+    if (!list) return;
+
+    ensureStyles();
+    list.innerHTML = `<div class="leaderboard-empty">Loading leaderboard...</div>`;
+
+    try {
+      await ensureFirebase();
+      const snapshot = await firebase.database().ref("leaderboard").once("value");
+
+      if (!snapshot.exists()) {
+        list.innerHTML = `<div class="leaderboard-empty">No scores submitted yet.</div>`;
+        return;
+      }
+
+      let entries = Object.values(snapshot.val() || {})
+        .filter(entry => Number.isFinite(Number(entry.score)))
+        .map(entry => ({
+          ...entry,
+          username: String(entry.username || "Player").trim() || "Player",
+          score: Number(entry.score || 0),
+          gameMode: mode(entry),
+          timestamp: Number(entry.timestamp || 0)
+        }));
+
+      if (filter && filter !== "all") {
+        if (filter === "solo") {
+          entries = entries.filter(entry => SOLO_MODES.includes(entry.gameMode));
+        } else {
+          entries = entries.filter(entry => entry.gameMode === filter);
+        }
+      }
+
+      entries.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return b.timestamp - a.timestamp;
+      });
+
+      const top20 = entries.slice(0, 20);
+
+      if (!top20.length) {
+        list.innerHTML = `<div class="leaderboard-empty">No scores yet for this leaderboard.</div>`;
+        return;
+      }
+
+      list.innerHTML = top20.map((entry, index) => {
+        const meta = metadataText(entry);
+
+        return `
+          <div class="leaderboard-row leaderboard-row-with-meta-v54">
+            <span class="leaderboard-rank">#${index + 1}</span>
+            <span class="leaderboard-name">${esc(entry.username)}</span>
+            <span class="leaderboard-score">${entry.score}</span>
+            <span class="leaderboard-mode">${esc(entry.gameMode)}</span>
+            ${meta ? `<span class="leaderboard-meta-v54">${esc(meta)}</span>` : ""}
+          </div>
+        `;
+      }).join("");
+
+    } catch (error) {
+      list.innerHTML = `<div class="leaderboard-error">Could not load leaderboard. ${esc(error.message || error)}</div>`;
+    }
+  }
+
+  // Important: use WINDOW capture, which fires before older document-level leaderboard handlers.
+  // This avoids the previous League Challenge handler stopping the metadata renderer.
+  window.addEventListener("click", function(event){
+    const mainTab = event.target?.closest?.(".leaderboard-tab[data-leaderboard-filter]");
+    const soloTab = event.target?.closest?.(".solo-sub-tab[data-solo-leaderboard-filter]");
+
+    if (!mainTab && !soloTab) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    ensureStyles();
+    ensureLeagueSubTab();
+    removeWorldCupMainTab();
+
+    if (soloTab) {
+      const filter = soloTab.dataset.soloLeaderboardFilter || "solo";
+      setActiveMain("solo");
+      setActiveSolo(filter);
+      loadLeaderboardWithMeta(filter);
+      return;
+    }
+
+    const filter = mainTab.dataset.leaderboardFilter || "all";
+    setActiveMain(filter);
+
+    if (filter === "solo") {
+      setActiveSolo("solo");
+      loadLeaderboardWithMeta("solo");
+    } else {
+      loadLeaderboardWithMeta(filter);
+    }
+  }, true);
+
+  window.addEventListener("click", function(event){
+    if (!event.target?.closest?.("#leaderboardBtn")) return;
+
+    setTimeout(() => {
+      ensureStyles();
+      ensureLeagueSubTab();
+      removeWorldCupMainTab();
+
+      const activeMain = document.querySelector(".leaderboard-tab[data-leaderboard-filter].active");
+      const filter = activeMain?.dataset?.leaderboardFilter || "all";
+
+      if (filter === "solo") {
+        const activeSolo = document.querySelector(".solo-sub-tab.active");
+        loadLeaderboardWithMeta(activeSolo?.dataset?.soloLeaderboardFilter || "solo");
+      } else {
+        loadLeaderboardWithMeta(filter);
+      }
+    }, 150);
+  }, true);
+
+  ensureStyles();
+  ensureLeagueSubTab();
+  removeWorldCupMainTab();
+})();
