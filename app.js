@@ -552,7 +552,7 @@ function injectEntryPanel() {
 
         <div class="challenge-card-v2 coming-soon">
           <span class="challenge-badge coming">COMING SOON</span>
-          <h4>📅 Monthly Challenges</h4>
+          <h4>🌍 Monthly Challenges</h4>
           <p>July 2026: World Cup 2026</p>
           <small>Future archive: August, September, October...</small>
         </div>
@@ -9194,7 +9194,7 @@ document.addEventListener('click', function(e){
       const button = document.createElement("button");
       button.type = "button";
       button.className = "challenge-card-v2 monthly-challenges-entry active-monthly-challenge";
-      button.innerHTML = `<span class="challenge-badge">LIVE</span><h4>📅 Monthly Challenges</h4><p>July 2026: World Cup 2026</p><span class="challenge-action">Play Now &rarr;</span>`;
+      button.innerHTML = `<span class="challenge-badge">LIVE</span><h4>Monthly Challenges</h4><p>July 2026: World Cup 2026</p><span class="challenge-action">Play Now &rarr;</span>`;
       monthly.replaceWith(button);
       button.addEventListener("click", openMonthlyChallenges);
       panel.dataset.worldCupMonthlyPatched = "1";
@@ -9438,5 +9438,685 @@ document.addEventListener('click', function(e){
       return result;
     };
   }
+})();
+
+
+
+// --- v53 safe solo labels + cleaner saved/share pitch image ---
+// Minimal patch: does not alter leaderboard submit logic or reveal flow.
+(function safeResultsAndImageV53(){
+  function isSoloResultV53(){
+    return !!(
+      state &&
+      !online.enabled &&
+      state.gameMode === "draft" &&
+      Number(state.userCount || state.users?.length || 0) === 1
+    );
+  }
+
+  function modeLabelV53(){
+    if (!state) return "Ultimate 5-a-side Draft";
+    if (isSoloResultV53()) {
+      const preset = window.challengePreset || state.challengePreset || "";
+      if (preset === "worldcup2026") return "World Cup 2026 Challenge";
+      if (preset === "ultimate") return "Ultimate Solo Mode";
+      if (preset === "easy") return "Easy Solo Challenge";
+      return "Solo Challenge";
+    }
+    if (online.enabled && state.gameMode === "draft") return "Online Ultimate Draft";
+    if (online.enabled && state.gameMode === "bid" && state.onlineBidMode === "live") return "Online Live Auction";
+    if (online.enabled && state.gameMode === "bid") return "Online Blind Bidding";
+    if (!online.enabled && state.gameMode === "bid") return "Local Bidding";
+    return "Ultimate Draft";
+  }
+
+  function ordinalV53(index){
+    const n = index + 1;
+    const suffix = n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th";
+    return `${n}${suffix} place`;
+  }
+
+  function injectV53Styles(){
+    if (document.getElementById("safeResultsAndImageV53Styles")) return;
+    const style = document.createElement("style");
+    style.id = "safeResultsAndImageV53Styles";
+    style.textContent = `
+      #resultsPanel .solo-score-pill-v53 {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        width: fit-content;
+        margin-top: 8px;
+        padding: 12px 18px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #dcfce7, #dbeafe);
+        color: #0f172a;
+        font-weight: 950;
+        box-shadow: 0 14px 32px rgba(15,23,42,.10);
+      }
+      #resultsPanel .solo-score-pill-v53 strong {
+        color: #1d4ed8;
+        font-size: 1.25rem;
+      }
+      #resultsPanel .finished-team-card.solo-result-card-v53 {
+        border-color: rgba(37,99,235,.26) !important;
+        box-shadow: 0 18px 52px rgba(37,99,235,.12) !important;
+      }
+      #resultsPanel .finished-team-card.solo-result-card-v53 .finished-rank {
+        color: #1d4ed8;
+      }
+      #resultsPanel .finished-player-name {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        overflow-wrap: anywhere;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function polishSoloResultsDomV53(){
+    if (!isSoloResultV53()) return;
+    injectV53Styles();
+    const scored = getFinalScores();
+    const score = scored[0]?.total ?? 0;
+
+    const hero = document.querySelector("#resultsPanel .finished-hero");
+    if (hero) {
+      const eyebrow = hero.querySelector(".eyebrow");
+      const title = hero.querySelector("h2");
+      const intro = hero.querySelector(".muted");
+      const winner = hero.querySelector(".winner-badge-large");
+      if (eyebrow) eyebrow.textContent = modeLabelV53();
+      if (title) title.textContent = "Your final score";
+      if (intro) intro.textContent = "Ratings are revealed. Here is your completed 5-a-side score.";
+      if (winner) {
+        winner.className = "solo-score-pill-v53";
+        winner.innerHTML = `Score: <strong>${score}</strong>`;
+      }
+    }
+
+    const card = document.querySelector("#resultsPanel .finished-team-card");
+    if (card) {
+      card.classList.remove("winner");
+      card.classList.add("solo-result-card-v53");
+    }
+
+    const rank = document.querySelector("#resultsPanel .finished-rank");
+    if (rank) rank.textContent = "Final score";
+  }
+
+  const previousRenderResultsV53 = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResultsV53.apply(this, args);
+    polishSoloResultsDomV53();
+    return result;
+  };
+
+  function roundRectV53(ctx, x, y, w, h, r){
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
+
+  function fitTextV53(ctx, text, x, y, maxWidth, font, color){
+    ctx.font = font;
+    ctx.fillStyle = color || "#0f172a";
+    let output = String(text || "");
+    while (output.length > 3 && ctx.measureText(output).width > maxWidth) {
+      output = output.slice(0, -2) + "…";
+    }
+    ctx.fillText(output, x, y);
+  }
+
+  function wrapTextV53(ctx, text, x, y, maxWidth, lineHeight, maxLines){
+    const words = String(text || "").split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = "";
+    words.forEach(word => {
+      const test = line ? `${line} ${word}` : word;
+      if (!line || ctx.measureText(test).width <= maxWidth) {
+        line = test;
+      } else {
+        lines.push(line);
+        line = word;
+      }
+    });
+    if (line) lines.push(line);
+    const clipped = lines.slice(0, maxLines);
+    if (lines.length > maxLines && clipped.length) {
+      let last = clipped[clipped.length - 1];
+      while (last.length > 3 && ctx.measureText(`${last}…`).width > maxWidth) last = last.slice(0, -1);
+      clipped[clipped.length - 1] = `${last}…`;
+    }
+    clipped.forEach((ln, i) => ctx.fillText(ln, x, y + i * lineHeight));
+  }
+
+  function drawBrandV53(ctx){
+    const logo = document.querySelector('img[alt*="Ultimate 5-a-side"], img[src*="LOGO"]');
+    if (logo && logo.complete && logo.naturalWidth) {
+      try {
+        ctx.drawImage(logo, 74, 42, 106, 106);
+        return 204;
+      } catch (err) {}
+    }
+    const g = ctx.createLinearGradient(74, 42, 180, 148);
+    g.addColorStop(0, "#22c55e");
+    g.addColorStop(1, "#2563eb");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(127, 95, 53, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "950 30px Arial";
+    ctx.fillText("5", 117, 105);
+    return 204;
+  }
+
+  function teamSlotsV53(user){
+    const team = Array.isArray(user?.team) ? user.team : [];
+    const mids = team.filter(p => (p.mainPosition || p.position) === "MID");
+    return {
+      GK: team.find(p => (p.mainPosition || p.position) === "GK") || null,
+      DEF: team.find(p => (p.mainPosition || p.position) === "DEF") || null,
+      MID1: mids[0] || null,
+      MID2: mids[1] || null,
+      FWD: team.find(p => (p.mainPosition || p.position) === "FWD") || null
+    };
+  }
+
+  function drawPlayerCardV53(ctx, player, label, cx, cy, boxW, boxH){
+    ctx.save();
+    ctx.translate(cx - boxW / 2, cy - boxH / 2);
+
+    // More modern/punchy card: slim blue accent, position pill, compact text, circular rating.
+    ctx.fillStyle = "rgba(248,250,252,.985)";
+    roundRectV53(ctx, 0, 0, boxW, boxH, 20);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(147,197,253,.95)";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.fillStyle = "#2563eb";
+    roundRectV53(ctx, 0, 0, 9, boxH, 20);
+    ctx.fill();
+
+    ctx.fillStyle = "#0f172a";
+    roundRectV53(ctx, 20, 16, 58, 32, 14);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 15px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(label, 49, 38);
+    ctx.textAlign = "left";
+
+    if (!player) {
+      ctx.fillStyle = "#64748b";
+      ctx.font = "900 20px Arial";
+      ctx.fillText("Empty", 92, 43);
+      ctx.restore();
+      return;
+    }
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "900 18px Arial";
+    wrapTextV53(ctx, player.player || "", 92, 32, boxW - 172, 20, 2);
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "800 12.5px Arial";
+    const meta = `${shortenClub(player.club)}${player.year ? ` • ${player.year}` : ""}`;
+    fitTextV53(ctx, meta, 92, boxH - 17, boxW - 178, "800 12.5px Arial", "#64748b");
+
+    ctx.fillStyle = "#dbeafe";
+    ctx.beginPath();
+    ctx.arc(boxW - 39, 39, 27, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#1d4ed8";
+    ctx.font = "950 26px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(String(player.rating || ""), boxW - 39, 48);
+    ctx.restore();
+  }
+
+  function drawPitchV53(ctx, user, x, y, w, h){
+    const pitch = ctx.createLinearGradient(x, y, x + w, y + h);
+    pitch.addColorStop(0, "#166534");
+    pitch.addColorStop(.52, "#16a34a");
+    pitch.addColorStop(1, "#15803d");
+    ctx.fillStyle = pitch;
+    roundRectV53(ctx, x, y, w, h, 34);
+    ctx.fill();
+
+    ctx.save();
+    ctx.beginPath();
+    roundRectV53(ctx, x, y, w, h, 34);
+    ctx.clip();
+
+    for (let i = 0; i < 10; i += 1) {
+      ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,.045)" : "rgba(0,0,0,.035)";
+      ctx.fillRect(x + i * w / 10, y, w / 10, h);
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,.78)";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+
+    ctx.beginPath();
+    ctx.moveTo(x, y + h / 2);
+    ctx.lineTo(x + w, y + h / 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x + w / 2, y + h / 2, Math.min(78, h * .105), 0, Math.PI * 2);
+    ctx.stroke();
+
+    const penaltyW = w * .36;
+    const penaltyH = h * .16;
+    ctx.strokeRect(x + (w - penaltyW) / 2, y + 3, penaltyW, penaltyH);
+    ctx.strokeRect(x + (w - penaltyW) / 2, y + h - penaltyH - 3, penaltyW, penaltyH);
+
+    const goalW = w * .18;
+    const goalH = h * .055;
+    ctx.strokeRect(x + (w - goalW) / 2, y + 3, goalW, goalH);
+    ctx.strokeRect(x + (w - goalW) / 2, y + h - goalH - 3, goalW, goalH);
+    ctx.restore();
+
+    const slots = teamSlotsV53(user);
+    const cardW = Math.min(382, w * .335);
+    const cardH = 116;
+
+    drawPlayerCardV53(ctx, slots.FWD, "FWD", x + w / 2, y + h * .135, cardW, cardH);
+    drawPlayerCardV53(ctx, slots.MID1, "MID", x + w * .285, y + h * .385, cardW, cardH);
+    drawPlayerCardV53(ctx, slots.MID2, "MID", x + w * .715, y + h * .385, cardW, cardH);
+    drawPlayerCardV53(ctx, slots.DEF, "DEF", x + w / 2, y + h * .645, cardW, cardH);
+    drawPlayerCardV53(ctx, slots.GK, "GK", x + w / 2, y + h * .885, cardW, cardH);
+  }
+
+  createSummaryCanvas = function(){
+    const scored = getFinalScores();
+    const solo = isSoloResultV53();
+    const teamCount = Math.max(scored.length, 1);
+    const canvas = document.createElement("canvas");
+    canvas.width = 1600;
+
+    // Removed the duplicate top score strip. The score now appears once in each team card.
+    const headerH = 178;
+    const cardH = 940;
+    const gap = 38;
+    canvas.height = headerH + teamCount * cardH + Math.max(0, teamCount - 1) * gap + 82;
+    const ctx = canvas.getContext("2d");
+
+    const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    bg.addColorStop(0, "#052e16");
+    bg.addColorStop(.52, "#0f172a");
+    bg.addColorStop(1, "#1e3a8a");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "rgba(255,255,255,.07)";
+    for (let i = 0; i < 15; i += 1) {
+      ctx.beginPath();
+      ctx.arc(120 + i * 112, 94 + (i % 3) * 58, 62, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const titleX = drawBrandV53(ctx);
+    ctx.fillStyle = "#fff";
+    ctx.font = "950 58px Arial";
+    ctx.fillText("Ultimate 5-a-side Draft", titleX, 82);
+    ctx.font = "850 28px Arial";
+    ctx.fillStyle = "#d1fae5";
+    ctx.fillText(modeLabelV53(), titleX, 122);
+
+    let y = headerH;
+    const x = 70;
+    const cardW = 1460;
+    const top = scored[0]?.total ?? 0;
+
+    scored.forEach((row, index) => {
+      const isWinner = !solo && row.total === top;
+      ctx.fillStyle = solo ? "rgba(239,246,255,.98)" : (isWinner ? "rgba(254,243,199,.98)" : "rgba(255,255,255,.95)");
+      roundRectV53(ctx, x, y, cardW, cardH, 34);
+      ctx.fill();
+      ctx.strokeStyle = solo ? "#60a5fa" : (isWinner ? "#f59e0b" : "rgba(226,232,240,.95)");
+      ctx.lineWidth = solo || isWinner ? 6 : 2.5;
+      ctx.stroke();
+
+      ctx.fillStyle = solo ? "#1d4ed8" : (isWinner ? "#92400e" : "#475569");
+      ctx.font = "950 26px Arial";
+      ctx.fillText(solo ? "FINAL SCORE" : ordinalV53(index).toUpperCase(), x + 34, y + 54);
+      fitTextV53(ctx, row.user.name, x + 34, y + 104, 650, "950 40px Arial", "#0f172a");
+
+      ctx.fillStyle = "#1d4ed8";
+      ctx.font = "950 58px Arial";
+      ctx.textAlign = "right";
+      ctx.fillText(String(row.total), x + cardW - 40, y + 68);
+      ctx.font = "850 19px Arial";
+      ctx.fillStyle = "#64748b";
+      ctx.fillText("SCORE", x + cardW - 40, y + 98);
+      ctx.textAlign = "left";
+
+      drawPitchV53(ctx, row.user, x + 54, y + 152, cardW - 108, cardH - 205);
+      y += cardH + gap;
+    });
+
+    ctx.fillStyle = "rgba(255,255,255,.78)";
+    ctx.font = "850 22px Arial";
+    ctx.fillText("Generated from Ultimate 5-a-side Draft", 70, canvas.height - 38);
+    return canvas;
+  };
+})();
+
+// --- v52 League Challenge from restored working files ---
+// Adds League Challenge without removing restored social footer, solo result labels, saved pitch image, or WC solo sub-tab.
+(function leagueChallengeRestoredV52(){
+  const PRESET = "league";
+  const MODE_LABEL = "League Challenge";
+  const OTHER_KEY = "__other__";
+  const REQUIRED = {GK:5, DEF:5, MID:10, FWD:5};
+  let selectedLeagueKeys = new Set();
+  let currentOptions = [];
+
+  const esc = v => String(v ?? "").replace(/[&<>'\"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c]));
+  const normLeague = v => String(v || "Unknown League").trim() || "Unknown League";
+  const leagueKey = v => normLeague(v).toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"") || "unknown_league";
+  const pLeague = p => normLeague(p?.league || p?.League || p?.LEAGUE || "Unknown League");
+  const pPos = p => String(p?.mainPosition || p?.Main_Position || p?.MainPosition || p?.position || p?.Position || "").toUpperCase();
+  const allPlayers = () => Array.isArray(players) ? players : [];
+
+  function countPositions(group){
+    return group.reduce((acc,p)=>{ const pos=pPos(p); if (acc[pos] !== undefined) acc[pos] += 1; return acc; }, {GK:0, DEF:0, MID:0, FWD:0});
+  }
+  function enough(group){
+    const c=countPositions(group);
+    return c.GK >= REQUIRED.GK && c.DEF >= REQUIRED.DEF && c.MID >= REQUIRED.MID && c.FWD >= REQUIRED.FWD;
+  }
+  function buildOptions(){
+    const source=allPlayers();
+    const leagues=[...new Set(source.map(pLeague))].sort((a,b)=>a.localeCompare(b));
+    const qualified=leagues.filter(lg => enough(source.filter(p => pLeague(p) === lg))).map(lg => ({key:leagueKey(lg), label:lg, league:lg, isOther:false}));
+    const qualifiedSet=new Set(qualified.map(o=>o.league));
+    const otherGroup=source.filter(p=>!qualifiedSet.has(pLeague(p)));
+    if (enough(otherGroup)) qualified.push({key:OTHER_KEY, label:"All Other Leagues", league:"All Other Leagues", isOther:true});
+    currentOptions=qualified;
+    return qualified;
+  }
+  function selectedOptions(){
+    const opts=currentOptions.length ? currentOptions : buildOptions();
+    return opts.filter(o=>selectedLeagueKeys.has(o.key));
+  }
+  function leaguePool(){
+    const opts=currentOptions.length ? currentOptions : buildOptions();
+    const selected=selectedOptions();
+    if (!selected.length) return [];
+    const selectedRegular=new Set(selected.filter(o=>!o.isOther).map(o=>o.league));
+    const qualifiedSet=new Set(opts.filter(o=>!o.isOther).map(o=>o.league));
+    const includeOther=selected.some(o=>o.isOther);
+    return allPlayers().filter(p=>{
+      const lg=pLeague(p);
+      if (selectedRegular.has(lg)) return true;
+      if (includeOther && !qualifiedSet.has(lg)) return true;
+      return false;
+    });
+  }
+  function selectionForState(){
+    const sel=selectedOptions();
+    return {keys:sel.map(o=>o.key), labels:sel.map(o=>o.label), playerCount:leaguePool().length, allYears:true};
+  }
+
+  function injectStyles(){
+    if (document.getElementById("leagueChallengeRestoredStylesV52")) return;
+    const style=document.createElement("style");
+    style.id="leagueChallengeRestoredStylesV52";
+    style.textContent = `
+      .challenge-grid-v2{align-items:stretch;}
+      .challenge-card-v2{min-height:176px;display:flex!important;flex-direction:column;align-items:flex-start;gap:8px;padding:18px 18px 16px!important;}
+      .challenge-card-v2 .challenge-badge{min-height:22px;display:inline-flex;align-items:center;justify-content:center;margin:0 0 4px;line-height:1;}
+      .challenge-card-v2 h4{min-height:38px;margin:0!important;display:flex;align-items:flex-start;line-height:1.18;}
+      .challenge-card-v2 p{min-height:48px;margin:0!important;line-height:1.28;}
+      .challenge-card-v2 small{margin:0!important;line-height:1.25;}
+      .challenge-card-v2 .challenge-action{margin-top:auto!important;}
+      .league-challenge-card-v52,.challenge-card-v2.league-challenge-card-v52{background:rgba(255,255,255,.085)!important;border:1px solid rgba(147,197,253,.10)!important;box-shadow:0 12px 30px rgba(15,23,42,.12)!important;}
+      .league-challenge-card-v52:hover,.league-challenge-card-v52:focus-visible{transform:translateY(-3px);background:rgba(59,130,246,.22)!important;border-color:rgba(147,197,253,.42)!important;box-shadow:0 18px 44px rgba(37,99,235,.22),0 0 0 1px rgba(147,197,253,.12) inset!important;}
+      .league-selector-v52{margin:14px 0 16px;padding:18px;border-radius:18px;background:#f8fafc;border:1px solid #dbeafe;}
+      .league-selector-v52 h3{margin:0 0 12px;color:#0f172a;}
+      .league-buttons-v52{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important;width:100%;}
+      .league-button-v52{width:100%!important;min-height:48px;display:inline-flex!important;align-items:center;justify-content:center;padding:12px 10px!important;border-radius:14px!important;border:2px solid #bfdbfe!important;background:#eff6ff!important;color:#1e3a8a!important;font-size:.95rem!important;font-weight:1000!important;line-height:1.05;text-align:center;box-shadow:0 8px 18px rgba(37,99,235,.10);cursor:pointer;}
+      .league-button-v52.selected{background:linear-gradient(135deg,#2563eb,#1d4ed8)!important;color:white!important;border-color:transparent!important;box-shadow:0 12px 24px rgba(37,99,235,.26)!important;}
+      .league-summary-v52{margin:14px 0 0!important;color:#166534!important;font-weight:950!important;font-size:1rem;}
+      .league-warning-v52{margin-top:10px!important;padding:10px 12px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412!important;font-weight:900!important;}
+      @media(max-width:720px){.league-buttons-v52{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px!important}.league-button-v52{min-height:46px;font-size:.86rem!important;padding:11px 8px!important}.challenge-card-v2{min-height:150px}.challenge-card-v2 h4,.challenge-card-v2 p{min-height:auto;}}
+      @media(max-width:360px){.league-button-v52{font-size:.78rem!important;}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function addPopularCard(){
+    injectStyles();
+    const grid=document.querySelector(".challenge-grid-v2");
+    if (!grid || grid.querySelector('[data-challenge="league"]')) return;
+    const card=document.createElement("button");
+    card.type="button";
+    card.className="challenge-card-v2 active-challenge league-challenge-card-v52";
+    card.dataset.challenge=PRESET;
+    card.innerHTML=`<span class="challenge-badge">LIVE</span><h4>🏟️ League Challenge</h4><p>Filter the all-years player pool by Premier League, La Liga and other eligible leagues.</p><span class="challenge-action">Play Now →</span>`;
+    const cards=grid.querySelectorAll(".challenge-card-v2");
+    if (cards[2]) grid.insertBefore(card,cards[2]); else grid.appendChild(card);
+  }
+
+  async function ensureLeagueData(){
+    await ensurePlayersReady();
+    if (players.some(p => p.league || p.League)) return;
+    try{
+      const response=await fetch("players.json", {cache:"no-store"});
+      const raw=await response.json();
+      const lookup=new Map();
+      raw.forEach(row=>{
+        const key=`${String(row.Player||row.player||"").trim()}|${Number(row.Game_Year||row.year||0)}|${String(row.Club||row.club||"").trim()}`;
+        lookup.set(key, row.League || row.league || row.LEAGUE || "Unknown League");
+      });
+      players.forEach(p=>{
+        const key=`${String(p.player||"").trim()}|${Number(p.year||0)}|${String(p.club||"").trim()}`;
+        p.league=lookup.get(key) || "Unknown League";
+      });
+    }catch(err){ console.warn("Could not add league data", err); }
+  }
+
+  if (typeof normalisePlayers === "function" && !normalisePlayers.__leagueV52) {
+    const previousNormalise = normalisePlayers;
+    normalisePlayers = function(data){
+      const out=previousNormalise.apply(this, arguments);
+      const rows=Array.isArray(data) ? data : [];
+      const lookup=new Map();
+      rows.forEach(row=>{
+        const key=`${String(row.Player||row.player||"").trim()}|${Number(row.Game_Year||row.year||0)}|${String(row.Club||row.club||"").trim()}`;
+        lookup.set(key, row.League || row.league || row.LEAGUE || "Unknown League");
+      });
+      out.forEach(p=>{
+        const key=`${String(p.player||"").trim()}|${Number(p.year||0)}|${String(p.club||"").trim()}`;
+        p.league=lookup.get(key) || p.league || "Unknown League";
+      });
+      return out;
+    };
+    normalisePlayers.__leagueV52 = true;
+  }
+
+  function defaultSelection(options){
+    if (!options.length) return;
+    const valid=[...selectedLeagueKeys].filter(k=>options.some(o=>o.key===k));
+    if (valid.length){ selectedLeagueKeys=new Set(valid); return; }
+    const premier=options.find(o=>/premier league/i.test(o.label));
+    selectedLeagueKeys=new Set([(premier || options[0]).key]);
+  }
+
+  function renderSelector(){
+    if (window.challengePreset !== PRESET) return;
+    injectStyles();
+    const panel=document.querySelector(".setup-panel-card");
+    if (!panel) return;
+    let holder=document.getElementById("leagueSelectorV52");
+    if (!holder){
+      holder=document.createElement("div");
+      holder.id="leagueSelectorV52";
+      holder.className="league-selector-v52";
+      const before=els.excludeDeclinesLabel || els.startBtn;
+      if (before && before.parentNode===panel) panel.insertBefore(holder,before); else panel.appendChild(holder);
+    }
+    const options=buildOptions();
+    defaultSelection(options);
+    const selected=selectedOptions();
+    const count=leaguePool().length;
+    if (!options.length){
+      holder.innerHTML=`<h3>Choose leagues</h3><p class="league-warning-v52">No league has enough players in the full player pool. A league needs at least 5 GK, 5 DEF, 10 MID and 5 FWD in total.</p>`;
+      if (els.startBtn) els.startBtn.disabled=true;
+      return;
+    }
+    holder.innerHTML=`<h3>Choose leagues</h3><div class="league-buttons-v52">${options.map(o=>`<button type="button" class="league-button-v52 ${selectedLeagueKeys.has(o.key)?"selected":""}" data-league-key="${o.key}">${esc(o.label)}</button>`).join("")}</div><p class="league-summary-v52">Selected: ${selected.map(o=>esc(o.label)).join(", ") || "None"} • Active pool: ${count} players</p><p class="league-warning-v52 ${selected.length?"hidden":""}">Select at least one league to start.</p>`;
+    holder.querySelectorAll(".league-button-v52").forEach(btn=>btn.addEventListener("click",()=>{
+      const key=btn.dataset.leagueKey;
+      if (!key) return;
+      if (selectedLeagueKeys.has(key)){ if (selectedLeagueKeys.size > 1) selectedLeagueKeys.delete(key); }
+      else selectedLeagueKeys.add(key);
+      renderSelector();
+    }));
+    if (els.startBtn) els.startBtn.disabled = selected.length < 1;
+  }
+  function hideYearFilter(){
+    const year=document.getElementById("localYearSlicerHolderStep4");
+    if (year){ year.style.display="none"; year.style.opacity="0.35"; year.style.pointerEvents="none"; year.querySelectorAll('input[type="range"]').forEach(s=>s.disabled=true); }
+  }
+  function restoreYearFilter(){
+    const year=document.getElementById("localYearSlicerHolderStep4");
+    if (year){ year.style.display=""; year.style.opacity=""; year.style.pointerEvents=""; year.querySelectorAll('input[type="range"]').forEach(s=>s.disabled=false); }
+  }
+  function removeLeagueUi(){ document.getElementById("leagueSelectorV52")?.remove(); if (els.startBtn) els.startBtn.disabled=false; }
+  function applySetup(){
+    if (window.challengePreset !== PRESET){ removeLeagueUi(); restoreYearFilter(); return; }
+    const heroEyebrow=document.querySelector("#setupPanel .setup-copy .eyebrow");
+    const heroTitle=document.querySelector("#setupPanel .setup-copy h2");
+    const heroLead=document.querySelector("#setupPanel .setup-copy .setup-lead");
+    const soloIntro=document.getElementById("soloSetupIntroStep7");
+    if (heroEyebrow) heroEyebrow.textContent="🏟️ League Challenge";
+    if (heroTitle) heroTitle.textContent="League Challenge";
+    if (heroLead) heroLead.textContent="Select one or more eligible leagues, then build your best 5-a-side team from that filtered all-years player pool.";
+    if (els.startBtn) els.startBtn.textContent="Start League Challenge";
+    if (els.gameModeDescription) els.gameModeDescription.textContent="League Challenge: solo draft using selected leagues from the full normal player pool. Year filter disabled.";
+    if (soloIntro){ soloIntro.dataset.hiddenByLeagueV52="1"; soloIntro.style.display="none"; }
+    hideYearFilter();
+    renderSelector();
+  }
+  async function withLeaguePool(fn){
+    if (!(window.challengePreset === PRESET || state?.challengePreset === PRESET)) return await fn();
+    const original=players;
+    players=leaguePool();
+    try { return await fn(); } finally { players=original; }
+  }
+
+  const oldInject=injectEntryPanel;
+  injectEntryPanel=function(...args){ const res=oldInject.apply(this,args); addPopularCard(); removeWorldCupMainTab(); return res; };
+  const oldUpdate=updateSetupForMode;
+  updateSetupForMode=function(...args){ const res=oldUpdate.apply(this,args); setTimeout(()=>ensureLeagueData().then(applySetup),0); return res; };
+  const oldStart=startNewGame;
+  startNewGame=function(gameMode,names,isOnlineGame){
+    if (!isOnlineGame && window.challengePreset === PRESET){
+      const sel=selectionForState();
+      if (!sel.labels.length){ alert("Select at least one league to start League Challenge."); return; }
+      const res=oldStart.apply(this, arguments);
+      if (state){ state.challengePreset=PRESET; state.challengeName=MODE_LABEL; state.leagueSelection=sel; state.yearRange=null; }
+      return res;
+    }
+    return oldStart.apply(this, arguments);
+  };
+  const oldPick=pickRandomPlayer;
+  pickRandomPlayer=async function(...args){ return await withLeaguePool(()=>oldPick.apply(this,args)); };
+  const oldRenderCandidate=renderCandidate;
+  renderCandidate=function(p){
+    const res=oldRenderCandidate.apply(this,arguments);
+    if ((window.challengePreset === PRESET || state?.challengePreset === PRESET) && els.candidateCard){
+      const sel=state?.leagueSelection || selectionForState();
+      const note=document.createElement("p");
+      note.className="muted";
+      note.style.marginTop="8px";
+      note.textContent=`League Challenge: ${sel.labels.join(", ") || "Selected leagues"}`;
+      els.candidateCard.appendChild(note);
+    }
+    return res;
+  };
+  const oldRender=render;
+  render=function(...args){
+    const res=oldRender.apply(this,args);
+    if (state?.challengePreset === PRESET && els?.message){
+      let pill=document.getElementById("activeLeagueChallengePillV52");
+      if (!pill){ pill=document.createElement("div"); pill.id="activeLeagueChallengePillV52"; pill.className="turn-lock-note"; pill.style.background="#eff6ff"; pill.style.borderColor="#bfdbfe"; pill.style.color="#1e3a8a"; els.message.insertAdjacentElement("afterend", pill); }
+      const sel=state.leagueSelection || selectionForState();
+      pill.textContent=`Active League Challenge: ${sel.labels.join(", ")} (${sel.playerCount || leaguePool().length} players, all years)`;
+    }
+    return res;
+  };
+  const oldReset=resetGame;
+  resetGame=function(...args){ selectedLeagueKeys=new Set(); document.getElementById("activeLeagueChallengePillV52")?.remove(); removeLeagueUi(); return oldReset.apply(this,args); };
+
+  function removeWorldCupMainTab(){ document.querySelectorAll('.leaderboard-tab[data-leaderboard-filter="World Cup 2026 Challenge"]').forEach(t=>t.remove()); }
+  function ensureLeagueLeaderboardTab(){
+    const tabs=document.getElementById("soloLeaderboardSubTabs");
+    if (!tabs || tabs.querySelector('[data-solo-leaderboard-filter="League Challenge"]')) return;
+    const btn=document.createElement("button"); btn.type="button"; btn.className="leaderboard-tab solo-sub-tab"; btn.dataset.soloLeaderboardFilter=MODE_LABEL; btn.textContent="League Challenge"; tabs.appendChild(btn);
+  }
+
+  async function submitLeagueLeaderboard(){
+    if (!state || !ratingsRevealed){ alert("Reveal the ratings first."); return; }
+    if (state.leaderboardSubmitted){ alert("This result has already been submitted from this screen."); return; }
+    const scored=getFinalScores(); const top=scored[0];
+    if (!top){ alert("No score found to submit."); return; }
+    const username=prompt("Enter leaderboard name (3-18 letters/numbers):", "");
+    if (username === null) return;
+    if (!validateUsername(username)){ alert("Invalid username. Use 3-18 characters: letters, numbers, spaces, underscores or hyphens. Avoid reserved names."); return; }
+    await ensureFirebase();
+    await firebase.database().ref("leaderboard").push({username:username.trim(), score:Number(top.total||0), gameMode:MODE_LABEL, online:false, roomId:"", yearRange:null, leagueSelection:state.leagueSelection || selectionForState(), team:Array.isArray(top.user?.team)?top.user.team.map(p=>({name:p.player||"", year:Number(p.year||0), position:p.mainPosition||p.position||"", rating:Number(p.rating||0), club:p.club||"", nation:p.nation||"", league:pLeague(p)})):[], timestamp:Date.now()});
+    state.leaderboardSubmitted=true;
+    const btn=document.getElementById("submitLeaderboardBtnStep19");
+    if (btn){ btn.textContent="Submitted ✅"; btn.disabled=true; }
+    alert("League Challenge score submitted to leaderboard.");
+  }
+  function patchLeaderboardButton(){ if (!state || state.challengePreset !== PRESET || !ratingsRevealed) return; const btn=document.getElementById("submitLeaderboardBtnStep19"); if (btn) btn.onclick=safe(submitLeagueLeaderboard); }
+  const oldResults=renderResults;
+  renderResults=function(...args){ const res=oldResults.apply(this,args); patchLeaderboardButton(); if (state?.challengePreset===PRESET){ const eyebrow=document.querySelector("#resultsPanel .finished-hero .eyebrow"); if (eyebrow) eyebrow.textContent="League Challenge"; } return res; };
+  if (typeof showFinishedResultsPageV33 === "function"){
+    const oldShow=showFinishedResultsPageV33;
+    showFinishedResultsPageV33=function(...args){ const res=oldShow.apply(this,args); patchLeaderboardButton(); return res; };
+  }
+
+  async function loadLeagueLeaderboard(filter){
+    const list=document.getElementById("leaderboardList"); if (!list) return;
+    list.innerHTML=`<div class="leaderboard-empty">Loading leaderboard...</div>`;
+    try{
+      await ensureFirebase(); const snap=await firebase.database().ref("leaderboard").once("value");
+      let entries=snap.exists()?Object.values(snap.val()||{}):[];
+      entries=entries.filter(e=>Number.isFinite(Number(e.score))).map(e=>({username:String(e.username||"Player").trim()||"Player", score:Number(e.score||0), gameMode:String(e.gameMode||"Unknown"), timestamp:Number(e.timestamp||0)}));
+      if (filter===MODE_LABEL) entries=entries.filter(e=>e.gameMode===MODE_LABEL);
+      else if (filter==="solo") entries=entries.filter(e=>["Solo Challenge","Ultimate Solo Mode","Easy Solo Challenge","World Cup 2026 Challenge",MODE_LABEL].includes(e.gameMode));
+      entries.sort((a,b)=>b.score!==a.score?b.score-a.score:b.timestamp-a.timestamp);
+      const top=entries.slice(0,20);
+      if (!top.length){ list.innerHTML=`<div class="leaderboard-empty">No scores yet for this leaderboard.</div>`; return; }
+      list.innerHTML=top.map((e,i)=>`<div class="leaderboard-row"><span class="leaderboard-rank">#${i+1}</span><span class="leaderboard-name">${esc(e.username)}</span><span class="leaderboard-score">${e.score}</span><span class="leaderboard-mode">${esc(e.gameMode)}</span></div>`).join("");
+    }catch(err){ list.innerHTML=`<div class="leaderboard-error">Could not load leaderboard. ${esc(err.message||err)}</div>`; }
+  }
+  document.addEventListener("click", function(event){
+    ensureLeagueLeaderboardTab(); removeWorldCupMainTab();
+    const tab=event.target?.closest?.('[data-solo-leaderboard-filter="League Challenge"], [data-solo-leaderboard-filter="solo"]');
+    if (!tab) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    document.querySelectorAll(".solo-sub-tab").forEach(t=>t.classList.toggle("active", t===tab));
+    document.querySelector('[data-leaderboard-filter="solo"]')?.classList.add("active");
+    loadLeagueLeaderboard(tab.dataset.soloLeaderboardFilter || "solo");
+  }, true);
+  document.addEventListener("click", function(event){ if (event.target?.closest?.('[data-challenge="league"]')) setTimeout(()=>ensureLeagueData().then(()=>{hideYearFilter();renderSelector();}),80); if (event.target?.closest?.("#leaderboardBtn")) setTimeout(()=>{ensureLeagueLeaderboardTab();removeWorldCupMainTab();},0); }, true);
+
+  injectStyles(); addPopularCard(); ensureLeagueLeaderboardTab(); removeWorldCupMainTab();
+  ensureLeagueData().then(()=>{ addPopularCard(); if (window.challengePreset===PRESET) applySetup(); });
 })();
 

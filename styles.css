@@ -560,90 +560,101 @@ select, input[type="text"], input[type="number"] { width: 100%; padding: 13px 14
 @media (max-width: 760px) { .monthly-challenge-grid { grid-template-columns: 1fr; } }
 
 
-/* v54 popular challenge card polish */
-.popular-challenges-v2 {
-  max-width: 1040px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.challenge-grid-v2 {
-  align-items: stretch;
-}
-
-.challenge-card-v2 {
-  min-height: 138px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+/* ===== Footer social links ===== */
+.footer-social {
+  margin: 0 auto 16px;
   padding: 18px 18px 16px;
-  border: 1px solid rgba(147, 197, 253, 0.10);
-  background: rgba(255, 255, 255, 0.085);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  max-width: 720px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
 }
 
-.challenge-card-v2 .challenge-badge {
-  align-self: flex-start;
-  margin: 0 0 4px;
-  min-height: 22px;
+.footer-social-title {
+  margin: 0 0 12px !important;
+  max-width: none !important;
+  color: rgba(255, 255, 255, 0.94) !important;
+  font-size: 0.88rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.footer-social-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.footer-social-link {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  line-height: 1;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(147, 197, 253, 0.28);
+  color: #dbeafe;
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform 0.12s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
 }
 
-.challenge-card-v2 h4 {
-  margin: 0;
-  min-height: 34px;
-  display: flex;
-  align-items: flex-start;
-  line-height: 1.18;
-}
-
-.challenge-card-v2 p {
-  margin: 0;
-  line-height: 1.28;
-}
-
-.challenge-card-v2 small {
-  display: block;
-  margin-top: 0;
-  line-height: 1.25;
-}
-
-.challenge-action {
-  margin-top: auto;
-  padding-top: 10px;
-}
-
-.active-challenge,
-.active-monthly-challenge {
-  cursor: pointer;
-  transition: transform .18s ease, background .18s ease, box-shadow .18s ease, border-color .18s ease;
-}
-
-.active-challenge:hover,
-.active-challenge:focus-visible,
-.active-monthly-challenge:hover,
-.active-monthly-challenge:focus-visible {
-  transform: translateY(-3px);
-  background: rgba(59, 130, 246, 0.22);
-  border-color: rgba(147, 197, 253, 0.42);
-  box-shadow: 0 18px 44px rgba(37, 99, 235, 0.22), 0 0 0 1px rgba(147, 197, 253, 0.12) inset;
+.footer-social-link:hover,
+.footer-social-link:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(37, 99, 235, 0.32);
+  border-color: rgba(147, 197, 253, 0.62);
+  color: #ffffff;
   outline: none;
 }
 
-.coming-soon {
-  display: flex;
-  flex-direction: column;
+.footer-social-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(96, 165, 250, 0.18);
+  color: #ffffff;
+  font-weight: 950;
+  line-height: 1;
 }
 
-@media (max-width: 700px) {
-  .challenge-card-v2 {
-    min-height: 126px;
+@media (max-width: 560px) {
+  .footer-social {
+    width: 100%;
+    padding: 16px 12px;
   }
-  .challenge-card-v2 h4 {
-    min-height: auto;
+
+  .footer-social-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .footer-social-link {
+    justify-content: center;
+    padding: 10px 8px;
   }
 }
+
+/* ===== League Challenge restored amendments v52 ===== */
+.challenge-grid-v2{align-items:stretch;}
+.challenge-card-v2{min-height:176px;display:flex!important;flex-direction:column;align-items:flex-start;gap:8px;padding:18px 18px 16px!important;}
+.challenge-card-v2 .challenge-badge{min-height:22px;display:inline-flex;align-items:center;justify-content:center;margin:0 0 4px;line-height:1;}
+.challenge-card-v2 h4{min-height:38px;margin:0!important;display:flex;align-items:flex-start;line-height:1.18;}
+.challenge-card-v2 p{min-height:48px;margin:0!important;line-height:1.28;}
+.challenge-card-v2 small{margin:0!important;line-height:1.25;}
+.challenge-card-v2 .challenge-action{margin-top:auto!important;}
+.league-challenge-card-v52,.challenge-card-v2.league-challenge-card-v52{background:rgba(255,255,255,.085)!important;border:1px solid rgba(147,197,253,.10)!important;box-shadow:0 12px 30px rgba(15,23,42,.12)!important;}
+.league-selector-v52{margin:14px 0 16px;padding:18px;border-radius:18px;background:#f8fafc;border:1px solid #dbeafe;}
+.league-buttons-v52{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important;width:100%;}
+.league-button-v52{width:100%!important;min-height:48px;display:inline-flex!important;align-items:center;justify-content:center;padding:12px 10px!important;border-radius:14px!important;border:2px solid #bfdbfe!important;background:#eff6ff!important;color:#1e3a8a!important;font-size:.95rem!important;font-weight:1000!important;line-height:1.05;text-align:center;box-shadow:0 8px 18px rgba(37,99,235,.10);cursor:pointer;}
+.league-button-v52.selected{background:linear-gradient(135deg,#2563eb,#1d4ed8)!important;color:#fff!important;border-color:transparent!important;box-shadow:0 12px 24px rgba(37,99,235,.26)!important;}
+.league-summary-v52{margin:14px 0 0!important;color:#166534!important;font-weight:950!important;font-size:1rem;}
+@media(max-width:720px){.league-buttons-v52{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px!important}.league-button-v52{min-height:46px;font-size:.86rem!important;padding:11px 8px!important}.challenge-card-v2{min-height:150px}.challenge-card-v2 h4,.challenge-card-v2 p{min-height:auto;}}
