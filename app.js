@@ -501,7 +501,7 @@ function injectEntryPanel() {
 
     <div class="game-entry-grid">
       <article class="entry-card online-card">
-        <h3>Online game</h3>
+        <h3>Online Game</h3>
         <p>Create a room and share the link, or join using a room code.</p>
 
         <div class="online-room-box">
@@ -552,16 +552,11 @@ function injectEntryPanel() {
 
         <div class="challenge-card-v2 coming-soon">
           <span class="challenge-badge coming">COMING SOON</span>
-          <h4>🌍 Monthly Challenges</h4>
+          <h4>📅 Monthly Challenges</h4>
           <p>July 2026: World Cup 2026</p>
           <small>Future archive: August, September, October...</small>
         </div>
 
-        <div class="challenge-card-v2 coming-soon">
-          <span class="challenge-badge coming">COMING SOON</span>
-          <h4>⏪ Nostalgia Challenge</h4>
-          <p>Legendary players from 1994–2004.</p>
-        </div>
 
       </div>
     </div>
@@ -8063,6 +8058,9 @@ if (els.startBtn) {
 (function () {
   function leaderboardGameModeLabelStep19() {
     if (!state) return "Unknown";
+    if (state.challengePreset === "leaguelegends" || window.challengePreset === "leaguelegends") {
+      return "League Legends Challenge";
+    }
     if (!online.enabled &&
     state.gameMode === "draft" &&
     Number(state.userCount || 0) === 1) {
@@ -8253,6 +8251,10 @@ if (els.startBtn) {
           timestamp: Number(entry.timestamp || 0)
         }));
 
+      if (!filter || filter === "all") {
+        entries = entries.filter(entry => entry.gameMode !== "League Legends Challenge");
+      }
+
       if (filter && filter !== "all") {
 
         if (filter === "solo") {
@@ -8263,6 +8265,7 @@ if (els.startBtn) {
             entry.gameMode === "Easy Solo Challenge" ||
             entry.gameMode === "World Cup 2026 Challenge"
           );
+          entries = entries.filter(entry => entry.gameMode !== "League Legends Challenge");
 
         } else {
 
@@ -8360,7 +8363,8 @@ if (els.startBtn) {
   }
 
   function wireLeaderboardPageStep20() {
-    $("leaderboardBtn")?.addEventListener("click", safe(openLeaderboardStep20));
+    // v64: disabled older leaderboard opener to avoid a brief flash before the rebuilt leaderboard renders.
+    // The final leaderboard click handler below opens and renders the v55/v64 leaderboard directly.
     $("leaderboardBackBtn")?.addEventListener("click", closeLeaderboardStep20);
 
     document.querySelectorAll(".leaderboard-tab[data-leaderboard-filter]").forEach(tab => {
@@ -9194,7 +9198,7 @@ document.addEventListener('click', function(e){
       const button = document.createElement("button");
       button.type = "button";
       button.className = "challenge-card-v2 monthly-challenges-entry active-monthly-challenge";
-      button.innerHTML = `<span class="challenge-badge">LIVE</span><h4>Monthly Challenges</h4><p>July 2026: World Cup 2026</p><span class="challenge-action">Play Now &rarr;</span>`;
+      button.innerHTML = `<span class="challenge-badge">LIVE</span><h4>📅 Monthly Challenges</h4><p>July 2026: World Cup 2026</p><span class="challenge-action">Play Now &rarr;</span>`;
       monthly.replaceWith(button);
       button.addEventListener("click", openMonthlyChallenges);
       panel.dataset.worldCupMonthlyPatched = "1";
@@ -9324,6 +9328,12 @@ document.addEventListener('click', function(e){
     if (!state) return "Unknown";
 
     if (!online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1) {
+      if (window.challengePreset === "leaguelegends" || state.challengePreset === "leaguelegends") {
+        return "League Legends Challenge";
+      }
+      if (window.challengePreset === "league" || state.challengePreset === "league") {
+        return "League Challenge";
+      }
       if (window.challengePreset === "worldcup2026" || state.challengePreset === "worldcup2026") {
         return "World Cup 2026 Challenge";
       }
@@ -9903,7 +9913,7 @@ document.addEventListener('click', function(e){
     card.type="button";
     card.className="challenge-card-v2 active-challenge league-challenge-card-v52";
     card.dataset.challenge=PRESET;
-    card.innerHTML=`<span class="challenge-badge">LIVE</span><h4>🏟️ League Challenge</h4><p>Filter the all-years player pool by Premier League, La Liga and other eligible leagues.</p><span class="challenge-action">Play Now →</span>`;
+    card.innerHTML=`<span class="challenge-badge challenge-badge-new">NEW</span><h4>🏟️ League Challenge</h4><p>Filter the all-years player pool by Premier League, La Liga and other eligible leagues.</p><span class="challenge-action">Play Now →</span>`;
     const cards=grid.querySelectorAll(".challenge-card-v2");
     if (cards[2]) grid.insertBefore(card,cards[2]); else grid.appendChild(card);
   }
@@ -10348,22 +10358,8 @@ document.addEventListener('click', function(e){
     loadLeaderboardWithMetadataV53(filter);
   }, true);
 
-  document.addEventListener("click", function(event){
-    if (!event.target?.closest?.("#leaderboardBtn")) return;
-    setTimeout(() => {
-      removeWorldCupMainTabV53();
-      ensureLeagueSubTabV53();
-      ensureMetadataStylesV53();
-      const activeMain = document.querySelector(".leaderboard-tab[data-leaderboard-filter].active");
-      const filter = activeMain?.dataset?.leaderboardFilter || "all";
-      if (filter === "solo") {
-        const activeSub = document.querySelector(".solo-sub-tab.active");
-        loadLeaderboardWithMetadataV53(activeSub?.dataset?.soloLeaderboardFilter || "solo");
-      } else {
-        loadLeaderboardWithMetadataV53(filter);
-      }
-    }, 120);
-  }, true);
+  // v64: older v53 leaderboard button refresh disabled.
+
 
   ensureMetadataStylesV53();
   ensureLeagueSubTabV53();
@@ -10429,8 +10425,8 @@ document.addEventListener('click', function(e){
     const gameMode = mode(entry);
 
     if (gameMode === "League Challenge") {
-      const labels = leagueLabels(entry);
-      return labels.length ? `Leagues: ${labels.join(", ")}` : "Leagues: selected leagues";
+      const labels = leagueLabels(entry).filter(label => !/^unknown league$/i.test(String(label || "").trim()));
+      return labels.length ? `Leagues: ${labels.join(", ")}` : "";
     }
 
     const years = yearRangeText(entry);
@@ -10610,27 +10606,2380 @@ document.addEventListener('click', function(e){
     }
   }, true);
 
-  window.addEventListener("click", function(event){
-    if (!event.target?.closest?.("#leaderboardBtn")) return;
+  // v64: older v54 leaderboard button refresh disabled. The v55/v64 handler below opens and renders once.
 
-    setTimeout(() => {
-      ensureStyles();
-      ensureLeagueSubTab();
-      removeWorldCupMainTab();
-
-      const activeMain = document.querySelector(".leaderboard-tab[data-leaderboard-filter].active");
-      const filter = activeMain?.dataset?.leaderboardFilter || "all";
-
-      if (filter === "solo") {
-        const activeSolo = document.querySelector(".solo-sub-tab.active");
-        loadLeaderboardWithMeta(activeSolo?.dataset?.soloLeaderboardFilter || "solo");
-      } else {
-        loadLeaderboardWithMeta(filter);
-      }
-    }, 150);
-  }, true);
 
   ensureStyles();
   ensureLeagueSubTab();
   removeWorldCupMainTab();
+})();
+
+// --- League Legends Challenge full implementation ---
+(function leagueLegendsChallengeFull(){
+  const PRESET = 'leaguelegends';
+  const MODE_LABEL = 'League Legends Challenge';
+  const DATA_FILE = 'league_players.json';
+  const LEAGUES = ['Premier League', 'La Liga', 'Serie A', 'Ligue 1', 'Bundesliga'];
+  const TEAM = ['GK', 'DEF', 'MID', 'MID', 'FWD'];
+  let legends = [];
+  let legendsPromise = null;
+  let selectedLeague = 'Premier League';
+
+  function esc(v){ return String(v ?? '').replace(/[&<>'\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c])); }
+  function roleLabel(role){ return role === 'FWD' ? 'ST' : role; }
+  function isActive(){ return window.challengePreset === PRESET || state?.challengePreset === PRESET; }
+  function normalMain(pos){
+    const p = String(pos || '').toUpperCase();
+    if (p.includes('GK')) return 'GK';
+    if (['CB','LB','RB','LWB','RWB','SW'].some(x => p.includes(x))) return 'DEF';
+    if (['DM','CDM','CM','AM','CAM','LM','RM'].some(x => p.includes(x))) return 'MID';
+    return 'FWD';
+  }
+  function normaliseLegendRows(rows){
+    return (Array.isArray(rows) ? rows : []).map((p, index) => {
+      const multipliers = p.Position_Multipliers || p.positionMultipliers || {};
+      const position = String(p.Position || p.position || '').trim();
+      const main = String(p.Main_Position || p.mainPosition || p.MainPosition || normalMain(position)).toUpperCase();
+      return {
+        id: `legend-${index + 1}`,
+        player: String(p.Player || p.player || '').trim(),
+        rank: Number(p.Rank || p.rank || 0),
+        baseRating: Number(p.Rating_OVR || p.rating || 0),
+        rating: Number(p.Rating_OVR || p.rating || 0),
+        position,
+        naturalPosition: position,
+        naturalMainPosition: main,
+        mainPosition: main,
+        club: String(p.Club || p.club || '').trim(),
+        nation: String(p.Nation || p.nation || '').trim(),
+        league: String(p.League || p.league || '').trim(),
+        multipliers: {
+          DEF: Number(multipliers.DEF ?? 0),
+          MID: Number(multipliers.MID ?? 0),
+          FWD: Number(multipliers.FWD ?? multipliers.ST ?? 0),
+          ST: Number(multipliers.ST ?? multipliers.FWD ?? 0)
+        }
+      };
+    }).filter(p => p.player && p.rating > 0 && LEAGUES.includes(p.league));
+  }
+  async function loadLegends(){
+    if (legendsPromise) return legendsPromise;
+    legendsPromise = (async () => {
+      const response = await fetch(DATA_FILE, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Could not load ${DATA_FILE}`);
+      legends = normaliseLegendRows(await response.json());
+      if (!legends.length) throw new Error(`${DATA_FILE} loaded but no valid players were found.`);
+      return legends;
+    })();
+    return legendsPromise;
+  }
+  function currentPool(){ return legends.filter(p => p.league === selectedLeague); }
+  function currentTeam(){ return Array.isArray(state?.users?.[0]?.team) ? state.users[0].team : []; }
+  function neededRoles(){
+    const counts = { GK:0, DEF:0, MID:0, FWD:0 };
+    currentTeam().forEach(p => { const r = p.selectedRole || p.mainPosition; if (counts[r] !== undefined) counts[r] += 1; });
+    const needed = [];
+    TEAM.forEach(role => { if (counts[role] > 0) counts[role] -= 1; else needed.push(role); });
+    return needed;
+  }
+  function finalScore(user){ return (Array.isArray(user?.team) ? user.team : []).reduce((sum, p) => sum + Number(p.adjustedRating ?? p.rating ?? 0), 0); }
+  function multiplierFor(player, role){
+    if (!player) return 0;
+    if (player.naturalMainPosition === 'GK') return role === 'GK' ? 1 : 0;
+    if (role === 'GK') return 0;
+    return Number(player.multipliers?.[role] ?? (role === 'FWD' ? player.multipliers?.ST : undefined) ?? 0.75);
+  }
+  function adjustedPlayer(player, role){
+    const base = Number(player.baseRating || player.rating || 0);
+    const multiplier = multiplierFor(player, role);
+    const adjusted = Math.round(base * multiplier);
+    return { ...player, selectedRole: role, mainPosition: role, rating: adjusted, adjustedRating: adjusted, baseRating: base, positionMultiplier: multiplier };
+  }
+  function availableCandidates(){
+    const selectedNames = new Set(currentTeam().map(p => p.player));
+    const needed = neededRoles();
+    const onlyGkLeft = needed.length === 1 && needed[0] === 'GK';
+    const gkAlreadyPicked = !needed.includes('GK');
+    return currentPool().filter(p => {
+      if (selectedNames.has(p.player)) return false;
+      if (onlyGkLeft) return p.naturalMainPosition === 'GK';
+      if (gkAlreadyPicked) return p.naturalMainPosition !== 'GK';
+      return true;
+    });
+  }
+
+  function removeOldSmallCard(){ document.querySelectorAll('.challenge-grid-v2 [data-challenge="leaguelegends"]').forEach(card => card.remove()); }
+  function addStandaloneSection(){
+    const entry = document.getElementById('gameEntryPanel');
+    if (!entry) return;
+    removeOldSmallCard();
+    let section = document.getElementById('leagueLegendsHome');
+    if (!section) {
+      section = document.createElement('section');
+      section.id = 'leagueLegendsHome';
+      section.className = 'league-legends-hero-card';
+      const popular = entry.querySelector('.popular-challenges-v2');
+      if (popular) entry.insertBefore(section, popular);
+      else {
+        const how = entry.querySelector('.landing-how-play-inline');
+        if (how) entry.insertBefore(section, how); else entry.appendChild(section);
+      }
+    }
+    section.className = 'league-legends-hero-card';
+    section.style.display = '';
+    section.innerHTML = `
+      <div class="league-legends-hero-copy">
+        <div class="league-legends-title-line"><span class="league-legends-new-badge">NEW</span><p class="eyebrow">Game mode</p></div>
+        <h3>League Legends</h3>
+        <p>Choose a league. Draft its legends. Pick their positions - but out-of-position picks affect the final rating.</p>
+      </div>
+      <div class="league-legends-hero-action">
+        <button type="button" class="btn btn-primary" data-challenge="leaguelegends">Play League Legends</button>
+      </div>`;
+  }
+  function addLeaderboardTab(){
+    const tabs = document.getElementById('soloLeaderboardSubTabs');
+    if (!tabs || tabs.querySelector(`[data-solo-leaderboard-filter="${MODE_LABEL}"]`)) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'leaderboard-tab solo-sub-tab';
+    btn.dataset.soloLeaderboardFilter = MODE_LABEL;
+    btn.textContent = 'League Legends';
+    tabs.appendChild(btn);
+  }
+  function hideNormalSetupBits(){
+    document.getElementById('soloSetupIntroStep7')?.remove();
+    const firstLabel = document.querySelector('.setup-panel-card > label:first-child');
+    if (firstLabel) firstLabel.style.display = 'none';
+    if (els.gameModeCards) els.gameModeCards.style.display = 'none';
+    els.userCount?.closest('div')?.classList.add('hidden');
+    els.userNameFields?.classList.add('hidden');
+    els.excludeDeclinesLabel?.classList.add('hidden');
+    const year = document.getElementById('localYearSlicerHolderStep4');
+    if (year) year.style.display = 'none';
+  }
+  function renderLeagueSelector(){
+    const panel = document.querySelector('.setup-panel-card');
+    if (!panel) return;
+    let holder = document.getElementById('leagueLegendsSelector');
+    if (!holder) {
+      holder = document.createElement('div');
+      holder.id = 'leagueLegendsSelector';
+      holder.className = 'league-legends-selector-card';
+      panel.insertBefore(holder, els.startBtn || panel.firstChild);
+    }
+    holder.innerHTML = `<h3>Choose your league</h3><div class="league-legends-league-grid">${LEAGUES.map(lg => `<button type="button" class="league-legends-league-btn ${lg === selectedLeague ? 'selected' : ''}" data-legend-league="${esc(lg)}"><span>${esc(lg)}</span></button>`).join('')}</div><div class="league-legends-rule-note"><strong>Rules:</strong> 3 declines only. GK is fixed. Outfield players can be placed DEF, MID or ST, with position multipliers applied at reveal.</div><div class="league-legends-rating-note"><strong>Ratings note:</strong> League Legends ratings are relative to the selected league and are different to the normal game mode ratings. They are based on prime ability, legacy and longevity.</div>`;
+    holder.querySelectorAll('[data-legend-league]').forEach(btn => btn.addEventListener('click', () => { selectedLeague = btn.dataset.legendLeague; renderLeagueSelector(); }));
+  }
+  async function openLeagueLegendsSetup(){
+    window.challengePreset = PRESET;
+    selectedGameMode = 'draft';
+    online.enabled = false;
+    await loadLegends();
+    hideEntryPanel();
+    show($('leaderboardPanel'), false);
+    show(els.resultsPanel, false);
+    show(els.gamePanel, false);
+    show(els.setupPanel, true);
+    if (els.resetBtn) els.resetBtn.style.display = '';
+    hideNormalSetupBits();
+    const eyebrow = document.querySelector('#setupPanel .setup-copy .eyebrow');
+    const title = document.querySelector('#setupPanel .setup-copy h2');
+    const lead = document.querySelector('#setupPanel .setup-copy .setup-lead');
+    if (eyebrow) eyebrow.textContent = MODE_LABEL;
+    if (title) title.textContent = 'Draft your legends';
+    if (lead) lead.textContent = "Choose a league, then draft from its legends. Choose their positions, but be careful - the ratings will be affected if they're out of position.";
+    if (els.gameModeDescription) els.gameModeDescription.textContent = 'Choose a league, then place each randomised legend into your five-a-side team.';
+    if (els.startBtn) els.startBtn.textContent = 'Start League Legends';
+    renderLeagueSelector();
+    setTimeout(() => els.setupPanel?.scrollIntoView({ behavior:'smooth', block:'start' }), 30);
+  }
+  async function startLeagueLegendsGame(){
+    await loadLegends();
+    ratingsRevealed = false;
+    currentCandidate = null;
+    state = {
+      gameMode: 'draft', challengePreset: PRESET, challengeName: MODE_LABEL,
+      selectedLegendLeague: selectedLeague,
+      leagueSelection: { labels:[selectedLeague], keys:[selectedLeague.toLowerCase().replace(/[^a-z0-9]+/g, '_')], playerCount: currentPool().length },
+      yearRange: null, userCount: 1, currentUserIndex: 0, excludeDeclines: false,
+      users: [{ name:selectedLeague, team:[], declines:0, declinedNames:new Set(), budget:AUCTION_BUDGET, spent:0, bidSkips:0 }],
+      acceptedPlayerNames: new Set(), history: [], bidOrder: [], bidRoundIndex: 0, leaderboardSubmitted: false
+    };
+    show(ensureLobby(), false);
+    show(els.setupPanel, false);
+    show(els.gamePanel, true);
+    show(els.resultsPanel, false);
+    if (els.resetBtn) els.resetBtn.style.display = '';
+    if (els.pickBtn) els.pickBtn.textContent = 'Randomise player';
+    clearCandidate('Click Randomise player to begin.');
+    render();
+  }
+  function setLegendButtons(){
+    if (!isActive()) return;
+    const user = state?.users?.[0];
+    if (els.pickBtn) els.pickBtn.disabled = !!currentCandidate || neededRoles().length === 0;
+    if (els.acceptBtn) els.acceptBtn.disabled = !currentCandidate || !currentCandidate.legendRole;
+    if (els.declineBtn) els.declineBtn.disabled = !currentCandidate || (user?.declines || 0) >= DECLINES_ALLOWED;
+  }
+  async function pickLegend(){
+    await loadLegends();
+    if (!isActive()) return;
+    if (neededRoles().length === 0) { completeLegendGame(); return; }
+    if (currentCandidate) { setMessage('Place or decline the current player first.'); return; }
+    const pool = availableCandidates();
+    if (!pool.length) { clearCandidate('No available player found for the remaining position.'); return; }
+    currentCandidate = { ...pool[Math.floor(Math.random() * pool.length)], legendRole: null };
+    if (currentCandidate.naturalMainPosition === 'GK') currentCandidate.legendRole = 'GK';
+    renderCandidate(currentCandidate);
+    render();
+    setMessage(currentCandidate.naturalMainPosition === 'GK' ? 'Goalkeeper candidate - accept to place in GK.' : `Choose an empty pitch slot. Remaining: ${neededRoles().map(roleLabel).join(', ')}`);
+    setLegendButtons();
+  }
+  function chooseLegendRole(role){
+    if (!currentCandidate || !isActive()) return;
+    if (currentCandidate.naturalMainPosition === 'GK' && role !== 'GK') return;
+    if (currentCandidate.naturalMainPosition !== 'GK' && role === 'GK') return;
+    if (!neededRoles().includes(role)) return;
+    currentCandidate.legendRole = role;
+    renderCandidate(currentCandidate);
+    render();
+    setMessage(`${currentCandidate.player} selected for ${roleLabel(role)}. Click Accept to confirm.`);
+    setLegendButtons();
+  }
+  async function acceptLegend(){
+    if (!currentCandidate || !isActive()) return;
+    const role = currentCandidate.legendRole;
+    if (!role) { setMessage('Choose a pitch position first.'); return; }
+    const user = state.users[0];
+    const picked = adjustedPlayer(currentCandidate, role);
+    user.team.push(picked);
+    state.acceptedPlayerNames.add(picked.player);
+    state.history.push({ user:user.name, decision:'ACCEPT', player:picked, selectedRole:role });
+    currentCandidate = null;
+    if (neededRoles().length === 0) { completeLegendGame(); render(); return; }
+    render();
+    await pickLegend();
+  }
+  async function declineLegend(){
+    if (!currentCandidate || !isActive()) return;
+    const user = state.users[0];
+    if ((user.declines || 0) >= DECLINES_ALLOWED) { setMessage('No declines left - choose a position and accept this player.'); setLegendButtons(); return; }
+    user.declines += 1;
+    user.declinedNames.add(currentCandidate.player);
+    state.history.push({ user:user.name, decision:'DECLINE', player:currentCandidate });
+    currentCandidate = null;
+    render();
+    await pickLegend();
+  }
+  function completeLegendGame(){
+    currentCandidate = null;
+    clearCandidate('Team complete. Reveal ratings to see the adjusted score.');
+    els.revealBtn?.classList.remove('hidden');
+    if (els.pickBtn) els.pickBtn.disabled = true;
+    if (els.acceptBtn) els.acceptBtn.disabled = true;
+    if (els.declineBtn) els.declineBtn.disabled = true;
+  }
+  const previousRenderCandidate = renderCandidate;
+  renderCandidate = function(p){
+    if (!isActive()) return previousRenderCandidate.apply(this, arguments);
+    if (!els.candidateCard || !p) return;
+    els.candidateCard.classList.remove('blank');
+    els.candidateCard.innerHTML = `<p class="eyebrow">${MODE_LABEL}</p><h3 class="player-name">${esc(p.player)}</h3><div class="badge-row"><span class="badge dark">${esc(p.league)}</span><span class="badge">Natural: ${esc(p.naturalPosition || p.position)}</span></div><div class="detail-grid"><div class="detail"><span>Club(s)</span>${esc(p.club)}</div><div class="detail"><span>Selected role</span>${p.legendRole ? esc(roleLabel(p.legendRole)) : (p.naturalMainPosition === 'GK' ? 'GK' : 'Pick from pitch')}</div></div>`;
+  };
+  function slotPlayer(role, midIndex = 0){
+    if (role === 'MID') return currentTeam().filter(p => (p.selectedRole || p.mainPosition) === 'MID')[midIndex] || null;
+    return currentTeam().find(p => (p.selectedRole || p.mainPosition) === role) || null;
+  }
+  function slotMarkup(role, cls, midIndex = 0){
+    const p = slotPlayer(role, midIndex);
+    const can = !!currentCandidate && !p && neededRoles().includes(role) && ((currentCandidate.naturalMainPosition === 'GK' && role === 'GK') || (currentCandidate.naturalMainPosition !== 'GK' && role !== 'GK'));
+    if (!p) return `<button type="button" class="pitch-player ${cls} empty-slot legend-slot ${can ? 'selectable' : ''} ${currentCandidate?.legendRole === role && can ? 'selected' : ''}" data-legend-slot="${role}" ${can ? '' : 'disabled'}><span class="pos">${roleLabel(role)}</span><span class="name">${can ? 'Place here' : 'Empty'}</span></button>`;
+    const rating = ratingsRevealed ? `<span class="rating">${p.adjustedRating} (${p.baseRating} x ${Number(p.positionMultiplier || 0).toFixed(2)})</span>` : '';
+    return `<div class="pitch-player ${cls} legend-filled"><span class="pos">${roleLabel(role)}</span><span class="name">${esc(shortenName(p.player))}</span><span class="club">${esc(shortenClub(p.club))}</span><span class="year">${esc(p.naturalPosition || p.position)}</span>${rating}</div>`;
+  }
+  const previousRenderTeams = renderTeams;
+  renderTeams = function(){
+    if (!isActive()) return previousRenderTeams.apply(this, arguments);
+    const user = state?.users?.[0];
+    if (!els.teamsContainer || !user) return;
+    const needText = neededRoles().map(roleLabel);
+    els.teamsContainer.innerHTML = `<article class="team-card legend-team"><div class="team-top-row"><div><h3>${esc(selectedLeague)}</h3><div class="team-meta">${needText.length ? `Needs ${needText.join(', ')}` : 'Complete'}</div></div><div class="score">${ratingsRevealed ? finalScore(user) : 'Hidden'}</div></div><div class="pitch legend-pitch"><div class="penalty-box top"></div><div class="penalty-box bottom"></div>${slotMarkup('GK','gk')}${slotMarkup('DEF','def')}${slotMarkup('MID','mid1',0)}${slotMarkup('MID','mid2',1)}${slotMarkup('FWD','fwd')}</div><div class="score">Declines used: ${user.declines}/${DECLINES_ALLOWED}</div></article>`;
+    setLegendButtons();
+  };
+  const previousRender = render;
+  render = function(...args){
+    const result = previousRender.apply(this, args);
+    if (isActive()) {
+      if (els.turnEyebrow) els.turnEyebrow.textContent = MODE_LABEL;
+      if (els.currentUserLabel) els.currentUserLabel.textContent = state?.selectedLegendLeague || selectedLeague;
+      if (els.pickBtn) els.pickBtn.textContent = 'Randomise player';
+      document.getElementById('activeYearRangePillStep5')?.remove();
+      document.getElementById('soloSetupIntroStep7')?.remove();
+    }
+    return result;
+  };
+  const previousGetFinalScores = getFinalScores;
+  getFinalScores = function(){
+    if (!isActive()) return previousGetFinalScores.apply(this, arguments);
+    const user = state?.users?.[0] || { name:selectedLeague, team:[] };
+    return [{ user, total: finalScore(user) }];
+  };
+  const previousRenderResults = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResults.apply(this, args);
+    if (state?.challengePreset === PRESET) {
+      const eyebrow = document.querySelector('#resultsPanel .finished-hero .eyebrow');
+      if (eyebrow) eyebrow.textContent = MODE_LABEL;
+      const btn = document.getElementById('submitLeaderboardBtnStep19');
+      if (btn) btn.onclick = safe(submitLegendLeaderboard);
+      document.querySelectorAll('.finished-player-row').forEach((row, index) => {
+        const p = currentTeam()[index];
+        const meta = row.querySelector('.finished-player-meta');
+        if (p && meta) meta.textContent = `${roleLabel(p.selectedRole || p.mainPosition)} from ${p.naturalPosition}`;
+        const rating = row.querySelector('.finished-player-rating');
+        if (p && rating) {
+          row.classList.add('league-legends-result-row');
+          rating.innerHTML = `<span class="league-legends-score-main">${p.adjustedRating}</span><span class="league-legends-score-multiplier">${Number(p.positionMultiplier || 0).toFixed(2)} x ${p.baseRating}</span>`;
+        }
+      });
+    }
+    return result;
+  };
+  async function submitLegendLeaderboard(){
+    if (!state || !ratingsRevealed) { alert('Reveal the ratings first.'); return; }
+    if (state.leaderboardSubmitted) { alert('This result has already been submitted from this screen.'); return; }
+    const username = prompt('Enter leaderboard name (3-18 letters/numbers):', '');
+    if (username === null) return;
+    if (!validateUsername(username)) { alert('Invalid username. Use 3-18 characters: letters, numbers, spaces, underscores or hyphens. Avoid reserved names.'); return; }
+    await ensureFirebase();
+    await firebase.database().ref('leaderboard').push({ username:username.trim(), score:finalScore(state.users[0]), gameMode:MODE_LABEL, online:false, roomId:'', yearRange:null, selectedLegendLeague:state.selectedLegendLeague || selectedLeague || '', league:state.selectedLegendLeague || selectedLeague || '', leagueSelection:state.leagueSelection || { labels:[state.selectedLegendLeague || selectedLeague].filter(Boolean) }, team:currentTeam().map(p => ({ name:p.player, selectedRole:roleLabel(p.selectedRole || p.mainPosition), naturalPosition:p.naturalPosition, baseRating:p.baseRating, multiplier:p.positionMultiplier, rating:p.adjustedRating, club:p.club, league:p.league || state.selectedLegendLeague || selectedLeague || '' })), timestamp:Date.now() });
+    state.leaderboardSubmitted = true;
+    const btn = document.getElementById('submitLeaderboardBtnStep19');
+    if (btn) { btn.textContent = 'Submitted ✅'; btn.disabled = true; }
+    alert('League Legends Challenge score submitted to leaderboard.');
+  }
+  const previousReset = resetGame;
+  resetGame = function(...args){
+    if (isActive()) {
+      window.challengePreset = null;
+      document.getElementById('leagueLegendsSelector')?.remove();
+      if (els.pickBtn) els.pickBtn.textContent = 'Pick player';
+    }
+    return previousReset.apply(this, args);
+  };
+  document.addEventListener('click', event => {
+    const card = event.target?.closest?.('[data-challenge="leaguelegends"]');
+    if (!card) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openLeagueLegendsSetup().catch(err => { console.error(err); alert(err.message || err); });
+  }, true);
+  document.addEventListener('click', event => {
+    if (!isActive()) return;
+    const slot = event.target?.closest?.('[data-legend-slot]');
+    if (!slot) return;
+    event.preventDefault(); event.stopImmediatePropagation(); chooseLegendRole(slot.dataset.legendSlot);
+  }, true);
+  document.addEventListener('click', event => {
+    const id = event.target?.id;
+    if (!['startBtn','pickBtn','acceptBtn','declineBtn'].includes(id)) return;
+    const leagueLegendsSetupIsVisible = !!document.getElementById('leagueLegendsSelector');
+    const leagueLegendsGameIsRunning = state?.challengePreset === PRESET;
+    if (!isActive() || (!leagueLegendsSetupIsVisible && !leagueLegendsGameIsRunning)) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    const fn = { startBtn:startLeagueLegendsGame, pickBtn:pickLegend, acceptBtn:acceptLegend, declineBtn:declineLegend }[id];
+    fn().catch(err => { console.error(err); setMessage(err.message || String(err)); });
+  }, true);
+  document.addEventListener('click', event => { if (event.target?.closest?.('#leaderboardBtn')) setTimeout(addLeaderboardTab, 0); }, true);
+  const previousInjectEntry = injectEntryPanel;
+  injectEntryPanel = function(...args){ const result = previousInjectEntry.apply(this, args); addStandaloneSection(); addLeaderboardTab(); return result; };
+  setTimeout(() => { addStandaloneSection(); addLeaderboardTab(); }, 80);
+})();
+
+
+// --- League Legends leaderboard separation hotfix ---
+// Keeps League Legends out of the All Time/Solo leaderboards and submits it under its own main leaderboard tab.
+(function leagueLegendsLeaderboardSeparation(){
+  const MODE = "League Legends Challenge";
+  const PRESET = "leaguelegends";
+  function isLeagueLegendsActive(){
+    return state?.challengePreset === PRESET || window.challengePreset === PRESET;
+  }
+  function scoreLeagueLegends(){
+    const team = Array.isArray(state?.users?.[0]?.team) ? state.users[0].team : [];
+    return team.reduce((sum, p) => sum + Number(p.adjustedRating ?? p.rating ?? 0), 0);
+  }
+  function roleLabel(role){ return role === "FWD" ? "ST" : role; }
+  async function submitLeagueLegendsLeaderboard(){
+    if (!state || !ratingsRevealed) { alert("Reveal the ratings first."); return; }
+    if (state.leaderboardSubmitted) { alert("This result has already been submitted from this screen."); return; }
+    const username = prompt("Enter leaderboard name (3-18 letters/numbers):", "");
+    if (username === null) return;
+    if (!validateUsername(username)) {
+      alert("Invalid username. Use 3-18 characters: letters, numbers, spaces, underscores or hyphens. Avoid reserved names.");
+      return;
+    }
+    const team = Array.isArray(state?.users?.[0]?.team) ? state.users[0].team : [];
+    await ensureFirebase();
+    await firebase.database().ref("leaderboard").push({
+      username: username.trim(),
+      score: scoreLeagueLegends(),
+      gameMode: MODE,
+      online: false,
+      roomId: "",
+      yearRange: null,
+      selectedLegendLeague: state.selectedLegendLeague || state.leagueSelection?.labels?.[0] || "",
+      league: state.selectedLegendLeague || state.leagueSelection?.labels?.[0] || "",
+      leagueSelection: state.leagueSelection || (state.selectedLegendLeague ? { labels: [state.selectedLegendLeague] } : null),
+      leaderboardGroup: "leagueLegends",
+      separateFromAllTime: true,
+      team: team.map(p => ({
+        name: p.player || "",
+        selectedRole: roleLabel(p.selectedRole || p.mainPosition || p.position || ""),
+        naturalPosition: p.naturalPosition || p.position || "",
+        baseRating: Number(p.baseRating || 0),
+        multiplier: Number(p.positionMultiplier || 0),
+        rating: Number(p.adjustedRating ?? p.rating ?? 0),
+        club: p.club || "",
+        league: p.league || state.selectedLegendLeague || state.leagueSelection?.labels?.[0] || ""
+      })),
+      timestamp: Date.now()
+    });
+    state.leaderboardSubmitted = true;
+    const btn = document.getElementById("submitLeaderboardBtnStep19");
+    if (btn) { btn.textContent = "Submitted ✅"; btn.disabled = true; }
+    alert("League Legends Challenge score submitted to leaderboard.");
+  }
+  function wireLeagueLegendsSubmit(){
+    if (!isLeagueLegendsActive()) return;
+    const btn = document.getElementById("submitLeaderboardBtnStep19");
+    if (btn) btn.onclick = safe(submitLeagueLegendsLeaderboard);
+  }
+  const previousRenderResults = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResults.apply(this, args);
+    wireLeagueLegendsSubmit();
+    return result;
+  };
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const previousShowFinished = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function(...args){
+      const result = previousShowFinished.apply(this, args);
+      wireLeagueLegendsSubmit();
+      return result;
+    };
+  }
+})();
+
+
+
+
+// --- v73 synchronous League Legends league resolver ---
+// This is placed before the active leaderboard renderer uses metadataTextV55, so the selected league is available on the first draw.
+window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
+  const NAME_TO_LEAGUE = {"thierry henry":"Premier League","alan shearer":"Premier League","mohamed salah":"Premier League","steven gerrard":"Premier League","wayne rooney":"Premier League","frank lampard":"Premier League","cristiano ronaldo":"Premier League","kevin de bruyne":"Premier League","roy keane":"Premier League","sergio aguero":"Premier League","paul scholes":"Premier League","john terry":"Premier League","eric cantona":"Premier League","virgil van dijk":"Premier League","patrick vieira":"Premier League","david silva":"Premier League","dennis bergkamp":"Premier League","harry kane":"Premier League","rio ferdinand":"Premier League","petr cech":"Premier League","ryan giggs":"Premier League","eden hazard":"Premier League","peter schmeichel":"Premier League","ashley cole":"Premier League","robin van persie":"Premier League","n golo kante":"Premier League","didier drogba":"Premier League","cesc fabregas":"Premier League","sol campbell":"Premier League","rodri":"Premier League","yaya toure":"Premier League","nemanja vidic":"Premier League","michael owen":"Premier League","vincent kompany":"Premier League","andrew cole":"Premier League","luis suarez":"Premier League","ruud van nistelrooy":"Premier League","robert pires":"Premier League","alisson becker":"Premier League","sadio mane":"Premier League","son heung min":"Premier League","david beckham":"Premier League","tony adams":"Premier League","david seaman":"Premier League","gareth bale":"Premier League","riyad mahrez":"Premier League","carlos tevez":"Premier League","robbie fowler":"Premier League","ian wright":"Premier League","jamie vardy":"Premier League","dwight yorke":"Premier League","edwin van der sar":"Premier League","jamie carragher":"Premier League","gary neville":"Premier League","michael essien":"Premier League","david de gea":"Premier League","claude makelele":"Premier League","mesut ozil":"Premier League","matt le tissier":"Premier League","jimmy floyd hasselbaink":"Premier League","bruno fernandes":"Premier League","dimitar berbatov":"Premier League","bernardo silva":"Premier League","trent alexander arnold":"Premier League","pepe reina":"Premier League","juan mata":"Premier League","kyle walker":"Premier League","marcus rashford":"Premier League","joe hart":"Premier League","raheem sterling":"Premier League","jermain defoe":"Premier League","teddy sheringham":"Premier League","gary speed":"Premier League","gareth barry":"Premier League","james milner":"Premier League","fernando torres":"Premier League","alexis sanchez":"Premier League","david ginola":"Premier League","luka modric":"Premier League","juninho paulista":"Premier League","xabi alonso":"Premier League","marcel desailly":"Premier League","coutinho":"Premier League","ricardo carvalho":"Premier League","andy robertson":"Premier League","les ferdinand":"Premier League","nicolas anelka":"Premier League","cesar azpilicueta":"Premier League","denis irwin":"Premier League","gianfranco zola":"Premier League","ledley king":"Premier League","kevin phillips":"Premier League","steve mcmanaman":"Premier League","paolo di canio":"Premier League","emmanuel adebayor":"Premier League","branislav ivanovic":"Premier League","laurent koscielny":"Premier League","chris sutton":"Premier League","ilkay gundogan":"Premier League","christian eriksen":"Premier League","lionel messi":"La Liga","alfredo di stefano":"La Liga","xavi":"La Liga","andres iniesta":"La Liga","johan cruyff":"La Liga","zinedine zidane":"La Liga","ronaldinho":"La Liga","karim benzema":"La Liga","raul":"La Liga","ferenc puskas":"La Liga","sergio ramos":"La Liga","iker casillas":"La Liga","sergio busquets":"La Liga","neymar":"La Liga","ronaldo nazario":"La Liga","romario":"La Liga","samuel eto o":"La Liga","ladislav kubala":"La Liga","luis figo":"La Liga","hugo sanchez":"La Liga","telmo zarra":"La Liga","paco gento":"La Liga","pirri":"La Liga","emilio butragueno":"La Liga","santillana":"La Liga","fernando hierro":"La Liga","carles puyol":"La Liga","dani alves":"La Liga","roberto carlos":"La Liga","marcelo":"La Liga","gerard pique":"La Liga","david villa":"La Liga","antoine griezmann":"La Liga","diego godin":"La Liga","jan oblak":"La Liga","thibaut courtois":"La Liga","diego simeone":"La Liga","koke":"La Liga","luis aragones":"La Liga","quini":"La Liga","cesar rodriguez":"La Liga","rivaldo":"La Liga","hristo stoichkov":"La Liga","michael laudrup":"La Liga","bernd schuster":"La Liga","gheorghe hagi":"La Liga","fernando redondo":"La Liga","deco":"La Liga","juan roman riquelme":"La Liga","diego forlan":"La Liga","joaquin":"La Liga","toni kroos":"La Liga","santi cazorla":"La Liga","juan carlos valeron":"La Liga","gaizka mendieta":"La Liga","pablo aimar":"La Liga","ivan rakitic":"La Liga","dani carvajal":"La Liga","juanito":"La Liga","luis enrique":"La Liga","pep guardiola":"La Liga","jordi alba":"La Liga","seydou keita":"La Liga","rafael marquez":"La Liga","javier mascherano":"La Liga","javier saviola":"La Liga","patrick kluivert":"La Liga","rafael van der vaart":"La Liga","arjen robben":"La Liga","isco":"La Liga","marco asensio":"La Liga","casemiro":"La Liga","vinicius junior":"La Liga","rodrygo":"La Liga","jude bellingham":"La Liga","kylian mbappe":"La Liga","robert lewandowski":"La Liga","pedri":"La Liga","gavi":"La Liga","lamine yamal":"La Liga","aritz aduriz":"La Liga","iago aspas":"La Liga","diego tristan":"La Liga","roy makaay":"La Liga","djalminha":"La Liga","fran":"La Liga","mauro silva":"La Liga","donato":"La Liga","jose antonio reyes":"La Liga","diego maradona":"Serie A","paolo maldini":"Serie A","francesco totti":"Serie A","roberto baggio":"Serie A","gianluigi buffon":"Serie A","alessandro del piero":"Serie A","michel platini":"Serie A","marco van basten":"Serie A","franco baresi":"Serie A","giuseppe meazza":"Serie A","silvio piola":"Serie A","gunnar nordahl":"Serie A","gianni rivera":"Serie A","andrea pirlo":"Serie A","gabriel batistuta":"Serie A","kaka":"Serie A","ruud gullit":"Serie A","lothar matthaus":"Serie A","javier zanetti":"Serie A","alessandro nesta":"Serie A","fabio cannavaro":"Serie A","paolo rossi":"Serie A","gigi riva":"Serie A","roberto mancini":"Serie A","christian vieri":"Serie A","zlatan ibrahimovic":"Serie A","andriy shevchenko":"Serie A","clarence seedorf":"Serie A","cafu":"Serie A","pavel nedved":"Serie A","dino zoff":"Serie A","gaetano scirea":"Serie A","sandro mazzola":"Serie A","giampiero boniperti":"Serie A","alessandro altobelli":"Serie A","giacinto facchetti":"Serie A","giuseppe bergomi":"Serie A","tarcisio burgnich":"Serie A","claudio gentile":"Serie A","antonio cabrini":"Serie A","marco tardelli":"Serie A","roberto donadoni":"Serie A","demetrio albertini":"Serie A","filippo inzaghi":"Serie A","ciro immobile":"Serie A","antonio di natale":"Serie A","hernan crespo":"Serie A","edinson cavani":"Serie A","gonzalo higuain":"Serie A","lautaro martinez":"Serie A","mauro icardi":"Serie A","paulo dybala":"Serie A","lorenzo insigne":"Serie A","dries mertens":"Serie A","marek hamsik":"Serie A","fabio quagliarella":"Serie A","alberto gilardino":"Serie A","luca toni":"Serie A","vincenzo montella":"Serie A","giuseppe signori":"Serie A","sinisa mihajlovic":"Serie A","dejan stankovic":"Serie A","juan sebastian veron":"Serie A","edgar davids":"Serie A","frank rijkaard":"Serie A","george weah":"Serie A","maicon":"Serie A","walter samuel":"Serie A","lucio":"Serie A","wesley sneijder":"Serie A","diego milito":"Serie A","esteban cambiasso":"Serie A","julio cesar":"Serie A","samir handanovic":"Serie A","giorgio chiellini":"Serie A","leonardo bonucci":"Serie A","andrea barzagli":"Serie A","paul pogba":"Serie A","arturo vidal":"Serie A","claudio marchisio":"Serie A","federico chiesa":"Serie A","dusan vlahovic":"Serie A","khvicha kvaratskhelia":"Serie A","victor osimhen":"Serie A","kim min jae":"Serie A","kalidou koulibaly":"Serie A","jorginho":"Serie A","thiago silva":"Serie A","zvonimir boban":"Serie A","dejan savicevic":"Serie A","jean pierre papin":"Serie A","oliver bierhoff":"Serie A","just fontaine":"Ligue 1","raymond kopa":"Ligue 1","delio onnis":"Ligue 1","bernard lacombe":"Ligue 1","alain giresse":"Ligue 1","juninho pernambucano":"Ligue 1","pauleta":"Ligue 1","carlos bianchi":"Ligue 1","josip skoblar":"Ligue 1","roger piantoni":"Ligue 1","herve revelli":"Ligue 1","dominique rocheteau":"Ligue 1","didier deschamps":"Ligue 1","laurent blanc":"Ligue 1","lilian thuram":"Ligue 1","fabien barthez":"Ligue 1","hugo lloris":"Ligue 1","steve mandanda":"Ligue 1","marquinhos":"Ligue 1","safet susic":"Ligue 1","mustapha dahleb":"Ligue 1","rai":"Ligue 1","sonny anderson":"Ligue 1","alexandre lacazette":"Ligue 1","wissam ben yedder":"Ligue 1","david trezeguet":"Ligue 1","youri djorkaeff":"Ligue 1","djibril cisse":"Ligue 1","bafetimbi gomis":"Ligue 1","andre pierre gignac":"Ligue 1","dimitri payet":"Ligue 1","florian thauvin":"Ligue 1","franck ribery":"Ligue 1","samir nasri":"Ligue 1","hatem ben arfa":"Ligue 1","ludovic giuly":"Ligue 1","sylvain wiltord":"Ligue 1","emmanuel petit":"Ligue 1","blaise matuidi":"Ligue 1","marco verratti":"Ligue 1","angel di maria":"Ligue 1","ousmane dembele":"Ligue 1","vitinha":"Ligue 1","bradley barcola":"Ligue 1","olivier giroud":"Ligue 1","gervinho":"Ligue 1","pierre emerick aubameyang":"Ligue 1","radamel falcao":"Ligue 1","james rodriguez":"Ligue 1","fabinho":"Ligue 1","joao moutinho":"Ligue 1","nabil fekir":"Ligue 1","memphis depay":"Ligue 1","lisandro lopez":"Ligue 1","mamadou niang":"Ligue 1","moussa sow":"Ligue 1","yoann gourcuff":"Ligue 1","mickael landreau":"Ligue 1","gregory coupet":"Ligue 1","joel bats":"Ligue 1","bernard lama":"Ligue 1","jean tigana":"Ligue 1","marius tresor":"Ligue 1","maxime bossis":"Ligue 1","dominique bathenay":"Ligue 1","luis fernandez":"Ligue 1","jean marc guillou":"Ligue 1","jean michel larque":"Ligue 1","robert herbin":"Ligue 1","salif keita":"Ligue 1","rachid mekhloufi":"Ligue 1","fleury di nallo":"Ligue 1","roger courtois":"Ligue 1","thadee cisowski":"Ligue 1","joseph ujlaki":"Ligue 1","gunnar andersson":"Ligue 1","hassan akesbi":"Ligue 1","jean baratte":"Ligue 1","andre guy":"Ligue 1","jacky vergnes":"Ligue 1","lucien cossou":"Ligue 1","gerd muller":"Bundesliga","franz beckenbauer":"Bundesliga","manuel neuer":"Bundesliga","karl heinz rummenigge":"Bundesliga","philipp lahm":"Bundesliga","oliver kahn":"Bundesliga","uwe seeler":"Bundesliga","matthias sammer":"Bundesliga","thomas muller":"Bundesliga","bastian schweinsteiger":"Bundesliga","jupp heynckes":"Bundesliga","klaus fischer":"Bundesliga","sepp maier":"Bundesliga","jurgen klinsmann":"Bundesliga","kevin keegan":"Bundesliga","miroslav klose":"Bundesliga","paul breitner":"Bundesliga","michael ballack":"Bundesliga","andreas moller":"Bundesliga","rudi voller":"Bundesliga","marco reus":"Bundesliga","gunter netzer":"Bundesliga","wolfgang overath":"Bundesliga","dieter muller":"Bundesliga","claudio pizarro":"Bundesliga","giovane elber":"Bundesliga","mario gomez":"Bundesliga","ulf kirsten":"Bundesliga","stefan kuntz":"Bundesliga","klaus allofs":"Bundesliga","manfred burgsmuller":"Bundesliga","horst hrubesch":"Bundesliga","hannes lohr":"Bundesliga","bernd holzenbein":"Bundesliga","mehmet scholl":"Bundesliga","stefan effenberg":"Bundesliga","mats hummels":"Bundesliga","jerome boateng":"Bundesliga","david alaba":"Bundesliga","joshua kimmich":"Bundesliga","florian wirtz":"Bundesliga","erling haaland":"Bundesliga","l cio":"Bundesliga","z roberto":"Bundesliga","tom rosick":"Bundesliga","sebastian deisler":"Bundesliga","franck rib ry":"Bundesliga","christoph metzelder":"Bundesliga","daniel van buyten":"Bundesliga","marcelinho":"Bundesliga","christian w rns":"Bundesliga","j r me boateng":"Bundesliga","michael olise":"Bundesliga","andr s d alessandro":"Bundesliga","fernando meira":"Bundesliga","jens nowotny":"Bundesliga","timo hildebrand":"Bundesliga","marcelo bordon":"Bundesliga","jon dahl tomasson":"Bundesliga","lukas podolski":"Bundesliga","marek mintal":"Bundesliga","diego":"Bundesliga","thiago alc ntara":"Bundesliga","leon goretzka":"Bundesliga","jamal musiala":"Bundesliga","willy sagnol":"Bundesliga","val rien isma l":"Bundesliga","bernd schneider":"Bundesliga","per mertesacker":"Bundesliga","thomas m ller":"Bundesliga","james rodr guez":"Bundesliga","jadon sancho":"Bundesliga","sadio man":"Bundesliga","gregor kobel":"Bundesliga","jonathan tah":"Bundesliga","luis d az":"Bundesliga","ailton":"Bundesliga","d d":"Bundesliga","markus babbel":"Bundesliga","mladen krstajic":"Bundesliga","roman weidenfeller":"Bundesliga","torsten frings":"Bundesliga","ren adler":"Bundesliga","bernd leno":"Bundesliga","yann sommer":"Bundesliga","serge gnabry":"Bundesliga","timo werner":"Bundesliga"};
+  function clean(value) {
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    if (["selected league", "selected leagues", "unknown league", "undefined", "null"].includes(text.toLowerCase())) return "";
+    return text;
+  }
+  function normName(value) {
+    return clean(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  }
+  const selection = entry?.leagueSelection || {};
+  const values = [
+    entry?.selectedLegendLeague,
+    entry?.legendLeague,
+    entry?.selectedLeague,
+    entry?.league,
+    selection.labels,
+    selection.label,
+    selection.selectedLegendLeague,
+    selection.selectedLeague,
+    selection.league
+  ];
+  const direct = [];
+  values.forEach(value => {
+    if (Array.isArray(value)) direct.push(...value);
+    else if (value && typeof value === "object") direct.push(...Object.values(value));
+    else direct.push(value);
+  });
+  if (Array.isArray(entry?.team)) {
+    entry.team.forEach(player => direct.push(player?.league, player?.League, player?.selectedLegendLeague, player?.legendLeague));
+  }
+  const cleanDirect = [...new Set(direct.map(clean).filter(Boolean))];
+  if (cleanDirect.length) return cleanDirect.join(", ");
+
+  const counts = new Map();
+  const team = Array.isArray(entry?.team) ? entry.team : [];
+  team.forEach(player => {
+    const name = normName(player?.name || player?.player || player?.Player);
+    const league = NAME_TO_LEAGUE[name];
+    if (league) counts.set(league, (counts.get(league) || 0) + 1);
+  });
+  if (!counts.size) return "";
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+};
+
+// --- v55 leaderboard tab restructure ---
+// Replaces the previous mixed leaderboard tabs with four clean categories:
+// Solo Mode, Online Battles, League Legends, Monthly Challenges.
+(function leaderboardTabRestructureV55(){
+  const GROUPS = {
+    solo: {
+      label: "Solo Mode",
+      defaultSub: "all",
+      subs: [
+        { key: "all", label: "All", modes: ["Solo Challenge", "Ultimate Solo Mode", "Easy Solo Challenge", "League Challenge"] },
+        { key: "standard", label: "Standard Solo", modes: ["Solo Challenge"] },
+        { key: "ultimate", label: "Ultimate Solo", modes: ["Ultimate Solo Mode"] },
+        { key: "easy", label: "Easy Solo", modes: ["Easy Solo Challenge"] },
+        { key: "league", label: "League Challenge", modes: ["League Challenge"] }
+      ]
+    },
+    online: {
+      label: "Online Battles",
+      defaultSub: "all",
+      subs: [
+        { key: "all", label: "All", modes: ["Online Ultimate Draft", "Online Blind Bidding", "Online Live Auction"] },
+        { key: "draft", label: "Ultimate Draft", modes: ["Online Ultimate Draft"] },
+        { key: "blind", label: "Blind Bidding", modes: ["Online Blind Bidding"] },
+        { key: "live", label: "Live Auction", modes: ["Online Live Auction"] }
+      ]
+    },
+    legends: {
+      label: "League Legends",
+      defaultSub: "all",
+      subs: [
+        { key: "all", label: "All", modes: ["League Legends Challenge"] }
+      ]
+    },
+    monthly: {
+      label: "Monthly Challenges",
+      defaultSub: "all",
+      subs: [
+        { key: "all", label: "All", modes: ["World Cup 2026 Challenge"] },
+        { key: "worldcup2026", label: "World Cup 2026", modes: ["World Cup 2026 Challenge"] }
+      ]
+    }
+  };
+
+  let activeGroup = "solo";
+  let activeSubByGroup = { solo: "all", online: "all", legends: "all", monthly: "all" };
+
+  function escV55(value) {
+    return String(value ?? "").replace(/[&<>'\"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+  }
+  function modeV55(entry) { return String(entry?.gameMode || "Unknown").trim() || "Unknown"; }
+  function yearRangeTextV55(entry) {
+    const range = entry?.yearRange;
+    if (!range || typeof range !== "object") return "";
+    const start = Number(range.start ?? range.from ?? range.min ?? 0);
+    const end = Number(range.end ?? range.to ?? range.max ?? 0);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || !start || !end) return "";
+    const a = Math.min(start, end); const b = Math.max(start, end);
+    return a === b ? `Year: ${a}` : `Years: ${a} - ${b}`;
+  }
+  function leagueLabelsV55(entry) {
+    const selection = entry?.leagueSelection || {};
+    const candidates = [
+      selection.labels,
+      selection.label,
+      selection.selectedLeague,
+      selection.league,
+      entry?.selectedLegendLeague,
+      entry?.legendLeague,
+      entry?.league
+    ];
+    let output = [];
+    candidates.forEach(value => {
+      if (Array.isArray(value)) output.push(...value);
+      else if (value && typeof value === "object") output.push(...Object.values(value));
+      else if (typeof value === "string") output.push(value);
+    });
+    if (Array.isArray(entry?.team)) {
+      output.push(...entry.team.map(player => player?.league));
+    }
+    return [...new Set(output.map(x => String(x || "").trim()).filter(Boolean))];
+  }
+  function metadataTextV55(entry) {
+    const mode = modeV55(entry);
+    if (mode === "League Challenge") {
+      const labels = leagueLabelsV55(entry).filter(label => !/^unknown league$/i.test(String(label || "").trim()));
+      return labels.length ? `Leagues: ${labels.join(", ")}` : "";
+    }
+    if (mode === "League Legends Challenge") {
+      const resolvedLeague = typeof window.getLeagueLegendsLeaderboardLeagueV73 === "function"
+        ? window.getLeagueLegendsLeaderboardLeagueV73(entry)
+        : "";
+      if (resolvedLeague) return `League: ${resolvedLeague}`;
+      const labels = leagueLabelsV55(entry).filter(label => !/^(selected league|unknown league)$/i.test(String(label || "").trim()));
+      return labels.length ? `League: ${labels.join(", ")}` : "";
+    }
+    if (mode === "World Cup 2026 Challenge") return "Player pool: World Cup 2026";
+    const yearText = yearRangeTextV55(entry);
+    if (yearText) return yearText;
+    if (mode === "Ultimate Solo Mode") return "Years: all years";
+    return "";
+  }
+  function currentSubConfigV55() {
+    const group = GROUPS[activeGroup] || GROUPS.solo;
+    const subKey = activeSubByGroup[activeGroup] || group.defaultSub || "all";
+    return group.subs.find(sub => sub.key === subKey) || group.subs[0];
+  }
+  function ensureStylesV55() {
+    if (document.getElementById("leaderboardStructureStylesV55")) return;
+    const style = document.createElement("style");
+    style.id = "leaderboardStructureStylesV55";
+    style.textContent = `
+      .leaderboard-main-tabs-v55{margin-bottom:10px!important}.leaderboard-subtabs-v55{margin-top:-4px!important;margin-bottom:16px!important;padding:10px 12px!important;background:rgba(248,250,252,.92)!important;border:1px solid rgba(226,232,240,.95)!important;border-radius:16px!important}.leaderboard-tab-v55.active{background:linear-gradient(135deg,var(--primary),var(--primary-dark))!important;color:#fff!important;border-color:transparent!important;box-shadow:0 10px 24px rgba(37,99,235,.22)!important}.leaderboard-tab-v55[data-leaderboard-group="legends"].active{background:linear-gradient(135deg,#f59e0b,#ea580c)!important;color:#111827!important}.leaderboard-row.leaderboard-row-v55{grid-template-columns:54px minmax(0,1fr) minmax(170px,max-content) 74px!important;align-items:center!important;column-gap:14px!important;row-gap:3px}.leaderboard-row.leaderboard-row-v55 .leaderboard-mode{text-align:right!important;justify-self:end!important;white-space:nowrap!important}.leaderboard-row.leaderboard-row-v55 .leaderboard-score{text-align:right!important;justify-self:end!important;min-width:58px!important;font-variant-numeric:tabular-nums}.leaderboard-meta-v55{grid-column:2 / span 3;color:#64748b;font-size:.78rem;font-weight:850;line-height:1.25;overflow-wrap:anywhere}@media(max-width:720px){.leaderboard-row.leaderboard-row-v55{grid-template-columns:44px minmax(0,1fr) 72px!important;column-gap:10px!important}.leaderboard-row.leaderboard-row-v55 .leaderboard-name{grid-column:2}.leaderboard-row.leaderboard-row-v55 .leaderboard-score{grid-column:3;grid-row:1;text-align:right!important}.leaderboard-row.leaderboard-row-v55 .leaderboard-mode{grid-column:2 / span 2;grid-row:2;text-align:left!important;justify-self:start!important;white-space:normal!important}.leaderboard-meta-v55{grid-column:2 / span 2}}
+    `;
+    document.head.appendChild(style);
+  }
+  function rebuildLeaderboardTabsV55() {
+    ensureStylesV55();
+    const panel = document.getElementById("leaderboardPanel"); if (!panel) return false;
+    const rows = panel.querySelectorAll(".leaderboard-tabs");
+    const mainTabs = rows[0]; const subTabs = document.getElementById("soloLeaderboardSubTabs") || rows[1];
+    if (!mainTabs || !subTabs) return false;
+    mainTabs.classList.add("leaderboard-main-tabs-v55");
+    mainTabs.innerHTML = Object.entries(GROUPS).map(([key, group]) => `<button type="button" class="leaderboard-tab leaderboard-tab-v55 ${key === activeGroup ? "active" : ""}" data-leaderboard-group="${escV55(key)}">${escV55(group.label)}</button>`).join("");
+    const group = GROUPS[activeGroup] || GROUPS.solo;
+    const activeSub = activeSubByGroup[activeGroup] || group.defaultSub || "all";
+    subTabs.className = "leaderboard-tabs solo-leaderboard-subtabs leaderboard-subtabs-v55";
+    subTabs.classList.remove("hidden");
+    subTabs.setAttribute("aria-label", `${group.label} leaderboard filters`);
+    subTabs.innerHTML = group.subs.map(sub => `<button type="button" class="leaderboard-tab leaderboard-tab-v55 leaderboard-sub-tab-v55 ${sub.key === activeSub ? "active" : ""}" data-leaderboard-sub="${escV55(sub.key)}">${escV55(sub.label)}</button>`).join("");
+    return true;
+  }
+  async function loadLeaderboardV55() {
+    const list = document.getElementById("leaderboardList"); if (!list) return;
+    const allowedModes = new Set(currentSubConfigV55().modes || []);
+    list.innerHTML = `<div class="leaderboard-empty">Loading leaderboard...</div>`;
+    try {
+      await ensureFirebase();
+      const snapshot = await firebase.database().ref("leaderboard").once("value");
+      if (!snapshot.exists()) { list.innerHTML = `<div class="leaderboard-empty">No scores submitted yet.</div>`; return; }
+      let entries = Object.values(snapshot.val() || {})
+        .filter(entry => Number.isFinite(Number(entry.score)))
+        .map(entry => ({ ...entry, username: String(entry.username || "Player").trim() || "Player", score: Number(entry.score || 0), gameMode: modeV55(entry), timestamp: Number(entry.timestamp || 0) }))
+        .filter(entry => allowedModes.has(entry.gameMode));
+      entries.sort((a,b) => b.score !== a.score ? b.score - a.score : b.timestamp - a.timestamp);
+      const top20 = entries.slice(0,20);
+      if (!top20.length) { list.innerHTML = `<div class="leaderboard-empty">No scores yet for this leaderboard.</div>`; return; }
+      list.innerHTML = top20.map((entry, index) => {
+        const meta = metadataTextV55(entry);
+        return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${index + 1}</span><span class="leaderboard-name">${escV55(entry.username)}</span><span class="leaderboard-mode">${escV55(entry.gameMode)}</span><span class="leaderboard-score">${entry.score}</span>${meta ? `<span class="leaderboard-meta-v55">${escV55(meta)}</span>` : ""}</div>`;
+      }).join("");
+    } catch (error) {
+      list.innerHTML = `<div class="leaderboard-error">Could not load leaderboard. ${escV55(error.message || error)}</div>`;
+    }
+  }
+  function refreshLeaderboardV55() { if (rebuildLeaderboardTabsV55()) loadLeaderboardV55(); }
+  window.addEventListener("click", function(event){
+    const panel = document.getElementById("leaderboardPanel"); if (!panel || panel.classList.contains("hidden")) return;
+    const mainTab = event.target?.closest?.("[data-leaderboard-group]");
+    const subTab = event.target?.closest?.("[data-leaderboard-sub]");
+    if (!mainTab && !subTab) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    if (mainTab) { const next = mainTab.dataset.leaderboardGroup; if (GROUPS[next]) { activeGroup = next; activeSubByGroup[activeGroup] = activeSubByGroup[activeGroup] || GROUPS[activeGroup].defaultSub || "all"; } }
+    if (subTab) { const group = GROUPS[activeGroup] || GROUPS.solo; const next = subTab.dataset.leaderboardSub || group.defaultSub || "all"; activeSubByGroup[activeGroup] = group.subs.some(sub => sub.key === next) ? next : group.defaultSub || "all"; }
+    refreshLeaderboardV55();
+  }, true);
+  window.addEventListener("click", function(event){
+    if (!event.target?.closest?.("#leaderboardBtn")) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    hideEntryPanel();
+    show(ensureLobby(), false);
+    show(els.setupPanel, false);
+    show(els.gamePanel, false);
+    show(els.resultsPanel, false);
+    show(document.getElementById("leaderboardPanel"), true);
+    refreshLeaderboardV55();
+    setTimeout(() => document.getElementById("leaderboardPanel")?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
+  }, true);
+  setTimeout(rebuildLeaderboardTabsV55, 0);
+})();
+
+
+// --- homepage layout polish: League Legends above Popular Challenges ---
+(function homepageLeagueLegendsLayoutPolish(){
+  function tidyHomepageLayout(){
+    const entry = document.getElementById("gameEntryPanel");
+    if (!entry) return;
+
+    const popular = entry.querySelector(".popular-challenges-v2");
+    const legends = document.getElementById("leagueLegendsHome");
+    if (popular && legends && legends.nextElementSibling !== popular) {
+      entry.insertBefore(legends, popular);
+    }
+
+    if (legends) {
+      const title = legends.querySelector(".league-legends-hero-copy h3");
+      if (title) title.textContent = "League Legends";
+      const eyebrow = legends.querySelector(".league-legends-title-line .eyebrow");
+      if (eyebrow) eyebrow.textContent = "Game mode";
+      const button = legends.querySelector('[data-challenge="leaguelegends"]');
+      if (button) button.textContent = "Play League Legends";
+      legends.setAttribute("aria-label", "League Legends game mode");
+    }
+
+    entry.querySelectorAll(".challenge-card-v2").forEach(card => {
+      const text = (card.textContent || "").toLowerCase();
+      if (text.includes("nostalgia challenge")) card.remove();
+    });
+  }
+
+  const previousInjectEntryPanelHomepagePolish = injectEntryPanel;
+  injectEntryPanel = function(...args){
+    const result = previousInjectEntryPanelHomepagePolish.apply(this, args);
+    setTimeout(tidyHomepageLayout, 0);
+    setTimeout(tidyHomepageLayout, 80);
+    return result;
+  };
+
+  document.addEventListener("DOMContentLoaded", () => setTimeout(tidyHomepageLayout, 0));
+  setTimeout(tidyHomepageLayout, 120);
+})();
+
+
+// --- homepage title casing polish ---
+(function homepageTitleCasingPolish(){
+  function fixOnlineGameTitle(){
+    const heading = document.querySelector('#gameEntryPanel .online-card h3');
+    if (heading && heading.textContent.trim() === 'Online game') heading.textContent = 'Online Game';
+  }
+  const previousInjectEntryPanelTitleCase = injectEntryPanel;
+  injectEntryPanel = function(...args){
+    const result = previousInjectEntryPanelTitleCase.apply(this, args);
+    setTimeout(fixOnlineGameTitle, 0);
+    return result;
+  };
+  setTimeout(fixOnlineGameTitle, 120);
+})();
+
+
+// --- League Legends reset button visibility fix ---
+// Ensures League Legends shows the same top-right Reset game button as the other modes.
+(function leagueLegendsResetButtonVisibilityV61(){
+  const PRESET = "leaguelegends";
+  function ensureResetVisibleForLeagueLegends(){
+    if ((window.challengePreset === PRESET || state?.challengePreset === PRESET) && els?.resetBtn) {
+      els.resetBtn.style.display = "";
+    }
+  }
+  const previousRenderLeagueLegendsResetV61 = render;
+  render = function(...args){
+    const result = previousRenderLeagueLegendsResetV61.apply(this, args);
+    ensureResetVisibleForLeagueLegends();
+    return result;
+  };
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.('[data-challenge="leaguelegends"]')) {
+      setTimeout(ensureResetVisibleForLeagueLegends, 0);
+    }
+  }, true);
+})();
+
+
+// --- Global mode transition cleanup and all-mode Firebase stats fix ---
+// Keeps mode-specific setup UIs isolated and records completed games for all current game modes.
+(function allModesCleanupAndStatsV63(){
+  const LEGENDS_PRESET = "leaguelegends";
+  const STATS_NODE = "stats";
+
+  function statsKey(label){
+    return String(label || "unknown")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "unknown";
+  }
+
+  function ukDateKey(date = new Date()){
+    try {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(date);
+    } catch (err) {
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  function detectCurrentModeLabel(){
+    if (!state) return "Unknown";
+
+    const preset = state.challengePreset || window.challengePreset || "";
+
+    if (!online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1) {
+      if (preset === "leaguelegends") return "League Legends Challenge";
+      if (preset === "league") return "League Challenge";
+      if (preset === "worldcup2026") return "World Cup 2026 Challenge";
+      if (preset === "ultimate") return "Ultimate Solo Mode";
+      if (preset === "easy") return "Easy Solo Challenge";
+      return "Solo Challenge";
+    }
+
+    if (online.enabled && state.gameMode === "draft") return "Online Ultimate Draft";
+    if (online.enabled && state.gameMode === "bid" && state.onlineBidMode === "live") return "Online Live Auction";
+    if (online.enabled && state.gameMode === "bid") return "Online Blind Bidding";
+    if (!online.enabled && state.gameMode === "bid") return "Local Bidding";
+    if (!online.enabled && state.gameMode === "draft") return "Local Ultimate Draft";
+
+    return state.challengeName || state.gameMode || "Unknown";
+  }
+
+  function topScoreForStats(){
+    try {
+      if (typeof getFinalScores === "function") {
+        const scored = getFinalScores();
+        const total = Number(scored?.[0]?.total || 0);
+        if (total) return total;
+      }
+    } catch (err) {}
+
+    const teams = Array.isArray(state?.users) ? state.users : [];
+    return teams.reduce((best, user) => {
+      const team = Array.isArray(user?.team) ? user.team : [];
+      const total = team.reduce((sum, player) => sum + Number(player.adjustedRating ?? player.rating ?? 0), 0);
+      return Math.max(best, total);
+    }, 0);
+  }
+
+  function isCompleteEnoughForStats(){
+    if (!state || state.statsRecorded) return false;
+    if (typeof isGameComplete === "function") {
+      try { if (isGameComplete()) return true; } catch (err) {}
+    }
+    if (state.challengePreset === LEGENDS_PRESET) {
+      const team = Array.isArray(state.users?.[0]?.team) ? state.users[0].team : [];
+      return team.length >= 5 && !!ratingsRevealed;
+    }
+    return !!ratingsRevealed;
+  }
+
+  async function recordCompletedGameStatsFallback(){
+    if (!isCompleteEnoughForStats()) return;
+
+    const label = detectCurrentModeLabel();
+    const key = statsKey(label);
+    const today = ukDateKey();
+    const now = Date.now();
+
+    state.statsRecorded = true;
+    state.statsRecordedAt = now;
+    state.statsMode = label;
+
+    try {
+      await ensureFirebase();
+      const increment = firebase.database.ServerValue.increment(1);
+      const recentRef = firebase.database().ref(`${STATS_NODE}/recent`).push();
+      const updates = {};
+
+      updates[`${STATS_NODE}/totals/all`] = increment;
+      updates[`${STATS_NODE}/totals/byMode/${key}`] = increment;
+      updates[`${STATS_NODE}/modeLabels/${key}`] = label;
+      updates[`${STATS_NODE}/daily/${today}/total`] = increment;
+      updates[`${STATS_NODE}/daily/${today}/byMode/${key}`] = increment;
+      updates[`${STATS_NODE}/lastCompletedAt`] = now;
+      updates[`${STATS_NODE}/lastCompletedMode`] = label;
+      updates[`${STATS_NODE}/daily/${today}/lastCompletedAt`] = now;
+      updates[`${STATS_NODE}/recent/${recentRef.key}`] = {
+        mode: label,
+        modeKey: key,
+        online: !!online.enabled,
+        roomId: online.enabled ? (online.roomId || "") : "",
+        userCount: Number(state.userCount || (Array.isArray(state.users) ? state.users.length : 0) || 0),
+        topScore: topScoreForStats(),
+        challengePreset: state.challengePreset || window.challengePreset || "",
+        leagueSelection: state.leagueSelection || null,
+        yearRange: state.yearRange || null,
+        completedAt: now,
+        dateKey: today
+      };
+
+      await firebase.database().ref().update(updates);
+      console.log("Completed game stats recorded:", label);
+    } catch (err) {
+      state.statsRecorded = false;
+      console.warn("Could not record completed game stats", err);
+    }
+  }
+
+  function cleanupLeagueLegendsUiIfInactive(){
+    if (window.challengePreset === LEGENDS_PRESET || state?.challengePreset === LEGENDS_PRESET) return;
+
+    document.getElementById("leagueLegendsSelector")?.remove();
+
+    const year = document.getElementById("localYearSlicerHolderStep4");
+    if (year) {
+      year.style.display = "";
+      year.style.opacity = "";
+      year.style.pointerEvents = "";
+      year.querySelectorAll('input[type="range"]').forEach(input => { input.disabled = false; });
+    }
+
+    if (els?.pickBtn && els.pickBtn.textContent === "Randomise player") {
+      els.pickBtn.textContent = "Pick player";
+    }
+  }
+
+  function leavingLegendsFromClick(event){
+    const challengeCard = event.target?.closest?.("[data-challenge]");
+    if (challengeCard && challengeCard.dataset.challenge !== LEGENDS_PRESET) return true;
+    if (event.target?.closest?.("#startLocalGameBtn, #createOnlineRoomBtn, #joinOnlineRoomBtn, #leaderboardBtn")) return true;
+    return false;
+  }
+
+  document.addEventListener("click", event => {
+    if (!leavingLegendsFromClick(event)) return;
+    const challengeCard = event.target?.closest?.("[data-challenge]");
+    if (!challengeCard && window.challengePreset === LEGENDS_PRESET && !state) {
+      window.challengePreset = "standard";
+    }
+    setTimeout(cleanupLeagueLegendsUiIfInactive, 0);
+  }, true);
+
+  const previousUpdateSetupForModeAllModesV63 = updateSetupForMode;
+  updateSetupForMode = function(...args){
+    const result = previousUpdateSetupForModeAllModesV63.apply(this, args);
+    setTimeout(cleanupLeagueLegendsUiIfInactive, 0);
+    return result;
+  };
+
+  const previousRenderResultsAllModesV63 = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResultsAllModesV63.apply(this, args);
+    setTimeout(recordCompletedGameStatsFallback, 0);
+    return result;
+  };
+
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const previousShowFinishedAllModesV63 = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function(...args){
+      const result = previousShowFinishedAllModesV63.apply(this, args);
+      setTimeout(recordCompletedGameStatsFallback, 0);
+      return result;
+    };
+  }
+
+  const previousResetAllModesV63 = resetGame;
+  resetGame = function(...args){
+    const result = previousResetAllModesV63.apply(this, args);
+    setTimeout(cleanupLeagueLegendsUiIfInactive, 0);
+    return result;
+  };
+})();
+
+
+// --- v65 leaderboard subtab polish and duplicate cleanup ---
+// Keeps the new v55 leaderboard structure tidy after older leaderboard patches and makes subtabs visually distinct.
+(function leaderboardSubtabPolishAndLegendsLeagueV65(){
+  function injectSubtabPolishStylesV65(){
+    if (document.getElementById("leaderboardSubtabPolishStylesV65")) return;
+    const style = document.createElement("style");
+    style.id = "leaderboardSubtabPolishStylesV65";
+    style.textContent = `
+      .leaderboard-subtabs-v55{
+        gap:8px!important;
+        padding:8px 10px!important;
+        background:#f8fbff!important;
+        border-color:#dbeafe!important;
+      }
+      .leaderboard-subtabs-v55 .leaderboard-tab-v55{
+        min-height:34px!important;
+        padding:7px 11px!important;
+        border-radius:14px!important;
+        font-size:.78rem!important;
+        line-height:1!important;
+        background:#f1f7ff!important;
+        border-color:#bfdbfe!important;
+        color:#1e3a8a!important;
+        box-shadow:none!important;
+      }
+      .leaderboard-subtabs-v55 .leaderboard-tab-v55.active{
+        background:linear-gradient(135deg,#dbeafe,#bfdbfe)!important;
+        border-color:#93c5fd!important;
+        color:#0f3b75!important;
+        box-shadow:0 6px 14px rgba(37,99,235,.12)!important;
+      }
+      .leaderboard-subtabs-v55 .leaderboard-tab-v55:hover{
+        background:#e0efff!important;
+      }
+      @media(max-width:720px){
+        .leaderboard-subtabs-v55{gap:6px!important;padding:7px!important;}
+        .leaderboard-subtabs-v55 .leaderboard-tab-v55{font-size:.74rem!important;padding:7px 9px!important;min-height:32px!important;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function removeLegacyDuplicateSubtabsV65(){
+    const holder = document.getElementById("soloLeaderboardSubTabs");
+    if (!holder) return;
+
+    // Older code appends legacy solo-sub-tab buttons using data-solo-leaderboard-filter.
+    // The current v55 subtabs use data-leaderboard-sub. Remove the legacy duplicate buttons.
+    holder.querySelectorAll('[data-solo-leaderboard-filter="League Challenge"]').forEach(button => button.remove());
+
+    // Extra safety: if duplicate visual labels still exist in the current v55 set, keep the first one only.
+    const seen = new Set();
+    holder.querySelectorAll('[data-leaderboard-sub]').forEach(button => {
+      const key = `${button.dataset.leaderboardSub || ""}|${(button.textContent || "").trim().toLowerCase()}`;
+      if (seen.has(key)) button.remove();
+      else seen.add(key);
+    });
+  }
+
+  function applyV65(){
+    injectSubtabPolishStylesV65();
+    removeLegacyDuplicateSubtabsV65();
+  }
+
+  document.addEventListener("click", event => {
+    if (!event.target?.closest?.("#leaderboardPanel, #leaderboardBtn")) return;
+    setTimeout(applyV65, 0);
+    setTimeout(applyV65, 80);
+    setTimeout(applyV65, 180);
+  }, true);
+
+  setTimeout(applyV65, 0);
+  setTimeout(applyV65, 150);
+})();
+
+
+// --- v66 authoritative results mode labels + League Legends league persistence ---
+// Fixes any final-results/saved-image label that is overwritten by older solo-result patches.
+// Also keeps the selected League Legends league explicit in state before leaderboard/stats saves.
+(function resultsModeLabelsAndLegendLeagueV66(){
+  const PRESET_LABELS_V66 = {
+    leaguelegends: "League Legends Challenge",
+    league: "League Challenge",
+    worldcup2026: "World Cup 2026 Challenge",
+    ultimate: "Ultimate Solo Mode",
+    easy: "Easy Solo Challenge",
+    standard: "Solo Challenge"
+  };
+
+  function cleanTextV66(value){
+    return String(value || "").trim();
+  }
+
+  function getPresetV66(){
+    return cleanTextV66(state?.challengePreset || window.challengePreset || "").toLowerCase();
+  }
+
+  function getModeLabelV66(){
+    if (!state) return "Ultimate 5-a-side Draft";
+
+    const preset = getPresetV66();
+    if (PRESET_LABELS_V66[preset]) return PRESET_LABELS_V66[preset];
+    if (state.challengeName) return cleanTextV66(state.challengeName);
+
+    if (online.enabled && state.gameMode === "draft") return "Online Ultimate Draft";
+    if (online.enabled && state.gameMode === "bid" && state.onlineBidMode === "live") return "Online Live Auction";
+    if (online.enabled && state.gameMode === "bid") return "Online Blind Bidding";
+    if (!online.enabled && state.gameMode === "bid") return "Local Bidding";
+    if (!online.enabled && state.gameMode === "draft" && Number(state.userCount || state.users?.length || 0) === 1) return "Solo Challenge";
+    if (!online.enabled && state.gameMode === "draft") return "Local Ultimate Draft";
+
+    return "Ultimate 5-a-side Draft";
+  }
+
+  function selectedLegendLeagueV66(){
+    const direct = cleanTextV66(state?.selectedLegendLeague || state?.league || state?.legendLeague);
+    if (direct && direct.toLowerCase() !== "selected league") return direct;
+
+    const labels = state?.leagueSelection?.labels;
+    if (Array.isArray(labels)) {
+      const label = labels.map(cleanTextV66).find(Boolean);
+      if (label && label.toLowerCase() !== "selected league") return label;
+    }
+    if (labels && typeof labels === "object") {
+      const label = Object.values(labels).map(cleanTextV66).find(Boolean);
+      if (label && label.toLowerCase() !== "selected league") return label;
+    }
+
+    const team = Array.isArray(state?.users?.[0]?.team) ? state.users[0].team : [];
+    const fromTeam = team.map(player => cleanTextV66(player?.league)).find(Boolean);
+    if (fromTeam && fromTeam.toLowerCase() !== "selected league") return fromTeam;
+
+    return "";
+  }
+
+  function ensureLegendLeagueStateV66(){
+    if (!state || getPresetV66() !== "leaguelegends") return;
+    const league = selectedLegendLeagueV66();
+    if (!league) return;
+
+    state.selectedLegendLeague = league;
+    state.league = league;
+    if (!state.leagueSelection || typeof state.leagueSelection !== "object") {
+      state.leagueSelection = { labels: [league] };
+    }
+    if (!Array.isArray(state.leagueSelection.labels) || !state.leagueSelection.labels.length) {
+      state.leagueSelection.labels = [league];
+    }
+    if (!Array.isArray(state.leagueSelection.keys) || !state.leagueSelection.keys.length) {
+      state.leagueSelection.keys = [league.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")];
+    }
+
+    const team = Array.isArray(state.users?.[0]?.team) ? state.users[0].team : [];
+    team.forEach(player => {
+      if (player && !cleanTextV66(player.league)) player.league = league;
+    });
+  }
+
+  function applyResultLabelsV66(){
+    if (!state || !ratingsRevealed) return;
+    ensureLegendLeagueStateV66();
+
+    const label = getModeLabelV66();
+    const league = selectedLegendLeagueV66();
+
+    const hero = document.querySelector("#resultsPanel .finished-hero");
+    if (hero) {
+      const eyebrow = hero.querySelector(".eyebrow");
+      const intro = hero.querySelector(".muted");
+      if (eyebrow) eyebrow.textContent = label;
+      if (intro && getPresetV66() === "leaguelegends" && league) {
+        intro.textContent = `Ratings are revealed. League: ${league}.`;
+      }
+    }
+
+    const resultsPanel = document.getElementById("resultsPanel");
+    if (resultsPanel) {
+      resultsPanel.dataset.gameModeLabel = label;
+      if (league) resultsPanel.dataset.selectedLegendLeague = league;
+    }
+  }
+
+  // Keep Firebase writes explicit without changing Firebase rules or schema.
+  const previousEnsureFirebaseV66 = ensureFirebase;
+  ensureFirebase = async function(...args){
+    ensureLegendLeagueStateV66();
+    return await previousEnsureFirebaseV66.apply(this, args);
+  };
+
+  const previousSerialiseStateV66 = serialiseState;
+  serialiseState = function(...args){
+    ensureLegendLeagueStateV66();
+    const raw = previousSerialiseStateV66.apply(this, args);
+    if (raw && raw.challengePreset === "leaguelegends") {
+      const league = selectedLegendLeagueV66();
+      if (league) {
+        raw.selectedLegendLeague = league;
+        raw.league = league;
+        raw.leagueSelection = raw.leagueSelection || { labels: [league] };
+        raw.leagueSelection.labels = Array.isArray(raw.leagueSelection.labels) && raw.leagueSelection.labels.length ? raw.leagueSelection.labels : [league];
+      }
+    }
+    return raw;
+  };
+
+  const previousRenderResultsV66 = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResultsV66.apply(this, args);
+    applyResultLabelsV66();
+    return result;
+  };
+
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const previousShowFinishedResultsPageV66 = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function(...args){
+      ensureLegendLeagueStateV66();
+      const result = previousShowFinishedResultsPageV66.apply(this, args);
+      applyResultLabelsV66();
+      setTimeout(applyResultLabelsV66, 0);
+      setTimeout(applyResultLabelsV66, 80);
+      return result;
+    };
+  }
+
+  const previousRevealScoresV66 = revealScores;
+  revealScores = async function(...args){
+    ensureLegendLeagueStateV66();
+    const result = await previousRevealScoresV66.apply(this, args);
+    applyResultLabelsV66();
+    return result;
+  };
+
+  const previousCreateSummaryCanvasV66 = createSummaryCanvas;
+  createSummaryCanvas = function(...args){
+    ensureLegendLeagueStateV66();
+    const canvas = previousCreateSummaryCanvasV66.apply(this, args);
+    try {
+      const ctx = canvas.getContext("2d");
+      const label = getModeLabelV66();
+      const league = selectedLegendLeagueV66();
+      const subtitle = getPresetV66() === "leaguelegends" && league ? `${label} - ${league}` : label;
+
+      // Cover the old mode text and redraw the authoritative label in the saved/share image header.
+      ctx.save();
+      ctx.fillStyle = "rgba(15,23,42,.98)";
+      ctx.fillRect(195, 92, 980, 48);
+      ctx.font = "850 28px Arial";
+      ctx.fillStyle = "#d1fae5";
+      ctx.fillText(subtitle, 204, 122);
+      ctx.restore();
+    } catch (err) {
+      console.warn("Could not apply saved image mode label fix", err);
+    }
+    return canvas;
+  };
+
+  const previousSubmitLeaderboardScoreV66 = typeof submitLeaderboardScore === "function" ? submitLeaderboardScore : null;
+  if (previousSubmitLeaderboardScoreV66) {
+    submitLeaderboardScore = async function(...args){
+      ensureLegendLeagueStateV66();
+      return await previousSubmitLeaderboardScoreV66.apply(this, args);
+    };
+  }
+
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.("#revealBtn, #saveSummaryBtn, #shareSummaryBtn, #submitLeaderboardBtnStep19")) {
+      ensureLegendLeagueStateV66();
+      setTimeout(applyResultLabelsV66, 0);
+      setTimeout(applyResultLabelsV66, 120);
+    }
+  }, true);
+})();
+
+
+// --- v67 League Legends leaderboard selected-league display fix ---
+// Renders the League Legends leaderboard with a reliable League line.
+// It uses saved Firebase fields first, then infers older entries from league_players.json by player name.
+(function leagueLegendsLeaderboardLeagueDisplayV67(){
+  let legendPoolPromiseV67 = null;
+
+  function escV67(value){
+    return String(value ?? "").replace(/[&<>'\"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+  }
+
+  function cleanV67(value){
+    const text = String(value || "").trim();
+    return text && text.toLowerCase() !== "selected league" ? text : "";
+  }
+
+  function modeV67(entry){
+    return String(entry?.gameMode || "").trim();
+  }
+
+  function getCandidateLeaguesV67(entry){
+    const selection = entry?.leagueSelection || {};
+    const candidates = [
+      entry?.selectedLegendLeague,
+      entry?.legendLeague,
+      entry?.league,
+      selection.labels,
+      selection.label,
+      selection.selectedLeague,
+      selection.league
+    ];
+
+    const out = [];
+    candidates.forEach(value => {
+      if (Array.isArray(value)) out.push(...value);
+      else if (value && typeof value === "object") out.push(...Object.values(value));
+      else out.push(value);
+    });
+
+    if (Array.isArray(entry?.team)) {
+      out.push(...entry.team.map(player => player?.league));
+    }
+
+    return out.map(cleanV67).filter(Boolean);
+  }
+
+  async function loadLegendPoolMapV67(){
+    if (legendPoolPromiseV67) return legendPoolPromiseV67;
+    legendPoolPromiseV67 = (async () => {
+      try {
+        const response = await fetch("league_players.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const rows = await response.json();
+        const byName = new Map();
+        (Array.isArray(rows) ? rows : []).forEach(row => {
+          const name = cleanV67(row.Player || row.player || row.Name || row.name).toLowerCase();
+          const league = cleanV67(row.League || row.league);
+          if (!name || !league) return;
+          if (!byName.has(name)) byName.set(name, []);
+          byName.get(name).push(league);
+        });
+        return byName;
+      } catch (err) {
+        console.warn("Could not load league_players.json for leaderboard league inference", err);
+        return new Map();
+      }
+    })();
+    return legendPoolPromiseV67;
+  }
+
+  async function inferLeagueV67(entry){
+    const direct = getCandidateLeaguesV67(entry);
+    if (direct.length) return [...new Set(direct)].join(", ");
+
+    const byName = await loadLegendPoolMapV67();
+    const counts = new Map();
+    const team = Array.isArray(entry?.team) ? entry.team : [];
+    team.forEach(player => {
+      const name = cleanV67(player?.name || player?.player || player?.Player).toLowerCase();
+      if (!name || !byName.has(name)) return;
+      byName.get(name).forEach(league => counts.set(league, (counts.get(league) || 0) + 1));
+    });
+
+    if (!counts.size) return "";
+    return [...counts.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  }
+
+  function isLeagueLegendsTabActiveV67(){
+    const activeGroup = document.querySelector("[data-leaderboard-group].active");
+    if (activeGroup?.dataset?.leaderboardGroup === "legends") return true;
+    return (activeGroup?.textContent || "").trim().toLowerCase() === "league legends";
+  }
+
+  async function renderLeagueLegendsLeaderboardV67(){
+    const panel = document.getElementById("leaderboardPanel");
+    const list = document.getElementById("leaderboardList");
+    if (!panel || panel.classList.contains("hidden") || !list || !isLeagueLegendsTabActiveV67()) return;
+
+    list.innerHTML = `<div class="leaderboard-empty">Loading League Legends leaderboard...</div>`;
+
+    try {
+      await ensureFirebase();
+      const snapshot = await firebase.database().ref("leaderboard").once("value");
+      if (!snapshot.exists()) {
+        list.innerHTML = `<div class="leaderboard-empty">No League Legends scores submitted yet.</div>`;
+        return;
+      }
+
+      const entries = Object.values(snapshot.val() || {})
+        .filter(entry => modeV67(entry) === "League Legends Challenge")
+        .filter(entry => Number.isFinite(Number(entry.score)))
+        .map(entry => ({
+          ...entry,
+          username: String(entry.username || "Player").trim() || "Player",
+          score: Number(entry.score || 0),
+          timestamp: Number(entry.timestamp || 0)
+        }))
+        .sort((a,b) => b.score !== a.score ? b.score - a.score : b.timestamp - a.timestamp)
+        .slice(0,20);
+
+      if (!entries.length) {
+        list.innerHTML = `<div class="leaderboard-empty">No League Legends scores submitted yet.</div>`;
+        return;
+      }
+
+      const leagues = await Promise.all(entries.map(inferLeagueV67));
+      if (!isLeagueLegendsTabActiveV67()) return;
+
+      list.innerHTML = entries.map((entry, index) => {
+        const league = leagues[index] || "Not recorded";
+        return `<div class="leaderboard-row leaderboard-row-v55">
+          <span class="leaderboard-rank">#${index + 1}</span>
+          <span class="leaderboard-name">${escV67(entry.username)}</span>
+          <span class="leaderboard-mode">League Legends Challenge</span>
+          <span class="leaderboard-score">${entry.score}</span>
+          <span class="leaderboard-meta-v55">League: ${escV67(league)}</span>
+        </div>`;
+      }).join("");
+    } catch (err) {
+      list.innerHTML = `<div class="leaderboard-error">Could not load League Legends leaderboard. ${escV67(err.message || err)}</div>`;
+    }
+  }
+
+  function scheduleRenderV67(){
+    setTimeout(renderLeagueLegendsLeaderboardV67, 0);
+    setTimeout(renderLeagueLegendsLeaderboardV67, 120);
+    setTimeout(renderLeagueLegendsLeaderboardV67, 300);
+  }
+
+  window.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub]")) {
+      scheduleRenderV67();
+    }
+  }, true);
+
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub]")) {
+      scheduleRenderV67();
+    }
+  }, true);
+
+  setTimeout(scheduleRenderV67, 250);
+})();
+
+
+// --- v68 definitive League Legends leaderboard league metadata renderer ---
+// The older leaderboard renderers can overwrite the League Legends metadata after the tab loads.
+// This observer-based renderer re-renders the active League Legends tab after every mutation, so the league line remains visible.
+(function leagueLegendsLeaderboardMetadataFinalV68(){
+  let renderTimerV68 = null;
+  let poolMapPromiseV68 = null;
+  let observerAttachedV68 = false;
+
+  function escV68(value){
+    return String(value ?? "").replace(/[&<>'\"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+  }
+
+  function cleanV68(value){
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    if (["selected league", "selected leagues", "undefined", "null"].includes(text.toLowerCase())) return "";
+    return text;
+  }
+
+  function normNameV68(value){
+    return cleanV68(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
+  function activeLegendsTabV68(){
+    const activeGroup = document.querySelector('[data-leaderboard-group].active');
+    if (activeGroup?.dataset?.leaderboardGroup === "legends") return true;
+    if ((activeGroup?.textContent || "").trim().toLowerCase() === "league legends") return true;
+
+    const activeLegacy = document.querySelector('.leaderboard-tab.active');
+    return (activeLegacy?.textContent || "").trim().toLowerCase() === "league legends";
+  }
+
+  function extractDirectLeaguesV68(entry){
+    const selection = entry?.leagueSelection || {};
+    const values = [
+      entry?.selectedLegendLeague,
+      entry?.legendLeague,
+      entry?.selectedLeague,
+      entry?.league,
+      selection.labels,
+      selection.label,
+      selection.selectedLegendLeague,
+      selection.selectedLeague,
+      selection.league
+    ];
+
+    const out = [];
+    values.forEach(value => {
+      if (Array.isArray(value)) out.push(...value);
+      else if (value && typeof value === "object") out.push(...Object.values(value));
+      else out.push(value);
+    });
+
+    if (Array.isArray(entry?.team)) {
+      entry.team.forEach(player => {
+        out.push(player?.league, player?.League, player?.selectedLegendLeague, player?.legendLeague);
+      });
+    }
+
+    return [...new Set(out.map(cleanV68).filter(Boolean))];
+  }
+
+  async function legendPoolMapV68(){
+    if (poolMapPromiseV68) return poolMapPromiseV68;
+    poolMapPromiseV68 = (async () => {
+      const map = new Map();
+      try {
+        const response = await fetch("league_players.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const rows = await response.json();
+        (Array.isArray(rows) ? rows : []).forEach(row => {
+          const name = normNameV68(row.Player || row.player || row.Name || row.name);
+          const league = cleanV68(row.League || row.league);
+          if (!name || !league) return;
+          if (!map.has(name)) map.set(name, []);
+          map.get(name).push(league);
+        });
+      } catch (err) {
+        console.warn("V68 could not load league_players.json for League Legends leaderboard metadata", err);
+      }
+      return map;
+    })();
+    return poolMapPromiseV68;
+  }
+
+  async function inferLeagueV68(entry){
+    const direct = extractDirectLeaguesV68(entry);
+    if (direct.length) return direct.join(", ");
+
+    const map = await legendPoolMapV68();
+    const counts = new Map();
+    const team = Array.isArray(entry?.team) ? entry.team : [];
+    team.forEach(player => {
+      const name = normNameV68(player?.name || player?.player || player?.Player);
+      if (!name || !map.has(name)) return;
+      map.get(name).forEach(league => counts.set(league, (counts.get(league) || 0) + 1));
+    });
+
+    if (!counts.size) return "Not recorded";
+    return [...counts.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  }
+
+  function injectStylesV68(){
+    if (document.getElementById("leagueLegendsLeaderboardMetadataFinalStylesV68")) return;
+    const style = document.createElement("style");
+    style.id = "leagueLegendsLeaderboardMetadataFinalStylesV68";
+    style.textContent = `
+      .leaderboard-row.league-legends-row-v68{
+        grid-template-columns:54px minmax(0,1fr) minmax(170px,max-content) 74px!important;
+        align-items:center!important;
+        column-gap:14px!important;
+        row-gap:2px!important;
+        padding-top:12px!important;
+        padding-bottom:12px!important;
+        min-height:62px!important;
+      }
+      .leaderboard-row.league-legends-row-v68 .leaderboard-name{
+        grid-column:2!important;
+        grid-row:1!important;
+      }
+      .leaderboard-row.league-legends-row-v68 .leaderboard-mode{
+        grid-column:3!important;
+        grid-row:1!important;
+        text-align:right!important;
+        justify-self:end!important;
+        white-space:nowrap!important;
+      }
+      .leaderboard-row.league-legends-row-v68 .leaderboard-score{
+        grid-column:4!important;
+        grid-row:1!important;
+        text-align:right!important;
+        justify-self:end!important;
+        min-width:58px!important;
+        font-variant-numeric:tabular-nums;
+      }
+      .leaderboard-row.league-legends-row-v68 .leaderboard-meta-v68{
+        display:block!important;
+        grid-column:2 / span 3!important;
+        grid-row:2!important;
+        color:#64748b!important;
+        font-size:.78rem!important;
+        font-weight:850!important;
+        line-height:1.2!important;
+        margin-top:1px!important;
+      }
+      @media(max-width:720px){
+        .leaderboard-row.league-legends-row-v68{
+          grid-template-columns:44px minmax(0,1fr) 72px!important;
+          column-gap:10px!important;
+        }
+        .leaderboard-row.league-legends-row-v68 .leaderboard-mode{
+          grid-column:2 / span 2!important;
+          grid-row:2!important;
+          text-align:left!important;
+          justify-self:start!important;
+          white-space:normal!important;
+        }
+        .leaderboard-row.league-legends-row-v68 .leaderboard-score{
+          grid-column:3!important;
+          grid-row:1!important;
+        }
+        .leaderboard-row.league-legends-row-v68 .leaderboard-meta-v68{
+          grid-column:2 / span 2!important;
+          grid-row:3!important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  async function renderV68(){
+    const panel = document.getElementById("leaderboardPanel");
+    const list = document.getElementById("leaderboardList");
+    if (!panel || panel.classList.contains("hidden") || !list || !activeLegendsTabV68()) return;
+    if (list.dataset.v68Rendering === "1") return;
+
+    injectStylesV68();
+    list.dataset.v68Rendering = "1";
+
+    try {
+      await ensureFirebase();
+      const snap = await firebase.database().ref("leaderboard").once("value");
+      const entries = Object.values(snap.val() || {})
+        .filter(entry => String(entry?.gameMode || "").trim() === "League Legends Challenge")
+        .filter(entry => Number.isFinite(Number(entry.score)))
+        .map(entry => ({
+          ...entry,
+          username: String(entry.username || "Player").trim() || "Player",
+          score: Number(entry.score || 0),
+          timestamp: Number(entry.timestamp || 0)
+        }))
+        .sort((a,b) => b.score !== a.score ? b.score - a.score : b.timestamp - a.timestamp)
+        .slice(0,20);
+
+      if (!activeLegendsTabV68()) return;
+
+      if (!entries.length) {
+        list.innerHTML = `<div class="leaderboard-empty">No League Legends scores submitted yet.</div>`;
+        return;
+      }
+
+      const leagues = await Promise.all(entries.map(inferLeagueV68));
+      if (!activeLegendsTabV68()) return;
+
+      list.innerHTML = entries.map((entry, index) => {
+        const league = leagues[index] || "Not recorded";
+        return `<div class="leaderboard-row leaderboard-row-v55 league-legends-row-v68">
+          <span class="leaderboard-rank">#${index + 1}</span>
+          <span class="leaderboard-name">${escV68(entry.username)}</span>
+          <span class="leaderboard-mode">League Legends Challenge</span>
+          <span class="leaderboard-score">${entry.score}</span>
+          <span class="leaderboard-meta-v68">League: ${escV68(league)}</span>
+        </div>`;
+      }).join("");
+    } catch (err) {
+      list.innerHTML = `<div class="leaderboard-error">Could not load League Legends leaderboard. ${escV68(err.message || err)}</div>`;
+    } finally {
+      setTimeout(() => {
+        const listNow = document.getElementById("leaderboardList");
+        if (listNow) listNow.dataset.v68Rendering = "0";
+      }, 120);
+    }
+  }
+
+  function scheduleV68(){
+    clearTimeout(renderTimerV68);
+    renderTimerV68 = setTimeout(renderV68, 80);
+    setTimeout(renderV68, 350);
+    setTimeout(renderV68, 900);
+    setTimeout(renderV68, 1800);
+  }
+
+  function attachObserverV68(){
+    if (observerAttachedV68) return;
+    const list = document.getElementById("leaderboardList");
+    if (!list) return;
+    observerAttachedV68 = true;
+    const observer = new MutationObserver(() => {
+      if (list.dataset.v68Rendering === "1") return;
+      if (activeLegendsTabV68()) scheduleV68();
+    });
+    observer.observe(list, { childList:true, subtree:false });
+  }
+
+  window.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub], .leaderboard-tab")) {
+      setTimeout(attachObserverV68, 0);
+      scheduleV68();
+    }
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    injectStylesV68();
+    setTimeout(attachObserverV68, 200);
+  });
+
+  setInterval(() => {
+    attachObserverV68();
+    if (activeLegendsTabV68()) scheduleV68();
+  }, 1500);
+})();
+
+
+// --- v69 League Challenge leaderboard Unknown League cleanup ---
+// Removes "Unknown League" from League Challenge leaderboard metadata without touching valid values like "All Other Leagues".
+(function leagueChallengeUnknownLeagueCleanupV69(){
+  let cleanupTimerV69 = null;
+
+  function cleanLeagueMetaTextV69(text){
+    const raw = String(text || "").trim();
+    if (!/^leagues?:/i.test(raw)) return raw;
+
+    const prefix = raw.split(":")[0];
+    const rest = raw.slice(raw.indexOf(":") + 1);
+    const leagues = rest
+      .split(",")
+      .map(item => item.trim())
+      .filter(Boolean)
+      .filter(item => !/^unknown league$/i.test(item));
+
+    return leagues.length ? `${prefix}: ${leagues.join(", ")}` : "";
+  }
+
+  function cleanupUnknownLeagueV69(){
+    const list = document.getElementById("leaderboardList");
+    if (!list) return;
+
+    list.querySelectorAll(".leaderboard-meta-v55, .leaderboard-meta-v54, .leaderboard-meta-v53, .leaderboard-meta-v68").forEach(meta => {
+      const cleaned = cleanLeagueMetaTextV69(meta.textContent || "");
+      if (cleaned) meta.textContent = cleaned;
+      else meta.remove();
+    });
+  }
+
+  function scheduleCleanupV69(){
+    clearTimeout(cleanupTimerV69);
+    cleanupTimerV69 = setTimeout(cleanupUnknownLeagueV69, 40);
+    setTimeout(cleanupUnknownLeagueV69, 180);
+    setTimeout(cleanupUnknownLeagueV69, 600);
+  }
+
+  function attachObserverV69(){
+    const list = document.getElementById("leaderboardList");
+    if (!list || list.dataset.unknownLeagueObserverV69 === "1") return;
+    list.dataset.unknownLeagueObserverV69 = "1";
+    const observer = new MutationObserver(scheduleCleanupV69);
+    observer.observe(list, { childList: true, subtree: true, characterData: true });
+  }
+
+  window.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub], .leaderboard-tab")) {
+      setTimeout(attachObserverV69, 0);
+      scheduleCleanupV69();
+    }
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(attachObserverV69, 200);
+    scheduleCleanupV69();
+  });
+
+  setInterval(() => {
+    attachObserverV69();
+    cleanupUnknownLeagueV69();
+  }, 1500);
+})();
+
+
+// --- v70 leaderboard subtab visual distinction + legacy duplicate prevention ---
+// Makes the sub-tab container visually distinct and prevents the old League Challenge sub-tab from reappearing/flickering.
+(function leaderboardSubtabsColourAndDuplicateGuardV70(){
+  let cleanupTimerV70 = null;
+  let observerAttachedV70 = false;
+
+  function injectStylesV70(){
+    if (document.getElementById("leaderboardSubtabsColourDuplicateGuardStylesV70")) return;
+    const style = document.createElement("style");
+    style.id = "leaderboardSubtabsColourDuplicateGuardStylesV70";
+    style.textContent = `
+      /* Hide legacy/old subtabs immediately so they do not flash for a split second before JS cleanup runs. */
+      #soloLeaderboardSubTabs [data-solo-leaderboard-filter],
+      #soloLeaderboardSubTabs .solo-sub-tab:not([data-leaderboard-sub]){
+        display:none!important;
+        visibility:hidden!important;
+        pointer-events:none!important;
+      }
+
+      /* Make the sub-tab box read as a secondary filter strip, not another main tab row. */
+      #soloLeaderboardSubTabs.leaderboard-subtabs-v55,
+      .leaderboard-subtabs-v55{
+        background:linear-gradient(135deg,#eaf3ff,#f7fbff)!important;
+        border:1.5px solid #93c5fd!important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.95), 0 8px 20px rgba(37,99,235,.08)!important;
+        border-radius:18px!important;
+      }
+      #soloLeaderboardSubTabs.leaderboard-subtabs-v55::before,
+      .leaderboard-subtabs-v55::before{
+        content:"Filters";
+        display:inline-flex;
+        align-items:center;
+        margin-right:2px;
+        padding:5px 8px;
+        border-radius:999px;
+        background:#dbeafe;
+        color:#1e3a8a;
+        font-size:.68rem;
+        font-weight:950;
+        letter-spacing:.08em;
+        text-transform:uppercase;
+      }
+      #soloLeaderboardSubTabs.leaderboard-subtabs-v55 .leaderboard-tab-v55,
+      .leaderboard-subtabs-v55 .leaderboard-tab-v55{
+        background:#f8fbff!important;
+        border-color:#93c5fd!important;
+      }
+      #soloLeaderboardSubTabs.leaderboard-subtabs-v55 .leaderboard-tab-v55.active,
+      .leaderboard-subtabs-v55 .leaderboard-tab-v55.active{
+        background:linear-gradient(135deg,#bfdbfe,#93c5fd)!important;
+        border-color:#60a5fa!important;
+        color:#0f2f66!important;
+      }
+      @media(max-width:720px){
+        #soloLeaderboardSubTabs.leaderboard-subtabs-v55::before,
+        .leaderboard-subtabs-v55::before{
+          font-size:.64rem;
+          padding:4px 7px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function removeLegacyDuplicateSubtabsV70(){
+    const holder = document.getElementById("soloLeaderboardSubTabs");
+    if (!holder) return;
+
+    holder.classList.add("leaderboard-subtabs-v55");
+
+    // Remove any legacy buttons created by older leaderboard handlers.
+    holder.querySelectorAll('[data-solo-leaderboard-filter], .solo-sub-tab:not([data-leaderboard-sub])').forEach(button => button.remove());
+
+    // If any duplicate labels still exist, keep the modern data-leaderboard-sub version and remove the rest.
+    const seen = new Map();
+    Array.from(holder.querySelectorAll('button')).forEach(button => {
+      const label = (button.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (!label) return;
+      const isModern = !!button.dataset.leaderboardSub;
+      if (!seen.has(label)) {
+        seen.set(label, button);
+        return;
+      }
+      const kept = seen.get(label);
+      const keptIsModern = !!kept.dataset.leaderboardSub;
+      if (isModern && !keptIsModern) {
+        kept.remove();
+        seen.set(label, button);
+      } else {
+        button.remove();
+      }
+    });
+
+    // Specific extra safety for the League Challenge duplicate reported in the screenshot.
+    const leagueButtons = Array.from(holder.querySelectorAll('button')).filter(button =>
+      (button.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase() === 'league challenge'
+    );
+    if (leagueButtons.length > 1) {
+      const preferred = leagueButtons.find(button => button.dataset.leaderboardSub === 'league') || leagueButtons[0];
+      leagueButtons.forEach(button => { if (button !== preferred) button.remove(); });
+    }
+  }
+
+  function applyV70(){
+    injectStylesV70();
+    removeLegacyDuplicateSubtabsV70();
+  }
+
+  function scheduleApplyV70(){
+    clearTimeout(cleanupTimerV70);
+    cleanupTimerV70 = setTimeout(applyV70, 0);
+    setTimeout(applyV70, 25);
+    setTimeout(applyV70, 90);
+    setTimeout(applyV70, 220);
+    setTimeout(applyV70, 600);
+  }
+
+  function attachObserverV70(){
+    if (observerAttachedV70) return;
+    const holder = document.getElementById("soloLeaderboardSubTabs");
+    if (!holder) return;
+    observerAttachedV70 = true;
+    const observer = new MutationObserver(() => scheduleApplyV70());
+    observer.observe(holder, { childList:true, subtree:true, attributes:true, attributeFilter:['class','data-solo-leaderboard-filter','data-leaderboard-sub'] });
+  }
+
+  window.addEventListener('click', event => {
+    if (event.target?.closest?.('#leaderboardPanel, #leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub], .leaderboard-tab') || document.getElementById('leaderboardPanel')) {
+      setTimeout(attachObserverV70, 0);
+      scheduleApplyV70();
+    }
+  }, true);
+
+  document.addEventListener('DOMContentLoaded', () => {
+    injectStylesV70();
+    setTimeout(attachObserverV70, 120);
+    scheduleApplyV70();
+  });
+
+  setInterval(() => {
+    injectStylesV70();
+    attachObserverV70();
+    removeLegacyDuplicateSubtabsV70();
+  }, 1000);
+
+  injectStylesV70();
+  scheduleApplyV70();
+})();
+
+
+// --- v71 definitive League Legends selected league display ---
+// Final defensive patch: renders the selected league inside the name column itself, so later row/grid styling cannot hide it.
+(function leagueLegendsSelectedLeagueFinalV71(){
+  let renderTimerV71 = null;
+  let poolMapPromiseV71 = null;
+  let observerReadyV71 = false;
+
+  function escV71(value){
+    return String(value ?? "").replace(/[&<>'\"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+  }
+
+  function cleanV71(value){
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    if (["selected league", "selected leagues", "unknown league", "undefined", "null"].includes(text.toLowerCase())) return "";
+    return text;
+  }
+
+  function normNameV71(value){
+    return cleanV71(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
+  function leagueLegendsTabIsActiveV71(){
+    const activeGroup = document.querySelector('[data-leaderboard-group="legends"].active');
+    if (activeGroup) return true;
+
+    // Some earlier patches use the button text rather than the data attribute.
+    const mainTabs = Array.from(document.querySelectorAll('[data-leaderboard-group], .leaderboard-main-tabs-v55 .leaderboard-tab, .leaderboard-tabs:first-of-type .leaderboard-tab'));
+    return mainTabs.some(btn => btn.classList.contains('active') && (btn.textContent || '').trim().toLowerCase() === 'league legends');
+  }
+
+  function directLeagueValuesV71(entry){
+    const selection = entry?.leagueSelection || {};
+    const values = [
+      entry?.selectedLegendLeague,
+      entry?.legendLeague,
+      entry?.selectedLeague,
+      entry?.league,
+      selection.labels,
+      selection.label,
+      selection.selectedLegendLeague,
+      selection.selectedLeague,
+      selection.league
+    ];
+
+    const output = [];
+    values.forEach(value => {
+      if (Array.isArray(value)) output.push(...value);
+      else if (value && typeof value === "object") output.push(...Object.values(value));
+      else output.push(value);
+    });
+
+    if (Array.isArray(entry?.team)) {
+      entry.team.forEach(player => output.push(player?.league, player?.League, player?.selectedLegendLeague, player?.legendLeague));
+    }
+
+    return [...new Set(output.map(cleanV71).filter(Boolean))];
+  }
+
+  async function loadLegendPoolMapV71(){
+    if (poolMapPromiseV71) return poolMapPromiseV71;
+    poolMapPromiseV71 = (async () => {
+      const map = new Map();
+      try {
+        const response = await fetch("league_players.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const rows = await response.json();
+        (Array.isArray(rows) ? rows : []).forEach(row => {
+          const name = normNameV71(row.Player || row.player || row.Name || row.name);
+          const league = cleanV71(row.League || row.league);
+          if (!name || !league) return;
+          if (!map.has(name)) map.set(name, []);
+          map.get(name).push(league);
+        });
+      } catch (err) {
+        console.warn("V71 could not load league_players.json for League Legends leaderboard metadata", err);
+      }
+      return map;
+    })();
+    return poolMapPromiseV71;
+  }
+
+  async function leagueForEntryV71(entry){
+    const direct = directLeagueValuesV71(entry);
+    if (direct.length) return direct.join(", ");
+
+    const map = await loadLegendPoolMapV71();
+    const counts = new Map();
+    const team = Array.isArray(entry?.team) ? entry.team : [];
+    team.forEach(player => {
+      const name = normNameV71(player?.name || player?.player || player?.Player);
+      if (!name || !map.has(name)) return;
+      map.get(name).forEach(league => counts.set(league, (counts.get(league) || 0) + 1));
+    });
+
+    if (!counts.size) return "Not recorded";
+    return [...counts.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  }
+
+  function injectStylesV71(){
+    if (document.getElementById("leagueLegendsSelectedLeagueFinalStylesV71")) return;
+    const style = document.createElement("style");
+    style.id = "leagueLegendsSelectedLeagueFinalStylesV71";
+    style.textContent = `
+      .leaderboard-row.league-legends-row-v71{
+        min-height:64px!important;
+        align-items:center!important;
+        row-gap:2px!important;
+      }
+      .leaderboard-row.league-legends-row-v71 .leaderboard-name{
+        display:flex!important;
+        flex-direction:column!important;
+        align-items:flex-start!important;
+        justify-content:center!important;
+        gap:3px!important;
+        min-width:0!important;
+      }
+      .leaderboard-row.league-legends-row-v71 .leaderboard-name-main-v71{
+        color:#0f172a!important;
+        font-weight:950!important;
+        line-height:1.1!important;
+      }
+      .leaderboard-row.league-legends-row-v71 .leaderboard-league-v71{
+        display:block!important;
+        color:#64748b!important;
+        font-size:.78rem!important;
+        font-weight:850!important;
+        line-height:1.15!important;
+        white-space:normal!important;
+      }
+      .leaderboard-row.league-legends-row-v71 .leaderboard-score{
+        text-align:right!important;
+        justify-self:end!important;
+      }
+      .leaderboard-row.league-legends-row-v71 .leaderboard-mode{
+        text-align:right!important;
+        justify-self:end!important;
+      }
+      @media(max-width:720px){
+        .leaderboard-row.league-legends-row-v71{min-height:76px!important;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  async function renderV71(){
+    const panel = document.getElementById("leaderboardPanel");
+    const list = document.getElementById("leaderboardList");
+    if (!panel || panel.classList.contains("hidden") || !list || !leagueLegendsTabIsActiveV71()) return;
+    if (list.dataset.v71Rendering === "1") return;
+
+    injectStylesV71();
+    list.dataset.v71Rendering = "1";
+
+    try {
+      await ensureFirebase();
+      const snap = await firebase.database().ref("leaderboard").once("value");
+      const entries = Object.values(snap.val() || {})
+        .filter(entry => String(entry?.gameMode || "").trim() === "League Legends Challenge")
+        .filter(entry => Number.isFinite(Number(entry.score)))
+        .map(entry => ({
+          ...entry,
+          username: String(entry.username || "Player").trim() || "Player",
+          score: Number(entry.score || 0),
+          timestamp: Number(entry.timestamp || 0)
+        }))
+        .sort((a,b) => b.score !== a.score ? b.score - a.score : b.timestamp - a.timestamp)
+        .slice(0,20);
+
+      if (!leagueLegendsTabIsActiveV71()) return;
+
+      if (!entries.length) {
+        list.innerHTML = `<div class="leaderboard-empty">No League Legends scores submitted yet.</div>`;
+        return;
+      }
+
+      const leagues = await Promise.all(entries.map(leagueForEntryV71));
+      if (!leagueLegendsTabIsActiveV71()) return;
+
+      list.innerHTML = entries.map((entry, index) => {
+        const league = leagues[index] || "Not recorded";
+        return `<div class="leaderboard-row leaderboard-row-v55 league-legends-row-v71">
+          <span class="leaderboard-rank">#${index + 1}</span>
+          <span class="leaderboard-name"><span class="leaderboard-name-main-v71">${escV71(entry.username)}</span><span class="leaderboard-league-v71">League: ${escV71(league)}</span></span>
+          <span class="leaderboard-mode">League Legends Challenge</span>
+          <span class="leaderboard-score">${entry.score}</span>
+        </div>`;
+      }).join("");
+    } catch (err) {
+      list.innerHTML = `<div class="leaderboard-error">Could not load League Legends leaderboard. ${escV71(err.message || err)}</div>`;
+    } finally {
+      setTimeout(() => {
+        const listNow = document.getElementById("leaderboardList");
+        if (listNow) listNow.dataset.v71Rendering = "0";
+      }, 150);
+    }
+  }
+
+  function scheduleV71(){
+    clearTimeout(renderTimerV71);
+    renderTimerV71 = setTimeout(renderV71, 40);
+    setTimeout(renderV71, 120);
+    setTimeout(renderV71, 300);
+    setTimeout(renderV71, 800);
+    setTimeout(renderV71, 1600);
+  }
+
+  function attachObserverV71(){
+    if (observerReadyV71) return;
+    const list = document.getElementById("leaderboardList");
+    const panel = document.getElementById("leaderboardPanel");
+    if (!list || !panel) return;
+    observerReadyV71 = true;
+
+    const observer = new MutationObserver(() => {
+      if (list.dataset.v71Rendering === "1") return;
+      if (leagueLegendsTabIsActiveV71()) scheduleV71();
+    });
+    observer.observe(list, { childList:true, subtree:false });
+
+    const tabObserver = new MutationObserver(() => {
+      if (leagueLegendsTabIsActiveV71()) scheduleV71();
+    });
+    tabObserver.observe(panel, { childList:true, subtree:true, attributes:true, attributeFilter:["class"] });
+  }
+
+  window.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn, #leaderboardPanel, [data-leaderboard-group], [data-leaderboard-sub], .leaderboard-tab")) {
+      setTimeout(attachObserverV71, 0);
+      scheduleV71();
+    }
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    injectStylesV71();
+    setTimeout(attachObserverV71, 150);
+    scheduleV71();
+  });
+
+  setInterval(() => {
+    injectStylesV71();
+    attachObserverV71();
+    if (leagueLegendsTabIsActiveV71()) scheduleV71();
+  }, 1000);
+
+  injectStylesV71();
+  scheduleV71();
+})();
+
+
+// --- v72 instant League Legends league display + remove Filters label ---
+// This avoids the previous slow fallback by using a local name-to-league map from league_players.json.
+(function leagueLegendsInstantLeagueAndNoFiltersLabelV72(){
+  const LEGEND_NAME_TO_LEAGUE_V72 = {"thierry henry":"Premier League","alan shearer":"Premier League","mohamed salah":"Premier League","steven gerrard":"Premier League","wayne rooney":"Premier League","frank lampard":"Premier League","cristiano ronaldo":"Premier League","kevin de bruyne":"Premier League","roy keane":"Premier League","sergio aguero":"Premier League","paul scholes":"Premier League","john terry":"Premier League","eric cantona":"Premier League","virgil van dijk":"Premier League","patrick vieira":"Premier League","david silva":"Premier League","dennis bergkamp":"Premier League","harry kane":"Premier League","rio ferdinand":"Premier League","petr cech":"Premier League","ryan giggs":"Premier League","eden hazard":"Premier League","peter schmeichel":"Premier League","ashley cole":"Premier League","robin van persie":"Premier League","n golo kante":"Premier League","didier drogba":"Premier League","cesc fabregas":"Premier League","sol campbell":"Premier League","rodri":"Premier League","yaya toure":"Premier League","nemanja vidic":"Premier League","michael owen":"Premier League","vincent kompany":"Premier League","andrew cole":"Premier League","luis suarez":"Premier League","ruud van nistelrooy":"Premier League","robert pires":"Premier League","alisson becker":"Premier League","sadio mane":"Premier League","son heung min":"Premier League","david beckham":"Premier League","tony adams":"Premier League","david seaman":"Premier League","gareth bale":"Premier League","riyad mahrez":"Premier League","carlos tevez":"Premier League","robbie fowler":"Premier League","ian wright":"Premier League","jamie vardy":"Premier League","dwight yorke":"Premier League","edwin van der sar":"Premier League","jamie carragher":"Premier League","gary neville":"Premier League","michael essien":"Premier League","david de gea":"Premier League","claude makelele":"Premier League","mesut ozil":"Premier League","matt le tissier":"Premier League","jimmy floyd hasselbaink":"Premier League","bruno fernandes":"Premier League","dimitar berbatov":"Premier League","bernardo silva":"Premier League","trent alexander arnold":"Premier League","pepe reina":"Premier League","juan mata":"Premier League","kyle walker":"Premier League","marcus rashford":"Premier League","joe hart":"Premier League","raheem sterling":"Premier League","jermain defoe":"Premier League","teddy sheringham":"Premier League","gary speed":"Premier League","gareth barry":"Premier League","james milner":"Premier League","fernando torres":"Premier League","alexis sanchez":"Premier League","david ginola":"Premier League","luka modric":"Premier League","juninho paulista":"Premier League","xabi alonso":"Premier League","marcel desailly":"Premier League","coutinho":"Premier League","ricardo carvalho":"Premier League","andy robertson":"Premier League","les ferdinand":"Premier League","nicolas anelka":"Premier League","cesar azpilicueta":"Premier League","denis irwin":"Premier League","gianfranco zola":"Premier League","ledley king":"Premier League","kevin phillips":"Premier League","steve mcmanaman":"Premier League","paolo di canio":"Premier League","emmanuel adebayor":"Premier League","branislav ivanovic":"Premier League","laurent koscielny":"Premier League","chris sutton":"Premier League","ilkay gundogan":"Premier League","christian eriksen":"Premier League","lionel messi":"La Liga","alfredo di stefano":"La Liga","xavi":"La Liga","andres iniesta":"La Liga","johan cruyff":"La Liga","zinedine zidane":"La Liga","ronaldinho":"La Liga","karim benzema":"La Liga","raul":"La Liga","ferenc puskas":"La Liga","sergio ramos":"La Liga","iker casillas":"La Liga","sergio busquets":"La Liga","neymar":"La Liga","ronaldo nazario":"La Liga","romario":"La Liga","samuel eto o":"La Liga","ladislav kubala":"La Liga","luis figo":"La Liga","hugo sanchez":"La Liga","telmo zarra":"La Liga","paco gento":"La Liga","pirri":"La Liga","emilio butragueno":"La Liga","santillana":"La Liga","fernando hierro":"La Liga","carles puyol":"La Liga","dani alves":"La Liga","roberto carlos":"La Liga","marcelo":"La Liga","gerard pique":"La Liga","david villa":"La Liga","antoine griezmann":"La Liga","diego godin":"La Liga","jan oblak":"La Liga","thibaut courtois":"La Liga","diego simeone":"La Liga","koke":"La Liga","luis aragones":"La Liga","quini":"La Liga","cesar rodriguez":"La Liga","rivaldo":"La Liga","hristo stoichkov":"La Liga","michael laudrup":"La Liga","bernd schuster":"La Liga","gheorghe hagi":"La Liga","fernando redondo":"La Liga","deco":"La Liga","juan roman riquelme":"La Liga","diego forlan":"La Liga","joaquin":"La Liga","toni kroos":"La Liga","santi cazorla":"La Liga","juan carlos valeron":"La Liga","gaizka mendieta":"La Liga","pablo aimar":"La Liga","ivan rakitic":"La Liga","dani carvajal":"La Liga","juanito":"La Liga","luis enrique":"La Liga","pep guardiola":"La Liga","jordi alba":"La Liga","seydou keita":"La Liga","rafael marquez":"La Liga","javier mascherano":"La Liga","javier saviola":"La Liga","patrick kluivert":"La Liga","rafael van der vaart":"La Liga","arjen robben":"La Liga","isco":"La Liga","marco asensio":"La Liga","casemiro":"La Liga","vinicius junior":"La Liga","rodrygo":"La Liga","jude bellingham":"La Liga","kylian mbappe":"La Liga","robert lewandowski":"La Liga","pedri":"La Liga","gavi":"La Liga","lamine yamal":"La Liga","aritz aduriz":"La Liga","iago aspas":"La Liga","diego tristan":"La Liga","roy makaay":"La Liga","djalminha":"La Liga","fran":"La Liga","mauro silva":"La Liga","donato":"La Liga","jose antonio reyes":"La Liga","diego maradona":"Serie A","paolo maldini":"Serie A","francesco totti":"Serie A","roberto baggio":"Serie A","gianluigi buffon":"Serie A","alessandro del piero":"Serie A","michel platini":"Serie A","marco van basten":"Serie A","franco baresi":"Serie A","giuseppe meazza":"Serie A","silvio piola":"Serie A","gunnar nordahl":"Serie A","gianni rivera":"Serie A","andrea pirlo":"Serie A","gabriel batistuta":"Serie A","kaka":"Serie A","ruud gullit":"Serie A","lothar matthaus":"Serie A","javier zanetti":"Serie A","alessandro nesta":"Serie A","fabio cannavaro":"Serie A","paolo rossi":"Serie A","gigi riva":"Serie A","roberto mancini":"Serie A","christian vieri":"Serie A","zlatan ibrahimovic":"Serie A","andriy shevchenko":"Serie A","clarence seedorf":"Serie A","cafu":"Serie A","pavel nedved":"Serie A","dino zoff":"Serie A","gaetano scirea":"Serie A","sandro mazzola":"Serie A","giampiero boniperti":"Serie A","alessandro altobelli":"Serie A","giacinto facchetti":"Serie A","giuseppe bergomi":"Serie A","tarcisio burgnich":"Serie A","claudio gentile":"Serie A","antonio cabrini":"Serie A","marco tardelli":"Serie A","roberto donadoni":"Serie A","demetrio albertini":"Serie A","filippo inzaghi":"Serie A","ciro immobile":"Serie A","antonio di natale":"Serie A","hernan crespo":"Serie A","edinson cavani":"Serie A","gonzalo higuain":"Serie A","lautaro martinez":"Serie A","mauro icardi":"Serie A","paulo dybala":"Serie A","lorenzo insigne":"Serie A","dries mertens":"Serie A","marek hamsik":"Serie A","fabio quagliarella":"Serie A","alberto gilardino":"Serie A","luca toni":"Serie A","vincenzo montella":"Serie A","giuseppe signori":"Serie A","sinisa mihajlovic":"Serie A","dejan stankovic":"Serie A","juan sebastian veron":"Serie A","edgar davids":"Serie A","frank rijkaard":"Serie A","george weah":"Serie A","maicon":"Serie A","walter samuel":"Serie A","lucio":"Serie A","wesley sneijder":"Serie A","diego milito":"Serie A","esteban cambiasso":"Serie A","julio cesar":"Serie A","samir handanovic":"Serie A","giorgio chiellini":"Serie A","leonardo bonucci":"Serie A","andrea barzagli":"Serie A","paul pogba":"Serie A","arturo vidal":"Serie A","claudio marchisio":"Serie A","federico chiesa":"Serie A","dusan vlahovic":"Serie A","khvicha kvaratskhelia":"Serie A","victor osimhen":"Serie A","kim min jae":"Serie A","kalidou koulibaly":"Serie A","jorginho":"Serie A","thiago silva":"Serie A","zvonimir boban":"Serie A","dejan savicevic":"Serie A","jean pierre papin":"Serie A","oliver bierhoff":"Serie A","just fontaine":"Ligue 1","raymond kopa":"Ligue 1","delio onnis":"Ligue 1","bernard lacombe":"Ligue 1","alain giresse":"Ligue 1","juninho pernambucano":"Ligue 1","pauleta":"Ligue 1","carlos bianchi":"Ligue 1","josip skoblar":"Ligue 1","roger piantoni":"Ligue 1","herve revelli":"Ligue 1","dominique rocheteau":"Ligue 1","didier deschamps":"Ligue 1","laurent blanc":"Ligue 1","lilian thuram":"Ligue 1","fabien barthez":"Ligue 1","hugo lloris":"Ligue 1","steve mandanda":"Ligue 1","marquinhos":"Ligue 1","safet susic":"Ligue 1","mustapha dahleb":"Ligue 1","rai":"Ligue 1","sonny anderson":"Ligue 1","alexandre lacazette":"Ligue 1","wissam ben yedder":"Ligue 1","david trezeguet":"Ligue 1","youri djorkaeff":"Ligue 1","djibril cisse":"Ligue 1","bafetimbi gomis":"Ligue 1","andre pierre gignac":"Ligue 1","dimitri payet":"Ligue 1","florian thauvin":"Ligue 1","franck ribery":"Ligue 1","samir nasri":"Ligue 1","hatem ben arfa":"Ligue 1","ludovic giuly":"Ligue 1","sylvain wiltord":"Ligue 1","emmanuel petit":"Ligue 1","blaise matuidi":"Ligue 1","marco verratti":"Ligue 1","angel di maria":"Ligue 1","ousmane dembele":"Ligue 1","vitinha":"Ligue 1","bradley barcola":"Ligue 1","olivier giroud":"Ligue 1","gervinho":"Ligue 1","pierre emerick aubameyang":"Ligue 1","radamel falcao":"Ligue 1","james rodriguez":"Ligue 1","fabinho":"Ligue 1","joao moutinho":"Ligue 1","nabil fekir":"Ligue 1","memphis depay":"Ligue 1","lisandro lopez":"Ligue 1","mamadou niang":"Ligue 1","moussa sow":"Ligue 1","yoann gourcuff":"Ligue 1","mickael landreau":"Ligue 1","gregory coupet":"Ligue 1","joel bats":"Ligue 1","bernard lama":"Ligue 1","jean tigana":"Ligue 1","marius tresor":"Ligue 1","maxime bossis":"Ligue 1","dominique bathenay":"Ligue 1","luis fernandez":"Ligue 1","jean marc guillou":"Ligue 1","jean michel larque":"Ligue 1","robert herbin":"Ligue 1","salif keita":"Ligue 1","rachid mekhloufi":"Ligue 1","fleury di nallo":"Ligue 1","roger courtois":"Ligue 1","thadee cisowski":"Ligue 1","joseph ujlaki":"Ligue 1","gunnar andersson":"Ligue 1","hassan akesbi":"Ligue 1","jean baratte":"Ligue 1","andre guy":"Ligue 1","jacky vergnes":"Ligue 1","lucien cossou":"Ligue 1","gerd muller":"Bundesliga","franz beckenbauer":"Bundesliga","manuel neuer":"Bundesliga","karl heinz rummenigge":"Bundesliga","philipp lahm":"Bundesliga","oliver kahn":"Bundesliga","uwe seeler":"Bundesliga","matthias sammer":"Bundesliga","thomas muller":"Bundesliga","bastian schweinsteiger":"Bundesliga","jupp heynckes":"Bundesliga","klaus fischer":"Bundesliga","sepp maier":"Bundesliga","jurgen klinsmann":"Bundesliga","kevin keegan":"Bundesliga","miroslav klose":"Bundesliga","paul breitner":"Bundesliga","michael ballack":"Bundesliga","andreas moller":"Bundesliga","rudi voller":"Bundesliga","marco reus":"Bundesliga","gunter netzer":"Bundesliga","wolfgang overath":"Bundesliga","dieter muller":"Bundesliga","claudio pizarro":"Bundesliga","giovane elber":"Bundesliga","mario gomez":"Bundesliga","ulf kirsten":"Bundesliga","stefan kuntz":"Bundesliga","klaus allofs":"Bundesliga","manfred burgsmuller":"Bundesliga","horst hrubesch":"Bundesliga","hannes lohr":"Bundesliga","bernd holzenbein":"Bundesliga","mehmet scholl":"Bundesliga","stefan effenberg":"Bundesliga","mats hummels":"Bundesliga","jerome boateng":"Bundesliga","david alaba":"Bundesliga","joshua kimmich":"Bundesliga","florian wirtz":"Bundesliga","erling haaland":"Bundesliga","l cio":"Bundesliga","z roberto":"Bundesliga","tom rosick":"Bundesliga","sebastian deisler":"Bundesliga","franck rib ry":"Bundesliga","christoph metzelder":"Bundesliga","daniel van buyten":"Bundesliga","marcelinho":"Bundesliga","christian w rns":"Bundesliga","j r me boateng":"Bundesliga","michael olise":"Bundesliga","andr s d alessandro":"Bundesliga","fernando meira":"Bundesliga","jens nowotny":"Bundesliga","timo hildebrand":"Bundesliga","marcelo bordon":"Bundesliga","jon dahl tomasson":"Bundesliga","lukas podolski":"Bundesliga","marek mintal":"Bundesliga","diego":"Bundesliga","thiago alc ntara":"Bundesliga","leon goretzka":"Bundesliga","jamal musiala":"Bundesliga","willy sagnol":"Bundesliga","val rien isma l":"Bundesliga","bernd schneider":"Bundesliga","per mertesacker":"Bundesliga","thomas m ller":"Bundesliga","james rodr guez":"Bundesliga","jadon sancho":"Bundesliga","sadio man":"Bundesliga","gregor kobel":"Bundesliga","jonathan tah":"Bundesliga","luis d az":"Bundesliga","ailton":"Bundesliga","d d":"Bundesliga","markus babbel":"Bundesliga","mladen krstajic":"Bundesliga","roman weidenfeller":"Bundesliga","torsten frings":"Bundesliga","ren adler":"Bundesliga","bernd leno":"Bundesliga","yann sommer":"Bundesliga","serge gnabry":"Bundesliga","timo werner":"Bundesliga"};
+  let timerV72 = null;
+  let observerAttachedV72 = false;
+
+  function injectStylesV72(){
+    if (document.getElementById("leagueLegendsInstantLeagueNoFiltersStylesV72")) return;
+    const style = document.createElement("style");
+    style.id = "leagueLegendsInstantLeagueNoFiltersStylesV72";
+    style.textContent = `
+      /* Remove the odd "Filters" word while keeping the more obvious sub-tab box styling. */
+      #soloLeaderboardSubTabs.leaderboard-subtabs-v55::before,
+      .leaderboard-subtabs-v55::before{
+        content:""!important;
+        display:none!important;
+      }
+
+      .leaderboard-row.league-legends-row-v72{
+        min-height:64px!important;
+        align-items:center!important;
+        row-gap:2px!important;
+      }
+      .leaderboard-row.league-legends-row-v72 .leaderboard-name{
+        display:flex!important;
+        flex-direction:column!important;
+        align-items:flex-start!important;
+        justify-content:center!important;
+        gap:3px!important;
+        min-width:0!important;
+      }
+      .leaderboard-row.league-legends-row-v72 .leaderboard-name-main-v72{
+        color:#0f172a!important;
+        font-weight:950!important;
+        line-height:1.1!important;
+      }
+      .leaderboard-row.league-legends-row-v72 .leaderboard-league-v72{
+        display:block!important;
+        color:#64748b!important;
+        font-size:.78rem!important;
+        font-weight:850!important;
+        line-height:1.15!important;
+        white-space:normal!important;
+      }
+      .leaderboard-row.league-legends-row-v72 .leaderboard-mode{
+        text-align:right!important;
+        justify-self:end!important;
+        white-space:nowrap!important;
+      }
+      .leaderboard-row.league-legends-row-v72 .leaderboard-score{
+        text-align:right!important;
+        justify-self:end!important;
+      }
+      @media(max-width:720px){
+        .leaderboard-row.league-legends-row-v72{min-height:76px!important;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function escV72(value){
+    return String(value ?? "").replace(/[&<>'\"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+  }
+
+  function cleanV72(value){
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    if (["selected league", "selected leagues", "unknown league", "undefined", "null"].includes(text.toLowerCase())) return "";
+    return text;
+  }
+
+  function normNameV72(value){
+    return cleanV72(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
+  function leagueLegendsActiveV72(){
+    const direct = document.querySelector('[data-leaderboard-group="legends"].active');
+    if (direct) return true;
+    return Array.from(document.querySelectorAll('[data-leaderboard-group], .leaderboard-main-tabs-v55 .leaderboard-tab, .leaderboard-tab'))
+      .some(btn => btn.classList.contains('active') && (btn.textContent || '').trim().toLowerCase() === 'league legends');
+  }
+
+  function directLeaguesV72(entry){
+    const selection = entry?.leagueSelection || {};
+    const values = [
+      entry?.selectedLegendLeague,
+      entry?.legendLeague,
+      entry?.selectedLeague,
+      entry?.league,
+      selection.labels,
+      selection.label,
+      selection.selectedLegendLeague,
+      selection.selectedLeague,
+      selection.league
+    ];
+    const out = [];
+    values.forEach(value => {
+      if (Array.isArray(value)) out.push(...value);
+      else if (value && typeof value === "object") out.push(...Object.values(value));
+      else out.push(value);
+    });
+    if (Array.isArray(entry?.team)) {
+      entry.team.forEach(player => out.push(player?.league, player?.League, player?.selectedLegendLeague, player?.legendLeague));
+    }
+    return [...new Set(out.map(cleanV72).filter(Boolean))];
+  }
+
+  function inferLeagueV72(entry){
+    const direct = directLeaguesV72(entry);
+    if (direct.length) return direct.join(", ");
+
+    const counts = new Map();
+    const team = Array.isArray(entry?.team) ? entry.team : [];
+    team.forEach(player => {
+      const name = normNameV72(player?.name || player?.player || player?.Player);
+      const league = LEGEND_NAME_TO_LEAGUE_V72[name];
+      if (league) counts.set(league, (counts.get(league) || 0) + 1);
+    });
+    if (!counts.size) return "Not recorded";
+    return [...counts.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  }
+
+  async function renderV72(){
+    const panel = document.getElementById("leaderboardPanel");
+    const list = document.getElementById("leaderboardList");
+    if (!panel || panel.classList.contains("hidden") || !list || !leagueLegendsActiveV72()) return;
+    if (list.dataset.v72Rendering === "1") return;
+
+    injectStylesV72();
+    list.dataset.v72Rendering = "1";
+    try {
+      await ensureFirebase();
+      const snapshot = await firebase.database().ref("leaderboard").once("value");
+      const entries = Object.values(snapshot.val() || {})
+        .filter(entry => String(entry?.gameMode || "").trim() === "League Legends Challenge")
+        .filter(entry => Number.isFinite(Number(entry.score)))
+        .map(entry => ({
+          ...entry,
+          username: String(entry.username || "Player").trim() || "Player",
+          score: Number(entry.score || 0),
+          timestamp: Number(entry.timestamp || 0)
+        }))
+        .sort((a,b) => b.score !== a.score ? b.score - a.score : b.timestamp - a.timestamp)
+        .slice(0,20);
+
+      if (!leagueLegendsActiveV72()) return;
+      if (!entries.length) {
+        list.innerHTML = `<div class="leaderboard-empty">No League Legends scores submitted yet.</div>`;
+        return;
+      }
+
+      list.innerHTML = entries.map((entry, index) => {
+        const league = inferLeagueV72(entry);
+        return `<div class="leaderboard-row leaderboard-row-v55 league-legends-row-v72">
+          <span class="leaderboard-rank">#${index + 1}</span>
+          <span class="leaderboard-name"><span class="leaderboard-name-main-v72">${escV72(entry.username)}</span><span class="leaderboard-league-v72">League: ${escV72(league)}</span></span>
+          <span class="leaderboard-mode">League Legends Challenge</span>
+          <span class="leaderboard-score">${entry.score}</span>
+        </div>`;
+      }).join("");
+    } catch (err) {
+      list.innerHTML = `<div class="leaderboard-error">Could not load League Legends leaderboard. ${escV72(err.message || err)}</div>`;
+    } finally {
+      setTimeout(() => {
+        const currentList = document.getElementById("leaderboardList");
+        if (currentList) currentList.dataset.v72Rendering = "0";
+      }, 80);
+    }
+  }
+
+  function scheduleV72(){
+    clearTimeout(timerV72);
+    timerV72 = setTimeout(renderV72, 0);
+    setTimeout(renderV72, 50);
+    setTimeout(renderV72, 150);
+    setTimeout(renderV72, 350);
+  }
+
+  function attachObserverV72(){
+    if (observerAttachedV72) return;
+    const panel = document.getElementById("leaderboardPanel");
+    const list = document.getElementById("leaderboardList");
+    if (!panel || !list) return;
+    observerAttachedV72 = true;
+    const observer = new MutationObserver(() => {
+      if (list.dataset.v72Rendering === "1") return;
+      if (leagueLegendsActiveV72()) scheduleV72();
+    });
+    observer.observe(panel, { childList:true, subtree:true, attributes:true, attributeFilter:["class"] });
+  }
+
+  window.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn, #leaderboardPanel, [data-leaderboard-group], [data-leaderboard-sub], .leaderboard-tab")) {
+      injectStylesV72();
+      setTimeout(attachObserverV72, 0);
+      scheduleV72();
+    }
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    injectStylesV72();
+    setTimeout(attachObserverV72, 100);
+    scheduleV72();
+  });
+
+  setInterval(() => {
+    injectStylesV72();
+    attachObserverV72();
+    if (leagueLegendsActiveV72()) scheduleV72();
+  }, 750);
+
+  injectStylesV72();
+  scheduleV72();
+})();
+
+
+// --- v73 no Filters label + immediate League Legends metadata visibility ---
+(function leaderboardNoFiltersAndLegendMetaVisibilityV73(){
+  function injectV73(){
+    if (document.getElementById("leaderboardNoFiltersLegendMetaVisibilityStylesV73")) return;
+    const style = document.createElement("style");
+    style.id = "leaderboardNoFiltersLegendMetaVisibilityStylesV73";
+    style.textContent = `
+      #soloLeaderboardSubTabs.leaderboard-subtabs-v55::before,
+      .leaderboard-subtabs-v55::before{
+        content:""!important;
+        display:none!important;
+      }
+      #leaderboardList .leaderboard-row-v55 .leaderboard-meta-v55{
+        display:block!important;
+        visibility:visible!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  injectV73();
+  document.addEventListener("DOMContentLoaded", injectV73);
 })();
