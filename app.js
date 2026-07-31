@@ -1,12 +1,9 @@
-// Ultimate 5-a-side Draft
-// app.js v46
-// Fixes:
-// - Online/local split front screen
-// - Online room/lobby flow
-// - Online Pick Player issue
-// - Firebase state safety issue: Cannot read properties of undefined reading 'map'
-// - Safe team arrays, safe declinedNames, safe acceptedPlayerNames
+// ============================================================
+// Ultimate 5-a-side main application
+// Clean rebuild: duplicate legacy function patches removed, grouped sections added, behaviour retained.
+// ============================================================
 
+// ----- Game constants and Firebase configuration -----
 const DECLINES_ALLOWED = 3;
 const AUCTION_BUDGET = 100;
 const BID_SKIPS_ALLOWED = 3;
@@ -23,6 +20,8 @@ const FIREBASE_CONFIG = {
   measurementId: "G-22516PSZD7"
 };
 
+
+// ----- Shared runtime state -----
 let players = [];
 let playersPromise = null;
 let selectedGameMode = "draft";
@@ -41,6 +40,8 @@ const online = {
   subscribed: false
 };
 
+
+// ----- Emergency fallback players if players.json cannot be loaded -----
 const samplePlayers = [
   {
     Player: "Lionel Messi",
@@ -107,6 +108,8 @@ const samplePlayers = [
   }
 ];
 
+
+// ----- DOM helpers and fixed page element lookups -----
 const $ = id => document.getElementById(id);
 
 const els = {
@@ -147,6 +150,7 @@ const els = {
   loadStatus: $("loadStatus")
 };
 
+// Wraps event handlers so errors show as on-page messages rather than breaking the app.
 function safe(fn) {
   return async (...args) => {
     try {
@@ -158,12 +162,14 @@ function safe(fn) {
   };
 }
 
+// Updates the main status/message area.
 function setMessage(text) {
   if (els.message) {
     els.message.textContent = text || "";
   }
 }
 
+// Escapes text before inserting it into HTML templates.
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, ch => ({
     "&": "&amp;",
@@ -174,6 +180,7 @@ function escapeHtml(value) {
   }[ch]));
 }
 
+// Creates Firebase-safe keys from player/user names.
 function safeKey(value) {
   return String(value || "")
     .trim()
@@ -181,6 +188,7 @@ function safeKey(value) {
     .replace(/[.#$\/[\]]/g, "_");
 }
 
+// Converts detailed positions into GK/DEF/MID/FWD buckets.
 function normalisePosition(pos, rawPosition = "") {
   const p = String(pos || rawPosition || "").toUpperCase();
 
@@ -197,6 +205,7 @@ function normalisePosition(pos, rawPosition = "") {
   return "FWD";
 }
 
+// Converts raw JSON rows into the compact player shape used by the game.
 function normalisePlayers(data) {
   const rows = Array.isArray(data) ? data : [];
 
@@ -217,6 +226,7 @@ function normalisePlayers(data) {
   }).filter(p => p.player && p.rating > 0 && TEAM_SHAPE.includes(p.mainPosition));
 }
 
+// Loads the main player pool and falls back to sample data if needed.
 async function loadPlayers() {
   if (playersPromise) return playersPromise;
 
@@ -254,11 +264,13 @@ async function loadPlayers() {
   return playersPromise;
 }
 
+// Ensures a player pool is available before starting actions.
 async function ensurePlayersReady() {
   await loadPlayers();
   return Array.isArray(players) && players.length > 0;
 }
 
+// Adds dynamic styles used by online/local entry screens.
 function injectStyles() {
   if ($("onlineLocalStyles")) return;
 
@@ -473,6 +485,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
+// Shows or hides a panel using the hidden class.
 function show(el, visible) {
   if (!el) return;
   el.classList.toggle("hidden", !visible);
@@ -482,6 +495,7 @@ function hideEntryPanel() {
   show($("gameEntryPanel"), false);
 }
 
+// Builds the home entry screen for online, local and challenge modes.
 function injectEntryPanel() {
   injectStyles();
 
@@ -529,7 +543,6 @@ function injectEntryPanel() {
         <button id="startLocalGameBtn" type="button" class="btn btn-primary">Set up local game</button>
       </article>
     </div>
-
 
 
     <div class="popular-challenges-v2">
@@ -647,6 +660,7 @@ function loadScriptOnce(src) {
   });
 }
 
+// Loads Firebase scripts and initialises the realtime database.
 async function ensureFirebase() {
   if (!firebaseConfigured()) {
     throw new Error("Firebase is not configured.");
@@ -667,7 +681,6 @@ async function ensureFirebase() {
 function randomRoomId() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
-
 
 
 function validateUsername(name) {
@@ -691,6 +704,7 @@ async function submitLeaderboardScore(username, score, gameMode) {
   });
 }
 
+// Creates a hosted online room in Firebase.
 async function createOnlineRoom() {
   const name = $("onlineRoomName")?.value.trim();
 
@@ -729,6 +743,7 @@ async function createOnlineRoom() {
   showLobby("host", [name], invite);
 }
 
+// Joins an existing online room and registers the participant.
 async function joinOnlineRoom(code) {
   const name = $("onlineRoomName")?.value.trim();
 
@@ -757,6 +772,7 @@ async function joinOnlineRoom(code) {
   showLobby("player", [name], "");
 }
 
+// Listens for room changes and applies remote state.
 function subscribeToRoom() {
   if (!online.ref || online.subscribed) return;
 
@@ -801,6 +817,7 @@ function ensureLobby() {
   return lobby;
 }
 
+// Renders the online waiting room for host or player.
 function showLobby(mode, participants = [], invite = "") {
   injectStyles();
   hideEntryPanel();
@@ -901,74 +918,8 @@ function participantNamesFromObject(obj) {
   return unique;
 }
 
-async function startOnlineGameFromLobby() {
-  if (!online.enabled || !online.isHost || !online.ref) return;
 
-  await ensurePlayersReady();
-
-  const snapshot = await online.ref.child("participants").once("value");
-  const names = participantNamesFromObject(snapshot.val());
-
-  const minUsers = selectedGameMode === "bid" ? 2 : 1;
-
-  if (names.length < minUsers) {
-    throw new Error(selectedGameMode === "bid"
-      ? "Bid mode needs at least 2 players."
-      : "At least 1 player is needed.");
-  }
-
-  startNewGame(selectedGameMode, names.slice(0, 4), true);
-
-  await saveOnlineState("Online game started.");
-}
-
-function serialiseState() {
-  if (!state) return null;
-
-  return {
-    ...state,
-    acceptedPlayerNames: state.acceptedPlayerNames instanceof Set
-      ? [...state.acceptedPlayerNames]
-      : [],
-    users: Array.isArray(state.users)
-      ? state.users.map(user => ({
-          ...user,
-          team: Array.isArray(user.team) ? user.team : [],
-          declinedNames: user.declinedNames instanceof Set
-            ? [...user.declinedNames]
-            : []
-        }))
-      : []
-  };
-}
-
-function restoreState(raw) {
-  if (!raw) return null;
-
-  const users = Array.isArray(raw.users)
-    ? raw.users.map((user, index) => ({
-        name: user?.name || `User ${index + 1}`,
-        team: Array.isArray(user?.team) ? user.team : [],
-        declines: Number(user?.declines || 0),
-        declinedNames: new Set(Array.isArray(user?.declinedNames) ? user.declinedNames : []),
-        budget: Number(user?.budget ?? AUCTION_BUDGET),
-        spent: Number(user?.spent || 0),
-        bidSkips: Number(user?.bidSkips || 0)
-      }))
-    : [];
-
-  const safeIndex = users.length
-    ? Math.min(Math.max(Number(raw.currentUserIndex || 0), 0), users.length - 1)
-    : 0;
-
-  return {
-    ...raw,
-    users,
-    currentUserIndex: safeIndex,
-    acceptedPlayerNames: new Set(Array.isArray(raw.acceptedPlayerNames) ? raw.acceptedPlayerNames : [])
-  };
-}
-
+// Writes the current game state to Firebase.
 async function saveOnlineState(messageOverride = null) {
   if (!online.enabled || !online.ref || applyingRemote) return;
 
@@ -981,42 +932,8 @@ async function saveOnlineState(messageOverride = null) {
   });
 }
 
-function applyRemoteData(data) {
-  applyingRemote = true;
 
-  state = restoreState(data.state);
-  currentCandidate = data.currentCandidate || null;
-  ratingsRevealed = !!data.ratingsRevealed;
-
-  hideEntryPanel();
-
-  show(ensureLobby(), false);
-  show(els.setupPanel, false);
-  show(els.gamePanel, true);
-  show(els.resultsPanel, ratingsRevealed);
-
-  updateGameControls();
-  render();
-
-  if (currentCandidate) {
-    renderCandidate(currentCandidate);
-  } else {
-    clearCandidate(data.message || "Waiting for the next action...");
-  }
-
-  renderTeams();
-
-  if (ratingsRevealed) {
-    renderResults();
-  }
-
-  setMessage(data.message || "");
-
-  applyingRemote = false;
-
-  applyOnlinePermissions();
-}
-
+// Refreshes local setup controls when the game type changes.
 function updateSetupForMode() {
   if (!els.userCount || !els.userNameFields) return;
 
@@ -1069,6 +986,7 @@ function getLocalUserNames() {
   });
 }
 
+// Starts a local game after players are loaded.
 async function startGame() {
   await ensurePlayersReady();
 
@@ -1077,6 +995,7 @@ async function startGame() {
   startNewGame(selectedGameMode, getLocalUserNames(), false);
 }
 
+// Creates a fresh game state for draft or bidding modes.
 function startNewGame(gameMode, names, isOnlineGame) {
   ratingsRevealed = false;
   currentCandidate = null;
@@ -1133,32 +1052,6 @@ function startNewGame(gameMode, names, isOnlineGame) {
   render();
 }
 
-function resetGame() {
-  state = null;
-  currentCandidate = null;
-  ratingsRevealed = false;
-
-  show(ensureLobby(), false);
-  show(els.gamePanel, false);
-  show(els.resultsPanel, false);
-
-  setMessage("");
-
-  if (online.enabled) {
-    hideEntryPanel();
-    show(els.setupPanel, false);
-    saveOnlineState("Game reset.");
-
-    showLobby(
-      online.isHost ? "host" : "player",
-      online.myName ? [online.myName] : [],
-      `${location.origin}${location.pathname}?room=${online.roomId}`
-    );
-  } else {
-    show(els.setupPanel, false);
-    show($("gameEntryPanel"), true);
-  }
-}
 
 function shuffleArray(array) {
   const a = [...array];
@@ -1175,195 +1068,6 @@ function currentUser() {
   return state?.users?.[state.currentUserIndex];
 }
 
-function getNeededPositions(user) {
-  if (!user) return [];
-
-  if (!Array.isArray(user.team)) {
-    user.team = [];
-  }
-
-  const counts = {
-    GK: 0,
-    DEF: 0,
-    MID: 0,
-    FWD: 0
-  };
-
-  user.team.filter(Boolean).forEach(player => {
-    const pos = player.mainPosition || player.Main_Position || player.position || player.Position;
-    const normalised = normalisePosition(pos);
-
-    if (counts[normalised] !== undefined) {
-      counts[normalised] += 1;
-    }
-  });
-
-  const needed = [];
-
-  TEAM_SHAPE.forEach(pos => {
-    if (counts[pos] > 0) {
-      counts[pos] -= 1;
-    } else {
-      needed.push(pos);
-    }
-  });
-
-  return needed;
-}
-
-function isGameComplete() {
-  return !!state && Array.isArray(state.users) && state.users.every(user => {
-    return getNeededPositions(user).length === 0;
-  });
-}
-
-function currentPlayerCanAct() {
-  if (!online.enabled) return true;
-
-  const user = currentUser();
-
-  return online.isHost || (user && safeKey(user.name) === safeKey(online.myName));
-}
-
-async function pickRandomPlayer() {
-  await ensurePlayersReady();
-
-  if (!state || state.gameMode !== "draft") return;
-
-  if (isGameComplete()) {
-    completeGame();
-    return;
-  }
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  if (currentCandidate) {
-    setMessage("Please accept or decline the current player before picking another.");
-    return;
-  }
-
-  const user = currentUser();
-
-  if (!user) {
-    setMessage("No current user found.");
-    return;
-  }
-
-  const needs = getNeededPositions(user);
-
-  if (!needs.length) {
-    moveToNextUser();
-    await pickRandomPlayer();
-    return;
-  }
-
-  const pool = players.filter(p => {
-    if (!needs.includes(p.mainPosition)) return false;
-    if (state.acceptedPlayerNames.has(p.player)) return false;
-    if (state.excludeDeclines && user.declinedNames.has(p.player)) return false;
-    return true;
-  });
-
-  if (!pool.length) {
-    clearCandidate(`No available player found for ${user.name}. They need: ${needs.join(", ")}.`);
-    await saveOnlineState();
-    return;
-  }
-
-  currentCandidate = pool[Math.floor(Math.random() * pool.length)];
-
-  renderCandidate(currentCandidate);
-
-  setMessage(`${user.name} needs: ${needs.join(", ")}`);
-
-  render();
-
-  await saveOnlineState();
-
-  applyOnlinePermissions();
-}
-
-async function acceptPlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-
-  if (!user) return;
-
-  if (!Array.isArray(user.team)) {
-    user.team = [];
-  }
-
-  user.team.push(currentCandidate);
-  state.acceptedPlayerNames.add(currentCandidate.player);
-
-  state.history.push({
-    user: user.name,
-    decision: "ACCEPT",
-    player: currentCandidate
-  });
-
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-  } else {
-    moveToNextUser();
-    clearCandidate("Click Pick player to continue.");
-  }
-
-  render();
-
-  await saveOnlineState();
-}
-
-async function declinePlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-
-  if (!user) return;
-
-  if (user.declines >= DECLINES_ALLOWED) {
-    setMessage(`${user.name} has no declines left and must accept this player.`);
-    return;
-  }
-
-  user.declines += 1;
-
-  if (!(user.declinedNames instanceof Set)) {
-    user.declinedNames = new Set();
-  }
-
-  user.declinedNames.add(currentCandidate.player);
-
-  state.history.push({
-    user: user.name,
-    decision: "DECLINE",
-    player: currentCandidate
-  });
-
-  currentCandidate = null;
-
-  clearCandidate("Click Pick player to try another player.");
-
-  render();
-
-  await saveOnlineState();
-}
 
 function moveToNextUser() {
   if (!state || !Array.isArray(state.users)) return;
@@ -1378,21 +1082,6 @@ function moveToNextUser() {
   }
 }
 
-function completeGame() {
-  currentCandidate = null;
-
-  clearCandidate("Game complete. Reveal ratings to see the winner.");
-
-  if (els.revealBtn) {
-    els.revealBtn.classList.remove("hidden");
-  }
-
-  if (els.pickBtn) els.pickBtn.disabled = true;
-  if (els.acceptBtn) els.acceptBtn.disabled = true;
-  if (els.declineBtn) els.declineBtn.disabled = true;
-
-  saveOnlineState("Game complete. Reveal ratings to see the winner.");
-}
 
 function updateGameControls() {
   if (!state) return;
@@ -1409,66 +1098,6 @@ function updateGameControls() {
   show(els.budgetPill, isBid);
 }
 
-function applyOnlinePermissions() {
-  if (!online.enabled || !state) return;
-
-  const user = currentUser();
-  const canAct = currentPlayerCanAct();
-
-  let note = $("turnLockNote");
-
-  if (!note && els.message) {
-    note = document.createElement("div");
-    note.id = "turnLockNote";
-    note.className = "turn-lock-note";
-    els.message.insertAdjacentElement("afterend", note);
-  }
-
-  if (note) {
-    note.textContent = canAct
-      ? online.isHost && user && safeKey(user.name) !== safeKey(online.myName)
-        ? `Host control enabled. Current player is ${user.name}.`
-        : `It is your turn, ${online.myName}.`
-      : `Waiting for ${user?.name || "the current player"}. You joined as ${online.myName}.`;
-  }
-
-  if (state.gameMode === "draft") {
-    if (els.pickBtn) {
-      els.pickBtn.disabled = !canAct || !!currentCandidate || isGameComplete();
-    }
-
-    if (els.acceptBtn) {
-      els.acceptBtn.disabled = !canAct || !currentCandidate;
-    }
-
-    if (els.declineBtn) {
-      els.declineBtn.disabled = !canAct || !currentCandidate || currentUser().declines >= DECLINES_ALLOWED;
-    }
-  }
-}
-
-function render() {
-  if (!state) return;
-
-  updateGameControls();
-
-  const user = currentUser();
-
-  if (els.currentUserLabel) {
-    els.currentUserLabel.textContent = user?.name || "";
-  }
-
-  if (state.gameMode === "draft" && els.declinesLeft) {
-    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
-  }
-
-  if (state.gameMode === "bid" && els.currentBudgetLeft) {
-    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
-  }
-
-  renderTeams();
-  applyOnlinePermissions();
-}
 
 function clearCandidate(text) {
   if (!els.candidateCard) return;
@@ -1508,27 +1137,6 @@ function renderCandidate(p) {
   `;
 }
 
-function buildSlots(user) {
-  if (!user || !Array.isArray(user.team)) {
-    return [
-      { label: "GK", player: null },
-      { label: "DEF", player: null },
-      { label: "MID", player: null },
-      { label: "MID", player: null },
-      { label: "FWD", player: null }
-    ];
-  }
-
-  const mids = user.team.filter(p => p.mainPosition === "MID");
-
-  return [
-    { label: "GK", player: user.team.find(p => p.mainPosition === "GK") },
-    { label: "DEF", player: user.team.find(p => p.mainPosition === "DEF") },
-    { label: "MID", player: mids[0] },
-    { label: "MID", player: mids[1] },
-    { label: "FWD", player: user.team.find(p => p.mainPosition === "FWD") }
-  ];
-}
 
 function shortenName(name, max = 22) {
   if (!name || name.length <= max) return name || "";
@@ -1602,192 +1210,15 @@ function renderPitch(slots) {
   `;
 }
 
-function renderTeams() {
-  if (!els.teamsContainer || !state || !Array.isArray(state.users)) return;
-
-  els.teamsContainer.innerHTML = state.users.map(user => {
-    if (!Array.isArray(user.team)) {
-      user.team = [];
-    }
-
-    const total = user.team.reduce((sum, p) => sum + Number(p.rating || 0), 0);
-    const needs = getNeededPositions(user);
-
-    return `
-      <article class="team-card">
-        <div class="team-top-row">
-          <div>
-            <h3>${escapeHtml(user.name)}</h3>
-            <div class="team-meta">${needs.length ? `Needs ${needs.join(", ")}` : "Complete"}</div>
-          </div>
-          <div class="score">${ratingsRevealed ? total : "Hidden"}</div>
-        </div>
-
-        ${renderPitch(buildSlots(user))}
-
-        ${state.gameMode === "draft"
-          ? `<div class="score">Declines used: ${user.declines}/${DECLINES_ALLOWED}</div>`
-          : ""}
-      </article>
-    `;
-  }).join("");
-}
-
-function getFinalScores() {
-  if (!state || !Array.isArray(state.users)) return [];
-
-  return state.users
-    .map(user => ({
-      user,
-      total: Array.isArray(user.team)
-        ? user.team.reduce((sum, p) => sum + Number(p.rating || 0), 0)
-        : 0
-    }))
-    .sort((a, b) => b.total - a.total);
-}
-
-function renderResults() {
-  if (!els.resultsContainer || !state) return;
-
-  const scored = getFinalScores();
-  const top = scored[0]?.total ?? 0;
-
-  els.resultsContainer.innerHTML = scored.map(row => `
-    <article class="result-card ${row.total === top ? "winner" : ""}">
-      <h3>${escapeHtml(row.user.name)}${row.total === top ? " 🏆" : ""}</h3>
-      <p class="score">${row.total}</p>
-      <p class="muted">
-        ${Array.isArray(row.user.team)
-          ? row.user.team.map(p => `${escapeHtml(p.player)} ${p.rating}`).join(" • ")
-          : ""}
-      </p>
-    </article>
-  `).join("");
-}
-
-async function revealScores() {
-  ratingsRevealed = true;
-
-  show(els.resultsPanel, true);
-
-  if (els.revealBtn) {
-    els.revealBtn.classList.add("hidden");
-  }
-
-  render();
-  renderResults();
-
-  await saveOnlineState("Scores revealed.");
-}
 
 // Basic host-assisted bid mode retained.
-async function bidRandomPlayer() {
-  await ensurePlayersReady();
 
-  if (!state || state.gameMode !== "bid") return;
-
-  const user = currentUser();
-
-  if (!user) return;
-
-  const needs = getNeededPositions(user);
-
-  const pool = players.filter(p => {
-    return needs.includes(p.mainPosition) && !state.acceptedPlayerNames.has(p.player);
-  });
-
-  if (!pool.length) {
-    setMessage(`No available player for ${user.name}.`);
-    return;
-  }
-
-  currentCandidate = pool[Math.floor(Math.random() * pool.length)];
-
-  renderCandidate(currentCandidate);
-  renderBidInputs();
-
-  await saveOnlineState();
-}
-
-function renderBidInputs() {
-  if (!els.bidInputs || !state || !currentCandidate) return;
-
-  els.bidInputs.innerHTML = state.users.map((u, i) => `
-    <div class="bid-row">
-      <label for="bidUser${i}">
-        ${escapeHtml(u.name)}
-        <span class="bid-help">Budget left: £${u.budget}m</span>
-      </label>
-      <input id="bidUser${i}" type="number" min="0" max="${u.budget}" step="1" value="0" />
-    </div>
-  `).join("");
-}
 
 function getBid(index) {
   const input = $(`bidUser${index}`);
   return Number(input?.value || 0);
 }
 
-async function awardHighestBid() {
-  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
-
-  let best = null;
-
-  state.users.forEach((u, i) => {
-    const bid = getBid(i);
-
-    if (bid > 0 && bid <= u.budget && (!best || bid > best.bid)) {
-      best = { user: u, index: i, bid };
-    }
-  });
-
-  if (!best) {
-    setMessage("Enter at least one valid bid above £0m.");
-    return;
-  }
-
-  if (!Array.isArray(best.user.team)) {
-    best.user.team = [];
-  }
-
-  best.user.team.push({
-    ...currentCandidate,
-    price: best.bid
-  });
-
-  best.user.budget -= best.bid;
-  best.user.spent += best.bid;
-
-  state.acceptedPlayerNames.add(currentCandidate.player);
-
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-  } else {
-    rotateBidNominator();
-  }
-
-  clearCandidate("Click Randomise player to continue.");
-
-  render();
-
-  await saveOnlineState();
-}
-
-async function skipBidPlayer() {
-  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
-
-  currentCandidate = null;
-
-  rotateBidNominator();
-
-  clearCandidate("Player skipped. Click Randomise player to continue.");
-
-  render();
-
-  await saveOnlineState();
-}
 
 function rotateBidNominator() {
   if (!state?.bidOrder?.length) return;
@@ -1804,28 +1235,6 @@ function rotateBidNominator() {
   }
 }
 
-function createSummaryCanvas() {
-  const canvas = document.createElement("canvas");
-  canvas.width = 1200;
-  canvas.height = 700;
-
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "#0f172a";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#fff";
-  ctx.font = "900 42px Arial";
-  ctx.fillText("5-a-side Results", 50, 70);
-
-  ctx.font = "700 28px Arial";
-
-  getFinalScores().forEach((row, i) => {
-    ctx.fillText(`${i + 1}. ${row.user.name} - ${row.total}`, 60, 140 + i * 50);
-  });
-
-  return canvas;
-}
 
 async function saveSummaryImage() {
   if (!state || !ratingsRevealed) {
@@ -1865,6 +1274,7 @@ async function shareSummaryImage() {
   }
 }
 
+// Attaches core button and setup event listeners.
 function wireEvents() {
   els.startBtn?.addEventListener("click", safe(startGame));
   els.resetBtn?.addEventListener("click", resetGame);
@@ -1892,9 +1302,11 @@ function wireEvents() {
 }
 
 
-
+// ----- Compatibility patches and recent targeted fixes -----
 // --- v29 targeted local draft fix and safe state overrides ---
 // These override earlier functions while preserving the existing visual layout and app structure.
+
+// ----- Final active helper implementations retained from later patches -----
 function v29Array(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -1948,6 +1360,7 @@ function v29SafeState() {
   state.bidRoundIndex = Number(state.bidRoundIndex || 0);
 }
 
+// Converts in-memory Sets into arrays for Firebase storage.
 function serialiseState() {
   if (!state) return null;
   v29SafeState();
@@ -1964,6 +1377,7 @@ function serialiseState() {
   };
 }
 
+// Rebuilds saved Firebase state back into safe runtime objects.
 function restoreState(raw) {
   if (!raw) return null;
   const users = v29Array(raw.users).map((user, index) => v29SafeUser(user, index));
@@ -2011,6 +1425,7 @@ function setDraftActionButtons() {
   if (els.declineBtn) els.declineBtn.disabled = !canAct || !currentCandidate || (user?.declines || 0) >= DECLINES_ALLOWED;
 }
 
+// Draws a random eligible draft player for the current user.
 async function pickRandomPlayer() {
   await ensurePlayersReady();
   if (!state || state.gameMode !== "draft") return;
@@ -2067,83 +1482,6 @@ async function pickRandomPlayer() {
   await saveOnlineState();
 }
 
-async function acceptPlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  v29SafeState();
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-  if (!user) return;
-
-  const picked = v29NormalisePlayer(currentCandidate);
-  if (!picked) return;
-
-  user.team.push(picked);
-  state.acceptedPlayerNames.add(picked.player);
-  state.history.push({ user: user.name, decision: "ACCEPT", player: picked });
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-  } else {
-    moveToNextUser();
-    clearCandidate("Click Pick player to continue.");
-  }
-
-  render();
-  setDraftActionButtons();
-  await saveOnlineState();
-}
-
-async function declinePlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  v29SafeState();
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-  if (!user) return;
-
-  if (user.declines >= DECLINES_ALLOWED) {
-    setMessage(`${user.name} has no declines left and must accept this player.`);
-    setDraftActionButtons();
-    return;
-  }
-
-  user.declines += 1;
-  user.declinedNames.add(currentCandidate.player);
-  state.history.push({ user: user.name, decision: "DECLINE", player: currentCandidate });
-  currentCandidate = null;
-
-  clearCandidate("Click Pick player to try another player.");
-  render();
-  setDraftActionButtons();
-  await saveOnlineState();
-}
-
-function render() {
-  if (!state) return;
-  v29SafeState();
-  updateGameControls();
-  const user = currentUser();
-  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
-  if (state.gameMode === "draft" && els.declinesLeft) {
-    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
-  }
-  if (state.gameMode === "bid" && els.currentBudgetLeft) {
-    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
-  }
-  renderTeams();
-  setDraftActionButtons();
-  applyOnlinePermissions();
-}
 
 function buildSlots(user) {
   const safeUser = v29SafeUser(user || {}, 0);
@@ -2157,31 +1495,6 @@ function buildSlots(user) {
   ];
 }
 
-function renderTeams() {
-  if (!els.teamsContainer || !state || !Array.isArray(state.users)) return;
-  v29SafeState();
-  els.teamsContainer.innerHTML = state.users.map((user, index) => {
-    const safeUser = v29SafeUser(user, index);
-    state.users[index] = safeUser;
-    const total = safeUser.team.reduce((sum, p) => sum + Number(p.rating || 0), 0);
-    const needs = getNeededPositions(safeUser);
-    return `
-      <article class="team-card">
-        <div class="team-top-row">
-          <div>
-            <h3>${escapeHtml(safeUser.name)}</h3>
-            <div class="team-meta">${needs.length ? `Needs ${needs.join(", ")}` : "Complete"}</div>
-          </div>
-          <div class="score">${ratingsRevealed ? total : "Hidden"}</div>
-        </div>
-        ${renderPitch(buildSlots(safeUser))}
-        ${state.gameMode === "draft"
-          ? `<div class="score">Declines used: ${safeUser.declines}/${DECLINES_ALLOWED}</div>`
-          : ""}
-      </article>
-    `;
-  }).join("");
-}
 
 function getFinalScores() {
   if (!state || !Array.isArray(state.users)) return [];
@@ -2198,76 +1511,8 @@ function getFinalScores() {
 }
 
 
-
 // --- v30 smoother local draft flow overrides ---
 // After Accept or Decline, immediately randomise the next eligible player so the game flows smoothly.
-async function acceptPlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  v29SafeState();
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-  if (!user) return;
-
-  const picked = v29NormalisePlayer(currentCandidate);
-  if (!picked) return;
-
-  user.team.push(picked);
-  state.acceptedPlayerNames.add(picked.player);
-  state.history.push({ user: user.name, decision: "ACCEPT", player: picked });
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-    render();
-    await saveOnlineState();
-    return;
-  }
-
-  moveToNextUser();
-  render();
-  setDraftActionButtons();
-  await saveOnlineState();
-
-  // Smooth flow: automatically pick the next player for the next user's turn.
-  await pickRandomPlayer();
-}
-
-async function declinePlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  v29SafeState();
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-  if (!user) return;
-
-  if (user.declines >= DECLINES_ALLOWED) {
-    setMessage(`${user.name} has no declines left and must accept this player.`);
-    setDraftActionButtons();
-    return;
-  }
-
-  user.declines += 1;
-  user.declinedNames.add(currentCandidate.player);
-  state.history.push({ user: user.name, decision: "DECLINE", player: currentCandidate });
-  currentCandidate = null;
-
-  render();
-  setDraftActionButtons();
-  await saveOnlineState();
-
-  // Smooth flow: automatically pick another player for the same user's turn.
-  await pickRandomPlayer();
-}
-
 
 
 // --- v32 explicit local + online draft flow overrides ---
@@ -2314,6 +1559,7 @@ function onlineDrawCandidateForCurrentTurnV32(messagePrefix = null) {
   return true;
 }
 
+// Accepts the current player into the active team.
 async function acceptPlayer() {
   if (!state || !currentCandidate || state.gameMode !== "draft") return;
   v29SafeState();
@@ -2355,6 +1601,7 @@ async function acceptPlayer() {
   }
 }
 
+// Declines the current player and tracks decline limits.
 async function declinePlayer() {
   if (!state || !currentCandidate || state.gameMode !== "draft") return;
   v29SafeState();
@@ -2392,8 +1639,9 @@ async function declinePlayer() {
 }
 
 
-
 // --- v33 finished-results page and improved share/save image overrides ---
+
+// ----- Finished results page rendering and share image styling -----
 function injectFinishedStylesV33() {
   if ($("finishedResultsStylesV33")) return;
   const style = document.createElement("style");
@@ -2536,33 +1784,8 @@ function playerRoleForFinishedV33(player) {
   return player?.mainPosition || player?.position || "";
 }
 
-function showFinishedResultsPageV33() {
-  if (!state) return;
-  injectFinishedStylesV33();
-  ratingsRevealed = true;
-  currentCandidate = null;
-  removeTurnLockNoteV33();
-  setMessage("");
 
-  show($("gameEntryPanel"), false);
-  show(ensureLobby(), false);
-  show(els.setupPanel, false);
-  show(els.gamePanel, false);
-  show(els.resultsPanel, true);
-
-  if (els.resultsPanel) els.resultsPanel.classList.add("finished-results-page");
-  if (els.revealBtn) els.revealBtn.classList.add("hidden");
-  if (els.pickBtn) els.pickBtn.disabled = true;
-  if (els.acceptBtn) els.acceptBtn.disabled = true;
-  if (els.declineBtn) els.declineBtn.disabled = true;
-  if (els.bidPickBtn) els.bidPickBtn.disabled = true;
-  if (els.awardBidBtn) els.awardBidBtn.disabled = true;
-  if (els.skipBidBtn) els.skipBidBtn.disabled = true;
-
-  renderResults();
-  setTimeout(() => els.resultsPanel?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-}
-
+// Renders final scorecards once ratings are revealed.
 function renderResults() {
   if (!els.resultsContainer || !state) return;
   const scored = getFinalScores();
@@ -2622,6 +1845,7 @@ function renderResults() {
   }).join("");
 }
 
+// Reveals ratings and final results.
 async function revealScores() {
   ratingsRevealed = true;
   currentCandidate = null;
@@ -2629,32 +1853,6 @@ async function revealScores() {
   await saveOnlineState("Scores revealed.");
 }
 
-function applyRemoteData(data) {
-  applyingRemote = true;
-  state = restoreState(data.state);
-  currentCandidate = data.currentCandidate || null;
-  ratingsRevealed = !!data.ratingsRevealed;
-
-  if (ratingsRevealed) {
-    applyingRemote = false;
-    showFinishedResultsPageV33();
-    return;
-  }
-
-  hideEntryPanel();
-  show(ensureLobby(), false);
-  show(els.setupPanel, false);
-  show(els.gamePanel, true);
-  show(els.resultsPanel, false);
-  updateGameControls();
-  render();
-  if (currentCandidate) renderCandidate(currentCandidate);
-  else clearCandidate(data.message || "Waiting for the next action...");
-  renderTeams();
-  setMessage(data.message || "");
-  applyingRemote = false;
-  applyOnlinePermissions();
-}
 
 function fitTextV33(ctx, text, x, y, maxWidth, font, color = "#0f172a") {
   ctx.font = font;
@@ -2677,6 +1875,7 @@ function roundRectV33(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// Builds the share/save image canvas.
 function createSummaryCanvas() {
   const scored = getFinalScores();
   const teamCount = Math.max(scored.length, 1);
@@ -2783,7 +1982,6 @@ function createSummaryCanvas() {
 }
 
 
-
 // --- v34 online turn ownership override ---
 // Host can still create/start the room, but cannot accept/decline/pick on behalf of another user.
 // Only the player whose name matches the current turn can control that turn.
@@ -2820,7 +2018,6 @@ function applyOnlinePermissions() {
     if (els.declineBtn) els.declineBtn.disabled = !canAct || !currentCandidate || (currentUser()?.declines || 0) >= DECLINES_ALLOWED;
   }
 }
-
 
 
 // --- v35 full reset-to-front-page override ---
@@ -2897,9 +2094,10 @@ function resetGame() {
 }
 
 
-
 // --- v36 improved 4-player results layout override ---
 // Keeps the v35 behaviour but makes the finished results page use a roomier 2-column layout on desktop.
+
+// ----- Results layout refinements -----
 function injectResultsLayoutStylesV36() {
   if ($("finishedResultsLayoutStylesV36")) return;
   const style = document.createElement("style");
@@ -2983,7 +2181,6 @@ function showFinishedResultsPageV33() {
 }
 
 
-
 // --- v37 allow any online user to reveal final results ---
 // Once all teams are complete, every joined online user sees and can click Reveal ratings.
 function syncRevealButtonV37() {
@@ -2998,52 +2195,8 @@ function syncRevealButtonV37() {
   els.revealBtn.disabled = !complete;
 }
 
-function render() {
-  if (!state) return;
-  v29SafeState();
-  updateGameControls();
-  const user = currentUser();
-  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
-  if (state.gameMode === "draft" && els.declinesLeft) {
-    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
-  }
-  if (state.gameMode === "bid" && els.currentBudgetLeft) {
-    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
-  }
-  renderTeams();
-  setDraftActionButtons();
-  applyOnlinePermissions();
-  syncRevealButtonV37();
-}
 
-function applyRemoteData(data) {
-  applyingRemote = true;
-  state = restoreState(data.state);
-  currentCandidate = data.currentCandidate || null;
-  ratingsRevealed = !!data.ratingsRevealed;
-
-  if (ratingsRevealed) {
-    applyingRemote = false;
-    showFinishedResultsPageV33();
-    return;
-  }
-
-  hideEntryPanel();
-  show(ensureLobby(), false);
-  show(els.setupPanel, false);
-  show(els.gamePanel, true);
-  show(els.resultsPanel, false);
-  updateGameControls();
-  render();
-  if (currentCandidate) renderCandidate(currentCandidate);
-  else clearCandidate(data.message || (isGameComplete() ? "Game complete. Reveal ratings to see the winner." : "Waiting for the next action..."));
-  renderTeams();
-  setMessage(data.message || "");
-  applyingRemote = false;
-  applyOnlinePermissions();
-  syncRevealButtonV37();
-}
-
+// Locks drafting and enables the reveal button.
 function completeGame() {
   currentCandidate = null;
   clearCandidate("Game complete. Reveal ratings to see the winner.");
@@ -3055,9 +2208,10 @@ function completeGame() {
 }
 
 
-
 // --- v38 online blind bidding mode override ---
 // Online bid mode only: all eligible users submit bids in parallel, then bids are revealed together.
+
+// ----- Online blind bidding helpers -----
 function userNeedsPositionV38(user, position) {
   return getNeededPositions(user).includes(position);
 }
@@ -3126,234 +2280,8 @@ async function drawOnlineBlindBidCandidateV38() {
   await saveOnlineState(`Blind bidding open for ${currentCandidate.player}.`);
 }
 
-function renderOnlineBidControlsV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid") return;
-  initialiseBlindBidStateV38();
 
-  show(els.draftControls, false);
-  show(els.bidControls, true);
-  show(els.declinesPill, false);
-  show(els.budgetPill, false);
-
-  if (els.bidPickBtn) els.bidPickBtn.classList.add("hidden");
-  if (els.awardBidBtn) els.awardBidBtn.classList.add("hidden");
-  if (els.skipBidBtn) els.skipBidBtn.classList.add("hidden");
-
-  const me = currentOnlineUserV38();
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(online.myName);
-  const myBid = state.blindBids?.[myKey];
-  const submittedCount = eligible.filter(user => state.blindBids?.[safeKey(user.name)]?.submitted).length;
-  const totalCount = eligible.length;
-  const outcome = state.bidOutcome;
-
-  if (els.bidOrderDisplay) {
-    els.bidOrderDisplay.innerHTML = `
-      <div class="bid-status-summary">
-        <strong>Blind bidding</strong>
-        <span>${submittedCount}/${totalCount} eligible bids submitted</span>
-      </div>
-    `;
-  }
-
-  if (!els.bidInputs) return;
-
-  if (!currentCandidate && isGameComplete()) {
-    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
-    syncRevealButtonV37?.();
-    return;
-  }
-
-  if (!currentCandidate && !outcome) {
-    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
-    return;
-  }
-
-  const statusRows = state.users.map(user => {
-    const key = safeKey(user.name);
-    const isEligible = eligibleKeys.has(key);
-    const submitted = !!state.blindBids?.[key]?.submitted;
-    const budget = Number(user.budget || 0);
-    return `
-      <div class="bid-row">
-        <label>
-          ${escapeHtml(user.name)}
-          <span class="bid-help">Budget left: £${budget}m</span>
-        </label>
-        <div class="bid-submit-status ${submitted ? "submitted" : "waiting"}">
-          ${isEligible ? (submitted ? "Bid submitted ✅" : "Waiting for bid") : "Not eligible for this position"}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (outcome) {
-    const bidRevealRows = outcome.bids.map(row => `
-      <div class="bid-row">
-        <label>${escapeHtml(row.name)}</label>
-        <div class="bid-submit-status submitted">£${Number(row.bid || 0)}m</div>
-      </div>
-    `).join("");
-
-    els.bidInputs.innerHTML = `
-      <div class="bid-order-card">
-        <p class="eyebrow">Bids revealed</p>
-        <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
-        <p class="message">
-          ${outcome.winnerName
-            ? `${escapeHtml(outcome.winnerName)} wins ${escapeHtml(outcome.player?.player || "the player")} for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
-            : `No valid bids above £0m. ${escapeHtml(outcome.player?.player || "The player")} was skipped.`}
-        </p>
-        ${bidRevealRows}
-        <p class="muted">Next player loading...</p>
-      </div>
-    `;
-    return;
-  }
-
-  const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
-  const myBudget = Number(me?.budget || 0);
-
-  const submitBox = canSubmit ? `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <h3>${escapeHtml(currentCandidate.player)}</h3>
-      <p class="muted">Enter your bid privately. Other users will only see that you have submitted.</p>
-      <div class="bid-row">
-        <label for="onlineBlindBidInput">
-          Your bid
-          <span class="bid-help">Budget left: £${myBudget}m</span>
-        </label>
-        <input id="onlineBlindBidInput" type="number" min="0" max="${myBudget}" step="1" value="0" />
-      </div>
-      <button id="submitBlindBidBtn" class="btn btn-primary" type="button">Submit blind bid</button>
-    </div>
-  ` : `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <p class="muted">
-        ${myBid?.submitted
-          ? "Your bid has been submitted. Waiting for everyone else."
-          : eligibleKeys.has(myKey)
-            ? "Bidding is locked while results are being calculated."
-            : "You are not eligible for this player because your team does not need this position, or you have no budget left."}
-      </p>
-    </div>
-  `;
-
-  els.bidInputs.innerHTML = submitBox + `<div class="bid-order-card"><p class="eyebrow">Submission status</p>${statusRows}</div>`;
-
-  $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
-}
-
-async function submitOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  const me = currentOnlineUserV38();
-  if (!me) throw new Error("You are not listed in this online game.");
-
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(me.name);
-
-  if (!eligibleKeys.has(myKey)) throw new Error("You are not eligible to bid for this player.");
-  if (state.blindBids?.[myKey]?.submitted) return;
-
-  const input = $("onlineBlindBidInput");
-  const rawBid = Number(input?.value || 0);
-  const bid = Math.max(0, Math.floor(rawBid));
-
-  if (!Number.isFinite(bid)) throw new Error("Enter a valid bid.");
-  if (bid > Number(me.budget || 0)) throw new Error(`Your bid cannot exceed your remaining budget of £${me.budget}m.`);
-
-  state.blindBids[myKey] = {
-    name: me.name,
-    bid,
-    submitted: true,
-    submittedAt: Date.now()
-  };
-
-  const allSubmitted = eligible.every(user => state.blindBids?.[safeKey(user.name)]?.submitted);
-
-  if (allSubmitted) {
-    await resolveOnlineBlindBidV38();
-  } else {
-    renderOnlineBidControlsV38();
-    await saveOnlineState(`${me.name} submitted a blind bid.`);
-  }
-}
-
-async function resolveOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  state.bidSubmittingLocked = true;
-  const candidate = v29NormalisePlayer(currentCandidate);
-  const eligible = eligibleBidUsersV38(candidate);
-  const bids = eligible.map(user => {
-    const entry = state.blindBids?.[safeKey(user.name)] || { name: user.name, bid: 0, submitted: false };
-    return {
-      name: user.name,
-      bid: Math.max(0, Math.floor(Number(entry.bid || 0))),
-      budget: Number(user.budget || 0)
-    };
-  });
-
-  let validBids = bids.filter(row => row.bid > 0 && row.bid <= row.budget);
-  validBids.sort((a, b) => b.bid - a.bid || a.name.localeCompare(b.name));
-
-  let winnerName = null;
-  let winningBid = 0;
-  let tie = false;
-
-  if (validBids.length) {
-    const highest = validBids[0].bid;
-    const tied = validBids.filter(row => row.bid === highest);
-    tie = tied.length > 1;
-    const winnerRow = tied[Math.floor(Math.random() * tied.length)];
-    winnerName = winnerRow.name;
-    winningBid = winnerRow.bid;
-
-    const winner = state.users.find(user => safeKey(user.name) === safeKey(winnerName));
-    if (winner && candidate) {
-      winner.team.push({ ...candidate, price: winningBid });
-      winner.budget = Math.max(0, Number(winner.budget || 0) - winningBid);
-      winner.spent = Number(winner.spent || 0) + winningBid;
-      state.acceptedPlayerNames.add(candidate.player);
-    }
-  }
-
-  state.bidOutcome = {
-    player: candidate,
-    bids,
-    winnerName,
-    winningBid,
-    tie,
-    resolvedAt: Date.now()
-  };
-
-  currentCandidate = null;
-  renderOnlineBidControlsV38();
-  renderTeams();
-  await saveOnlineState(winnerName ? `${winnerName} won ${candidate.player} for £${winningBid}m.` : `${candidate.player} was skipped.`);
-
-  if (isGameComplete()) {
-    setTimeout(async () => {
-      completeGame();
-      render();
-      await saveOnlineState("Bidding complete. Reveal ratings to see the winner.");
-    }, 3500);
-  } else {
-    setTimeout(async () => {
-      await drawOnlineBlindBidCandidateV38();
-    }, 3500);
-  }
-}
-
+// Starts an online game from the lobby participant list.
 async function startOnlineGameFromLobby() {
   if (!online.enabled || !online.isHost || !online.ref) return;
 
@@ -3382,48 +2310,8 @@ async function startOnlineGameFromLobby() {
   }
 }
 
-async function bidRandomPlayer() {
-  if (online.enabled && state?.gameMode === "bid") {
-    await drawOnlineBlindBidCandidateV38();
-    return;
-  }
-  await ensurePlayersReady();
-  if (!state || state.gameMode !== "bid") return;
-  const user = currentUser();
-  if (!user) return;
-  const needs = getNeededPositions(user);
-  const pool = players.filter(p => {
-    return needs.includes(p.mainPosition) && !state.acceptedPlayerNames.has(p.player);
-  });
-  if (!pool.length) {
-    setMessage(`No available player for ${user.name}.`);
-    return;
-  }
-  currentCandidate = pool[Math.floor(Math.random() * pool.length)];
-  renderCandidate(currentCandidate);
-  renderBidInputs();
-  await saveOnlineState();
-}
 
-function render() {
-  if (!state) return;
-  v29SafeState();
-  updateGameControls();
-  const user = currentUser();
-  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
-  if (state.gameMode === "draft" && els.declinesLeft) {
-    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
-  }
-  if (state.gameMode === "bid" && els.currentBudgetLeft) {
-    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
-  }
-  renderTeams();
-  if (online.enabled && state.gameMode === "bid") renderOnlineBidControlsV38();
-  else setDraftActionButtons();
-  applyOnlinePermissions();
-  syncRevealButtonV37();
-}
-
+// Applies Firebase data to the local UI.
 function applyRemoteData(data) {
   applyingRemote = true;
   state = restoreState(data.state);
@@ -3454,9 +2342,10 @@ function applyRemoteData(data) {
 }
 
 
-
 // --- v39 preserve unsubmitted blind bid input during remote updates ---
 // Fixes: When another online user submits, Firebase refresh re-renders the controls. Any typed-but-unsubmitted bid now persists locally.
+
+// ----- Local draft persistence for blind-bid entries -----
 function blindBidDraftKeyV39() {
   const playerKey = currentCandidate?.player ? safeKey(currentCandidate.player) : "no_player";
   const roomKey = online.roomId || "local_room";
@@ -3488,205 +2377,10 @@ function clearBlindBidDraftV39() {
   }
 }
 
-function renderOnlineBidControlsV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid") return;
-  initialiseBlindBidStateV38();
-
-  show(els.draftControls, false);
-  show(els.bidControls, true);
-  show(els.declinesPill, false);
-  show(els.budgetPill, false);
-
-  if (els.bidPickBtn) els.bidPickBtn.classList.add("hidden");
-  if (els.awardBidBtn) els.awardBidBtn.classList.add("hidden");
-  if (els.skipBidBtn) els.skipBidBtn.classList.add("hidden");
-
-  const me = currentOnlineUserV38();
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(online.myName);
-  const myBid = state.blindBids?.[myKey];
-  const submittedCount = eligible.filter(user => state.blindBids?.[safeKey(user.name)]?.submitted).length;
-  const totalCount = eligible.length;
-  const outcome = state.bidOutcome;
-
-  if (els.bidOrderDisplay) {
-    els.bidOrderDisplay.innerHTML = `
-      <div class="bid-status-summary">
-        <strong>Blind bidding</strong>
-        <span>${submittedCount}/${totalCount} eligible bids submitted</span>
-      </div>
-    `;
-  }
-
-  if (!els.bidInputs) return;
-
-  if (!currentCandidate && isGameComplete()) {
-    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
-    syncRevealButtonV37?.();
-    return;
-  }
-
-  if (!currentCandidate && !outcome) {
-    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
-    return;
-  }
-
-  const statusRows = state.users.map(user => {
-    const key = safeKey(user.name);
-    const isEligible = eligibleKeys.has(key);
-    const submitted = !!state.blindBids?.[key]?.submitted;
-    const budget = Number(user.budget || 0);
-    return `
-      <div class="bid-row">
-        <label>
-          ${escapeHtml(user.name)}
-          <span class="bid-help">Budget left: £${budget}m</span>
-        </label>
-        <div class="bid-submit-status ${submitted ? "submitted" : "waiting"}">
-          ${isEligible ? (submitted ? "Bid submitted ✅" : "Waiting for bid") : "Not eligible for this position"}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (outcome) {
-    clearBlindBidDraftV39();
-    const bidRevealRows = outcome.bids.map(row => `
-      <div class="bid-row">
-        <label>${escapeHtml(row.name)}</label>
-        <div class="bid-submit-status submitted">£${Number(row.bid || 0)}m</div>
-      </div>
-    `).join("");
-
-    els.bidInputs.innerHTML = `
-      <div class="bid-order-card">
-        <p class="eyebrow">Bids revealed</p>
-        <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
-        <p class="message">
-          ${outcome.winnerName
-            ? `${escapeHtml(outcome.winnerName)} wins ${escapeHtml(outcome.player?.player || "the player")} for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
-            : `No valid bids above £0m. ${escapeHtml(outcome.player?.player || "The player")} was skipped.`}
-        </p>
-        ${bidRevealRows}
-        <p class="muted">Next player loading...</p>
-      </div>
-    `;
-    return;
-  }
-
-  const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
-  const myBudget = Number(me?.budget || 0);
-  const draftValue = getBlindBidDraftV39("0");
-
-  const submitBox = canSubmit ? `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <h3>${escapeHtml(currentCandidate.player)}</h3>
-      <p class="muted">Enter your bid privately. Other users will only see that you have submitted.</p>
-      <div class="bid-row">
-        <label for="onlineBlindBidInput">
-          Your bid
-          <span class="bid-help">Budget left: £${myBudget}m</span>
-        </label>
-        <input id="onlineBlindBidInput" type="number" min="0" max="${myBudget}" step="1" value="${escapeHtml(draftValue)}" />
-      </div>
-      <button id="submitBlindBidBtn" class="btn btn-primary" type="button">Submit blind bid</button>
-    </div>
-  ` : `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <p class="muted">
-        ${myBid?.submitted
-          ? "Your bid has been submitted. Waiting for everyone else."
-          : eligibleKeys.has(myKey)
-            ? "Bidding is locked while results are being calculated."
-            : "You are not eligible for this player because your team does not need this position, or you have no budget left."}
-      </p>
-    </div>
-  `;
-
-  els.bidInputs.innerHTML = submitBox + `<div class="bid-order-card"><p class="eyebrow">Submission status</p>${statusRows}</div>`;
-
-  const bidInput = $("onlineBlindBidInput");
-  if (bidInput) {
-    bidInput.addEventListener("input", event => setBlindBidDraftV39(event.target.value));
-    bidInput.addEventListener("change", event => setBlindBidDraftV39(event.target.value));
-  }
-
-  $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
-}
-
-async function submitOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  const me = currentOnlineUserV38();
-  if (!me) throw new Error("You are not listed in this online game.");
-
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(me.name);
-
-  if (!eligibleKeys.has(myKey)) throw new Error("You are not eligible to bid for this player.");
-  if (state.blindBids?.[myKey]?.submitted) return;
-
-  const input = $("onlineBlindBidInput");
-  const rawValue = input?.value ?? getBlindBidDraftV39("0");
-  const rawBid = Number(rawValue || 0);
-  const bid = Math.max(0, Math.floor(rawBid));
-
-  if (!Number.isFinite(bid)) throw new Error("Enter a valid bid.");
-  if (bid > Number(me.budget || 0)) throw new Error(`Your bid cannot exceed your remaining budget of £${me.budget}m.`);
-
-  state.blindBids[myKey] = {
-    name: me.name,
-    bid,
-    submitted: true,
-    submittedAt: Date.now()
-  };
-  clearBlindBidDraftV39();
-
-  const allSubmitted = eligible.every(user => state.blindBids?.[safeKey(user.name)]?.submitted);
-
-  if (allSubmitted) {
-    await resolveOnlineBlindBidV38();
-  } else {
-    renderOnlineBidControlsV38();
-    await saveOnlineState(`${me.name} submitted a blind bid.`);
-  }
-}
-
-
 
 // --- v42 local bid controls fix ---
 // Fixes local bid mode where Award highest bid and Skip player stayed disabled.
 // Online blind bidding from v39 is deliberately left unchanged.
-function setBidActionButtonsV42() {
-  if (!state || state.gameMode !== "bid") return;
-
-  // Online bid mode uses its own blind bidding controls, so don't interfere with it.
-  if (online.enabled) return;
-
-  const hasCandidate = !!currentCandidate;
-  const complete = isGameComplete();
-
-  if (els.bidPickBtn) {
-    els.bidPickBtn.classList.remove("hidden");
-    els.bidPickBtn.disabled = hasCandidate || complete;
-  }
-
-  if (els.awardBidBtn) {
-    els.awardBidBtn.classList.remove("hidden");
-    els.awardBidBtn.disabled = !hasCandidate || complete;
-  }
-
-  if (els.skipBidBtn) {
-    els.skipBidBtn.classList.remove("hidden");
-    els.skipBidBtn.disabled = !hasCandidate || complete;
-  }
-}
 
 function clearLocalBidInputsV42(message = "") {
   if (!online.enabled && state?.gameMode === "bid" && els.bidInputs) {
@@ -3694,28 +2388,8 @@ function clearLocalBidInputsV42(message = "") {
   }
 }
 
-function renderBidInputs() {
-  if (!els.bidInputs || !state || state.gameMode !== "bid") return;
 
-  if (!currentCandidate) {
-    clearLocalBidInputsV42("Randomise a player to enter bids.");
-    setBidActionButtonsV42();
-    return;
-  }
-
-  els.bidInputs.innerHTML = state.users.map((u, i) => `
-    <div class="bid-row">
-      <label for="bidUser${i}">
-        ${escapeHtml(u.name)}
-        <span class="bid-help">Budget left: £${u.budget}m</span>
-      </label>
-      <input id="bidUser${i}" type="number" min="0" max="${u.budget}" step="1" value="0" />
-    </div>
-  `).join("");
-
-  setBidActionButtonsV42();
-}
-
+// Draws a candidate for local blind bidding.
 async function bidRandomPlayer() {
   if (online.enabled && state?.gameMode === "bid") {
     await drawOnlineBlindBidCandidateV38();
@@ -3761,77 +2435,8 @@ async function bidRandomPlayer() {
   await saveOnlineState();
 }
 
-async function awardHighestBid() {
-  // Keep online mode completely separate.
-  if (online.enabled) return;
-  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
-  v29SafeState();
 
-  let best = null;
-
-  state.users.forEach((u, i) => {
-    const bid = getBid(i);
-    if (bid > 0 && bid <= u.budget && (!best || bid > best.bid)) {
-      best = { user: u, index: i, bid };
-    }
-  });
-
-  if (!best) {
-    setMessage("Enter at least one valid bid above £0m.");
-    setBidActionButtonsV42();
-    return;
-  }
-
-  const awardedPlayer = v29NormalisePlayer(currentCandidate);
-  if (!awardedPlayer) return;
-
-  best.user.team.push({
-    ...awardedPlayer,
-    price: best.bid
-  });
-
-  best.user.budget = Math.max(0, Number(best.user.budget || 0) - best.bid);
-  best.user.spent = Number(best.user.spent || 0) + best.bid;
-  state.acceptedPlayerNames.add(awardedPlayer.player);
-
-  const winnerName = best.user.name;
-  const playerName = awardedPlayer.player;
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-    clearLocalBidInputsV42("Bidding complete. Reveal ratings to see the winner.");
-  } else {
-    rotateBidNominator();
-    clearCandidate("Click Randomise player to continue.");
-    clearLocalBidInputsV42("Randomise the next player to enter bids.");
-    setMessage(`${winnerName} won ${playerName} for £${best.bid}m.`);
-  }
-
-  render();
-  setBidActionButtonsV42();
-  await saveOnlineState();
-}
-
-async function skipBidPlayer() {
-  // Keep online mode completely separate.
-  if (online.enabled) return;
-  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
-  v29SafeState();
-
-  const skippedName = currentCandidate.player;
-  currentCandidate = null;
-
-  rotateBidNominator();
-  clearCandidate("Player skipped. Click Randomise player to continue.");
-  clearLocalBidInputsV42("Randomise the next player to enter bids.");
-  setMessage(`${skippedName} was skipped.`);
-
-  render();
-  setBidActionButtonsV42();
-  await saveOnlineState();
-}
-
+// Refreshes the main game panels.
 function render() {
   if (!state) return;
   v29SafeState();
@@ -3861,7 +2466,6 @@ function render() {
   applyOnlinePermissions();
   syncRevealButtonV37();
 }
-
 
 
 // --- v43 restore local bid skip lives ---
@@ -3901,6 +2505,8 @@ function localIncrementSkipsV43(users) {
   });
 }
 
+
+// ----- Local bidding controls and skip logic -----
 function setBidActionButtonsV42() {
   if (!state || state.gameMode !== "bid") return;
   if (online.enabled) return;
@@ -3962,6 +2568,7 @@ function renderBidInputs() {
   setBidActionButtonsV42();
 }
 
+// Awards the candidate to the highest valid local bid.
 async function awardHighestBid() {
   // Keep online mode completely separate.
   if (online.enabled) return;
@@ -4047,6 +2654,7 @@ async function awardHighestBid() {
   await saveOnlineState();
 }
 
+// Skips the current local bid candidate.
 async function skipBidPlayer() {
   // Keep online mode completely separate.
   if (online.enabled) return;
@@ -4077,6 +2685,7 @@ async function skipBidPlayer() {
   await saveOnlineState();
 }
 
+// Renders all teams and pitch layouts.
 function renderTeams() {
   if (!els.teamsContainer || !state || !Array.isArray(state.users)) return;
   v29SafeState();
@@ -4104,10 +2713,11 @@ function renderTeams() {
 }
 
 
-
 // --- v44 online blind bid skip lives ---
 // Extends the v43 3-skip rule to ONLINE blind bidding.
 // If an eligible online user submits £0m, they lose one skip. If they have used all 3 skips, they must bid above £0m.
+
+// ----- Online bidding skip/reserve rules -----
 function onlineBidSkipsUsedV44(user) {
   return Math.max(0, Number(user?.bidSkips || 0));
 }
@@ -4119,262 +2729,6 @@ function onlineBidSkipsLeftV44(user) {
 function onlineIncrementSkipV44(user) {
   if (!user) return;
   user.bidSkips = Math.min(BID_SKIPS_ALLOWED, onlineBidSkipsUsedV44(user) + 1);
-}
-
-function renderOnlineBidControlsV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid") return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  show(els.draftControls, false);
-  show(els.bidControls, true);
-  show(els.declinesPill, false);
-  show(els.budgetPill, false);
-
-  if (els.bidPickBtn) els.bidPickBtn.classList.add("hidden");
-  if (els.awardBidBtn) els.awardBidBtn.classList.add("hidden");
-  if (els.skipBidBtn) els.skipBidBtn.classList.add("hidden");
-
-  const me = currentOnlineUserV38();
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(online.myName);
-  const myBid = state.blindBids?.[myKey];
-  const submittedCount = eligible.filter(user => state.blindBids?.[safeKey(user.name)]?.submitted).length;
-  const totalCount = eligible.length;
-  const outcome = state.bidOutcome;
-
-  if (els.bidOrderDisplay) {
-    els.bidOrderDisplay.innerHTML = `
-      <div class="bid-status-summary">
-        <strong>Blind bidding</strong>
-        <span>${submittedCount}/${totalCount} eligible bids submitted</span>
-      </div>
-    `;
-  }
-
-  if (!els.bidInputs) return;
-
-  if (!currentCandidate && isGameComplete()) {
-    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
-    syncRevealButtonV37?.();
-    return;
-  }
-
-  if (!currentCandidate && !outcome) {
-    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
-    return;
-  }
-
-  const statusRows = state.users.map(user => {
-    const key = safeKey(user.name);
-    const isEligible = eligibleKeys.has(key);
-    const submitted = !!state.blindBids?.[key]?.submitted;
-    const budget = Number(user.budget || 0);
-    const skipsLeft = onlineBidSkipsLeftV44(user);
-    return `
-      <div class="bid-row">
-        <label>
-          ${escapeHtml(user.name)}
-          <span class="bid-help">Budget left: £${budget}m • Skips left: ${skipsLeft}/${BID_SKIPS_ALLOWED}</span>
-        </label>
-        <div class="bid-submit-status ${submitted ? "submitted" : "waiting"}">
-          ${isEligible ? (submitted ? "Bid submitted ✅" : (skipsLeft <= 0 ? "Must bid above £0m" : "Waiting for bid")) : "Not eligible for this position"}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (outcome) {
-    clearBlindBidDraftV39();
-    const bidRevealRows = outcome.bids.map(row => `
-      <div class="bid-row">
-        <label>${escapeHtml(row.name)}</label>
-        <div class="bid-submit-status submitted">£${Number(row.bid || 0)}m</div>
-      </div>
-    `).join("");
-
-    els.bidInputs.innerHTML = `
-      <div class="bid-order-card">
-        <p class="eyebrow">Bids revealed</p>
-        <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
-        <p class="message">
-          ${outcome.winnerName
-            ? `${escapeHtml(outcome.winnerName)} wins ${escapeHtml(outcome.player?.player || "the player")} for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
-            : `No valid bids above £0m. ${escapeHtml(outcome.player?.player || "The player")} was skipped.`}
-        </p>
-        ${bidRevealRows}
-        ${outcome.zeroBidNames?.length ? `<p class="muted">${escapeHtml(outcome.zeroBidNames.join(", "))} ${outcome.zeroBidNames.length === 1 ? "loses" : "lose"} one skip for bidding £0m.</p>` : ""}
-        <p class="muted">Next player loading...</p>
-      </div>
-    `;
-    return;
-  }
-
-  const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
-  const myBudget = Number(me?.budget || 0);
-  const mySkipsLeft = onlineBidSkipsLeftV44(me);
-  const draftValue = getBlindBidDraftV39("0");
-
-  const submitBox = canSubmit ? `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <h3>${escapeHtml(currentCandidate.player)}</h3>
-      <p class="muted">Enter your bid privately. Other users will only see that you have submitted.</p>
-      <div class="bid-row">
-        <label for="onlineBlindBidInput">
-          Your bid
-          <span class="bid-help">Budget left: £${myBudget}m • Skips left: ${mySkipsLeft}/${BID_SKIPS_ALLOWED}${mySkipsLeft <= 0 ? " • must bid above £0m" : ""}</span>
-        </label>
-        <input id="onlineBlindBidInput" type="number" min="0" max="${myBudget}" step="1" value="${escapeHtml(draftValue)}" />
-      </div>
-      <button id="submitBlindBidBtn" class="btn btn-primary" type="button">Submit blind bid</button>
-    </div>
-  ` : `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <p class="muted">
-        ${myBid?.submitted
-          ? "Your bid has been submitted. Waiting for everyone else."
-          : eligibleKeys.has(myKey)
-            ? "Bidding is locked while results are being calculated."
-            : "You are not eligible for this player because your team does not need this position, or you have no budget left."}
-      </p>
-    </div>
-  `;
-
-  els.bidInputs.innerHTML = submitBox + `<div class="bid-order-card"><p class="eyebrow">Submission status</p>${statusRows}</div>`;
-
-  const bidInput = $("onlineBlindBidInput");
-  if (bidInput) {
-    bidInput.addEventListener("input", event => setBlindBidDraftV39(event.target.value));
-    bidInput.addEventListener("change", event => setBlindBidDraftV39(event.target.value));
-  }
-
-  $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
-}
-
-async function submitOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  const me = currentOnlineUserV38();
-  if (!me) throw new Error("You are not listed in this online game.");
-
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(me.name);
-
-  if (!eligibleKeys.has(myKey)) throw new Error("You are not eligible to bid for this player.");
-  if (state.blindBids?.[myKey]?.submitted) return;
-
-  const input = $("onlineBlindBidInput");
-  const rawValue = input?.value ?? getBlindBidDraftV39("0");
-  const rawBid = Number(rawValue || 0);
-  const bid = Math.max(0, Math.floor(rawBid));
-
-  if (!Number.isFinite(bid)) throw new Error("Enter a valid bid.");
-  if (bid > Number(me.budget || 0)) throw new Error(`Your bid cannot exceed your remaining budget of £${me.budget}m.`);
-  if (bid <= 0 && onlineBidSkipsLeftV44(me) <= 0) throw new Error("You have used all 3 skips and must bid above £0m.");
-
-  state.blindBids[myKey] = {
-    name: me.name,
-    bid,
-    submitted: true,
-    submittedAt: Date.now()
-  };
-  clearBlindBidDraftV39();
-
-  const allSubmitted = eligible.every(user => state.blindBids?.[safeKey(user.name)]?.submitted);
-
-  if (allSubmitted) {
-    await resolveOnlineBlindBidV38();
-  } else {
-    renderOnlineBidControlsV38();
-    await saveOnlineState(`${me.name} submitted a blind bid.`);
-  }
-}
-
-async function resolveOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  state.bidSubmittingLocked = true;
-  const candidate = v29NormalisePlayer(currentCandidate);
-  const eligible = eligibleBidUsersV38(candidate);
-  const bids = eligible.map(user => {
-    const entry = state.blindBids?.[safeKey(user.name)] || { name: user.name, bid: 0, submitted: false };
-    return {
-      name: user.name,
-      bid: Math.max(0, Math.floor(Number(entry.bid || 0))),
-      budget: Number(user.budget || 0)
-    };
-  });
-
-  const zeroBidNames = [];
-  bids.forEach(row => {
-    if (row.bid <= 0) {
-      const user = state.users.find(u => safeKey(u.name) === safeKey(row.name));
-      if (user) {
-        onlineIncrementSkipV44(user);
-        zeroBidNames.push(user.name);
-      }
-    }
-  });
-
-  let validBids = bids.filter(row => row.bid > 0 && row.bid <= row.budget);
-  validBids.sort((a, b) => b.bid - a.bid || a.name.localeCompare(b.name));
-
-  let winnerName = null;
-  let winningBid = 0;
-  let tie = false;
-
-  if (validBids.length) {
-    const highest = validBids[0].bid;
-    const tied = validBids.filter(row => row.bid === highest);
-    tie = tied.length > 1;
-    const winnerRow = tied[Math.floor(Math.random() * tied.length)];
-    winnerName = winnerRow.name;
-    winningBid = winnerRow.bid;
-
-    const winner = state.users.find(user => safeKey(user.name) === safeKey(winnerName));
-    if (winner && candidate) {
-      winner.team.push({ ...candidate, price: winningBid });
-      winner.budget = Math.max(0, Number(winner.budget || 0) - winningBid);
-      winner.spent = Number(winner.spent || 0) + winningBid;
-      state.acceptedPlayerNames.add(candidate.player);
-    }
-  }
-
-  state.bidOutcome = {
-    player: candidate,
-    bids,
-    winnerName,
-    winningBid,
-    tie,
-    zeroBidNames,
-    resolvedAt: Date.now()
-  };
-
-  currentCandidate = null;
-  renderOnlineBidControlsV38();
-  renderTeams();
-  const zeroText = zeroBidNames.length ? ` ${zeroBidNames.join(", ")} ${zeroBidNames.length === 1 ? "loses" : "lose"} one skip.` : "";
-  await saveOnlineState(winnerName ? `${winnerName} won ${candidate.player} for £${winningBid}m.${zeroText}` : `${candidate.player} was skipped.${zeroText}`);
-
-  if (isGameComplete()) {
-    setTimeout(async () => {
-      completeGame();
-      render();
-      await saveOnlineState("Bidding complete. Reveal ratings to see the winner.");
-    }, 3500);
-  } else {
-    setTimeout(async () => {
-      await drawOnlineBlindBidCandidateV38();
-    }, 3500);
-  }
 }
 
 
@@ -4640,6 +2994,8 @@ async function resolveOnlineBlindBidV38() {
   }
 }
 
+
+// ----- Application startup wiring -----
 function init() {
   injectEntryPanel();
   wireEvents();
@@ -8448,7 +6804,6 @@ document.addEventListener('click', function(e){
 });
 
 
-
 /* =====================================================================
    ULTIMATE 5-A-SIDE ONLINE BIDDING FIXES - VERSION 2
    ---------------------------------------------------------------------
@@ -9449,7 +7804,6 @@ document.addEventListener('click', function(e){
     };
   }
 })();
-
 
 
 // --- v53 safe solo labels + cleaner saved/share pitch image ---
@@ -11073,8 +9427,6 @@ document.addEventListener('click', function(e){
 })();
 
 
-
-
 // --- v73 synchronous League Legends league resolver ---
 // This is placed before the active leaderboard renderer uses metadataTextV55, so the selected league is available on the first draw.
 window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
@@ -12072,4 +10424,71 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
 
   document.addEventListener("DOMContentLoaded", fixVisiblePanelDisplayV76);
   setTimeout(fixVisiblePanelDisplayV76, 0);
+})();
+
+
+// --- v77 Home button rename and current-mode Restart flow ---
+// Adds a dedicated Restart button inside the active game/results cards.
+// Home still returns to the front page; Restart returns to the current mode setup/lobby.
+(function currentModeRestartV77(){
+  function byId(id){ return document.getElementById(id); }
+  function setHomeButtonLabelV77(){ const btn = byId("resetBtn"); if (btn) { btn.textContent = "Home"; btn.setAttribute("aria-label", "Go back to home screen"); btn.title = "Go back to the home screen"; } }
+  function injectRestartStylesV77(){
+    if (byId("restartStylesV77")) return;
+    const style = document.createElement("style");
+    style.id = "restartStylesV77";
+    style.textContent = `.game-card-restart-row-v77{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 14px}.restart-current-btn-v77{background:linear-gradient(135deg,#0ea5e9,#2563eb)!important;color:#fff!important;border:0!important;min-height:42px;padding:10px 16px!important;border-radius:14px!important;box-shadow:0 10px 24px rgba(37,99,235,.22)!important}.finished-actions .restart-current-btn-v77{background:linear-gradient(135deg,#0ea5e9,#2563eb)!important}@media(max-width:720px){.game-card-restart-row-v77{justify-content:stretch;margin:0 0 12px}.game-card-restart-row-v77 .btn{width:100%}}`;
+    document.head.appendChild(style);
+  }
+  function currentPresetV77(){ return state?.challengePreset || window.challengePreset || "standard"; }
+  function clickFirstV77(selectors){ for (const selector of selectors){ const el=document.querySelector(selector); if(el){ el.click(); return true; } } return false; }
+  function clearTransientGameUiV77(){ byId("turnLockNote")?.remove(); byId("activeYearRangePillStep5")?.remove(); byId("onlineRoomMiniStep12")?.remove(); document.querySelectorAll(".online-action-banner-step16").forEach(el=>el.remove()); document.body.classList.remove("solo-challenge-active-step8","solo-results-centred-step9","online-game-active-step12","worldcup-challenge-active"); }
+  async function restartOnlineGameToLobbyV77(){
+    const ref=online?.ref; const roomId=online?.roomId; const isHost=!!online?.isHost; const myName=online?.myName || "";
+    if(!ref || !roomId){ resetGame(); return; }
+    let participants=[];
+    try{ const snap=await ref.child("participants").once("value"); participants=participantNamesFromObject(snap.val()); }
+    catch(err){ console.warn("Could not read room participants during restart",err); if(myName) participants=[myName]; }
+    state=null; currentCandidate=null; ratingsRevealed=false; applyingRemote=false; clearTransientGameUiV77();
+    try{ await ref.update({updatedAt:Date.now(),state:null,currentCandidate:null,ratingsRevealed:false,message:"Game restarted. Back in the lobby."}); }
+    catch(err){ console.warn("Could not update room during restart",err); }
+    const invite=`${location.origin}${location.pathname}?room=${roomId}`;
+    showLobby(isHost ? "host" : "player", participants, invite);
+    setHomeButtonLabelV77(); setTimeout(refreshRestartButtonsV77,0);
+  }
+  function reopenCurrentLocalSetupV77(preset){
+    window.challengePreset=preset || "standard";
+    if(preset==="leaguelegends" && clickFirstV77(['[data-challenge="leaguelegends"]'])) return;
+    if(preset==="league" && clickFirstV77(['[data-challenge="league"]'])) return;
+    if(preset==="worldcup2026"){
+      const monthly=document.querySelector(".active-monthly-challenge"); if(monthly) monthly.click();
+      setTimeout(()=>{ if(!clickFirstV77(["#playWorldCup2026ChallengeBtn"])){ window.challengePreset="standard"; byId("startLocalGameBtn")?.click(); } },80);
+      return;
+    }
+    if((preset==="ultimate" || preset==="easy") && clickFirstV77([`[data-challenge="${preset}"]`])) return;
+    window.challengePreset="standard"; byId("startLocalGameBtn")?.click();
+  }
+  async function restartCurrentModeV77(){ const preset=currentPresetV77(); if(online?.enabled){ await restartOnlineGameToLobbyV77(); return; } clearTransientGameUiV77(); resetGame(); setTimeout(()=>reopenCurrentLocalSetupV77(preset),120); }
+  function ensureGameRestartButtonV77(){
+    injectRestartStylesV77(); setHomeButtonLabelV77();
+    const gamePanel=byId("gamePanel"); const draftCard=document.querySelector("#gamePanel .draft-card");
+    if(!gamePanel || !draftCard || gamePanel.classList.contains("hidden") || ratingsRevealed){ byId("restartGameTopRowV77")?.remove(); return; }
+    let row=byId("restartGameTopRowV77");
+    if(!row){ row=document.createElement("div"); row.id="restartGameTopRowV77"; row.className="game-card-restart-row-v77"; row.innerHTML=`<button id="restartCurrentGameBtnV77" type="button" class="btn restart-current-btn-v77">Restart</button>`; draftCard.insertBefore(row,draftCard.firstChild); }
+  }
+  function ensureResultsRestartButtonV77(){
+    injectRestartStylesV77(); setHomeButtonLabelV77(); const actions=document.querySelector("#resultsPanel .finished-actions"); if(!actions) return;
+    const oldNewGame=byId("resetBtnResults");
+    if(oldNewGame){ oldNewGame.textContent="Restart"; oldNewGame.classList.add("restart-current-btn-v77"); oldNewGame.setAttribute("aria-label","Restart this game mode"); oldNewGame.title="Restart this game mode"; }
+    if(!byId("restartResultsBtnV77") && !oldNewGame){ const btn=document.createElement("button"); btn.id="restartResultsBtnV77"; btn.type="button"; btn.className="btn restart-current-btn-v77"; btn.textContent="Restart"; actions.appendChild(btn); }
+  }
+  function refreshRestartButtonsV77(){ setHomeButtonLabelV77(); ensureGameRestartButtonV77(); ensureResultsRestartButtonV77(); }
+  document.addEventListener("click",event=>{ if(event.target?.closest?.("#restartCurrentGameBtnV77, #restartResultsBtnV77, #resetBtnResults")){ event.preventDefault(); event.stopImmediatePropagation(); safe(restartCurrentModeV77)(); return; } if(event.target?.closest?.("#resetBtn")) setHomeButtonLabelV77(); },true);
+  const previousRenderV77=render; render=function(...args){ const result=previousRenderV77.apply(this,args); refreshRestartButtonsV77(); return result; };
+  const previousStartNewGameV77=startNewGame; startNewGame=function(...args){ const result=previousStartNewGameV77.apply(this,args); refreshRestartButtonsV77(); return result; };
+  const previousApplyRemoteDataV77=applyRemoteData; applyRemoteData=function(...args){ const result=previousApplyRemoteDataV77.apply(this,args); refreshRestartButtonsV77(); return result; };
+  if(typeof showFinishedResultsPageV33==="function"){ const previousShowFinishedV77=showFinishedResultsPageV33; showFinishedResultsPageV33=function(...args){ const result=previousShowFinishedV77.apply(this,args); refreshRestartButtonsV77(); return result; }; }
+  if(typeof renderResults==="function"){ const previousRenderResultsV77=renderResults; renderResults=function(...args){ const result=previousRenderResultsV77.apply(this,args); refreshRestartButtonsV77(); return result; }; }
+  const previousResetGameV77=resetGame; resetGame=function(...args){ const result=previousResetGameV77.apply(this,args); setHomeButtonLabelV77(); byId("restartGameTopRowV77")?.remove(); return result; };
+  document.addEventListener("DOMContentLoaded",refreshRestartButtonsV77); setTimeout(refreshRestartButtonsV77,0);
 })();
