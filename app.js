@@ -10492,3 +10492,371 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
   const previousResetGameV77=resetGame; resetGame=function(...args){ const result=previousResetGameV77.apply(this,args); setHomeButtonLabelV77(); byId("restartGameTopRowV77")?.remove(); return result; };
   document.addEventListener("DOMContentLoaded",refreshRestartButtonsV77); setTimeout(refreshRestartButtonsV77,0);
 })();
+
+// --- v78 leaderboard team display ---
+// Adds the submitted 5-a-side team to every leaderboard row where team data exists.
+(function leaderboardTeamDisplayV78(){
+  const GROUPS={
+    solo:{defaultSub:"all",subs:{all:["Solo Challenge","Ultimate Solo Mode","Easy Solo Challenge","League Challenge"],standard:["Solo Challenge"],ultimate:["Ultimate Solo Mode"],easy:["Easy Solo Challenge"],league:["League Challenge"]}},
+    online:{defaultSub:"all",subs:{all:["Online Ultimate Draft","Online Blind Bidding","Online Live Auction"],draft:["Online Ultimate Draft"],blind:["Online Blind Bidding"],live:["Online Live Auction"]}},
+    legends:{defaultSub:"all",subs:{all:["League Legends Challenge"]}},
+    monthly:{defaultSub:"all",subs:{all:["World Cup 2026 Challenge"],worldcup2026:["World Cup 2026 Challenge"]}}
+  };
+  let cache=null,cacheAt=0,busy=false,timer=null;
+  function byId(id){return document.getElementById(id);} 
+  function esc(v){return String(v??"").replace(/[&<>'\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));}
+  function mode(e){return String(e?.gameMode||"Unknown").trim()||"Unknown";}
+  function injectStyles(){
+    if(byId("leaderboardTeamStylesV78"))return;
+    const style=document.createElement("style");
+    style.id="leaderboardTeamStylesV78";
+    style.textContent=`#leaderboardList .leaderboard-row.leaderboard-row-v55.leaderboard-row-has-team-v78{align-items:start!important;row-gap:7px!important}.leaderboard-team-v78{grid-column:2 / span 3;display:grid;gap:6px;margin-top:2px;padding-top:7px;border-top:1px solid rgba(203,213,225,.72)}.leaderboard-team-title-v78{display:flex;align-items:center;gap:6px;color:#334155;font-size:.75rem;font-weight:950;text-transform:uppercase;letter-spacing:.06em}.leaderboard-team-chips-v78{display:flex;flex-wrap:wrap;gap:6px}.leaderboard-player-chip-v78{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:6px 9px;border-radius:999px;background:#eef6ff;border:1px solid #bfdbfe;color:#0f172a;font-size:.76rem;font-weight:850;line-height:1.1}.leaderboard-player-pos-v78{color:#1d4ed8;font-weight:1000}.leaderboard-player-rating-v78{color:#166534;font-weight:1000}.leaderboard-team-unavailable-v78{color:#64748b;font-size:.76rem;font-weight:850}@media(max-width:720px){.leaderboard-team-v78{grid-column:2 / span 2}.leaderboard-team-chips-v78{display:grid;grid-template-columns:1fr;gap:5px}.leaderboard-player-chip-v78{justify-content:space-between;border-radius:12px}}`;
+    document.head.appendChild(style);
+  }
+  function activeGroup(){const a=document.querySelector("#leaderboardPanel [data-leaderboard-group].active");const k=a?.dataset?.leaderboardGroup||"solo";return GROUPS[k]?k:"solo";}
+  function activeSub(groupKey){const a=document.querySelector("#leaderboardPanel [data-leaderboard-sub].active");const g=GROUPS[groupKey]||GROUPS.solo;const k=a?.dataset?.leaderboardSub||g.defaultSub||"all";return g.subs[k]?k:g.defaultSub||"all";}
+  function allowedModes(){const g=activeGroup();const s=activeSub(g);return new Set(GROUPS[g]?.subs?.[s]||GROUPS.solo.subs.all);}
+  async function allEntries(){
+    const now=Date.now();
+    if(cache&&now-cacheAt<2500)return cache;
+    await ensureFirebase();
+    const snap=await firebase.database().ref("leaderboard").once("value");
+    cache=Object.values(snap.val()||{}).filter(e=>Number.isFinite(Number(e?.score))).map(e=>({...e,username:String(e?.username||"Player").trim()||"Player",score:Number(e?.score||0),gameMode:mode(e),timestamp:Number(e?.timestamp||0)}));
+    cacheAt=now;
+    return cache;
+  }
+  function visibleEntries(entries){const allowed=allowedModes();return entries.filter(e=>allowed.has(e.gameMode)).sort((a,b)=>b.score!==a.score?b.score-a.score:Number(b.timestamp||0)-Number(a.timestamp||0)).slice(0,20);}
+  function playerName(p){return p?.name||p?.player||p?.Player||"Player";}
+  function playerRole(p){return String(p?.selectedRole||p?.position||p?.mainPosition||p?.Main_Position||p?.Position||"").trim().toUpperCase();}
+  function playerRating(p){const n=Number(p?.rating??p?.adjustedRating??p?.score??p?.baseRating??p?.Rating_OVR??"");return Number.isFinite(n)&&n?Math.round(n):"";}
+  function teamHtml(entry){
+    const team=Array.isArray(entry?.team)?entry.team.filter(Boolean).slice(0,5):[];
+    if(!team.length)return `<span class="leaderboard-team-unavailable-v78">Team used: not available for this older submission.</span>`;
+    const chips=team.map(p=>{const pos=playerRole(p),rating=playerRating(p);return `<span class="leaderboard-player-chip-v78">${pos?`<span class="leaderboard-player-pos-v78">${esc(pos)}</span>`:""}<span>${esc(playerName(p))}</span>${rating!==""?`<span class="leaderboard-player-rating-v78">${esc(rating)}</span>`:""}</span>`;}).join("");
+    return `<span class="leaderboard-team-title-v78">Team used</span><div class="leaderboard-team-chips-v78">${chips}</div>`;
+  }
+  async function enhance(){
+    if(busy)return;
+    const panel=byId("leaderboardPanel"),list=byId("leaderboardList");
+    if(!panel||!list||panel.classList.contains("hidden"))return;
+    const rows=Array.from(list.querySelectorAll(".leaderboard-row-v55"));
+    if(!rows.length)return;
+    busy=true;
+    try{
+      injectStyles();
+      const entries=visibleEntries(await allEntries());
+      rows.forEach((row,i)=>{const entry=entries[i];if(!entry)return;row.classList.add("leaderboard-row-has-team-v78");const html=teamHtml(entry);let holder=row.querySelector(".leaderboard-team-v78");if(!holder){holder=document.createElement("span");holder.className="leaderboard-team-v78";row.appendChild(holder);}if(holder.dataset.htmlV78!==html){holder.innerHTML=html;holder.dataset.htmlV78=html;}});
+    }catch(err){console.warn("Could not add teams to leaderboard rows",err);}finally{busy=false;}
+  }
+  function schedule(delay=80){if(timer)clearTimeout(timer);timer=setTimeout(()=>{timer=null;enhance();},delay);}
+  function observe(){const list=byId("leaderboardList");if(!list||list.dataset.teamObserverV78==="1")return;list.dataset.teamObserverV78="1";new MutationObserver(()=>schedule(80)).observe(list,{childList:true,subtree:false});}
+  document.addEventListener("DOMContentLoaded",()=>{injectStyles();observe();schedule(250);});
+  document.addEventListener("click",event=>{if(event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub]")){schedule(350);setTimeout(()=>schedule(50),900);}},true);
+  injectStyles();observe();schedule(250);
+})();
+
+// --- v79 compact leaderboard team chips ---
+// Makes the team-used section much smaller and keeps it on the same line where space allows.
+(function leaderboardTeamCompactV79(){
+  function byId(id){return document.getElementById(id);}
+  function injectStylesV79(){
+    if(byId("leaderboardTeamCompactStylesV79"))return;
+    const style=document.createElement("style");
+    style.id="leaderboardTeamCompactStylesV79";
+    style.textContent=`
+      #leaderboardList .leaderboard-row.leaderboard-row-v55.leaderboard-row-has-team-v78{
+        row-gap:3px!important;
+        padding-top:10px!important;
+        padding-bottom:10px!important;
+      }
+      #leaderboardList .leaderboard-row-v55 .leaderboard-meta-v55{
+        margin-top:0!important;
+        font-size:.76rem!important;
+        line-height:1.12!important;
+      }
+      #leaderboardList .leaderboard-team-v78{
+        grid-column:2 / span 3!important;
+        display:flex!important;
+        align-items:center!important;
+        flex-wrap:wrap!important;
+        gap:4px 6px!important;
+        margin-top:1px!important;
+        padding-top:0!important;
+        border-top:0!important;
+        min-width:0!important;
+        line-height:1.05!important;
+      }
+      #leaderboardList .leaderboard-team-title-v78{
+        display:inline-flex!important;
+        flex:0 0 auto!important;
+        color:#475569!important;
+        font-size:.66rem!important;
+        font-weight:950!important;
+        letter-spacing:.02em!important;
+        text-transform:none!important;
+        margin-right:1px!important;
+      }
+      #leaderboardList .leaderboard-team-chips-v78{
+        display:flex!important;
+        align-items:center!important;
+        flex-wrap:wrap!important;
+        gap:4px!important;
+        min-width:0!important;
+      }
+      #leaderboardList .leaderboard-player-chip-v78{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
+        gap:4px!important;
+        padding:3px 6px!important;
+        border-radius:999px!important;
+        font-size:.68rem!important;
+        font-weight:850!important;
+        line-height:1!important;
+        white-space:nowrap!important;
+        max-width:100%!important;
+        box-shadow:none!important;
+      }
+      #leaderboardList .leaderboard-player-pos-v78,
+      #leaderboardList .leaderboard-player-rating-v78{
+        font-size:.67rem!important;
+        line-height:1!important;
+      }
+      #leaderboardList .leaderboard-team-unavailable-v78{
+        font-size:.68rem!important;
+        line-height:1.1!important;
+      }
+      @media(max-width:720px){
+        #leaderboardList .leaderboard-row.leaderboard-row-v55.leaderboard-row-has-team-v78{
+          row-gap:3px!important;
+          padding:10px 12px!important;
+        }
+        #leaderboardList .leaderboard-team-v78{
+          grid-column:2 / span 2!important;
+          gap:3px 5px!important;
+        }
+        #leaderboardList .leaderboard-team-title-v78{
+          font-size:.62rem!important;
+        }
+        #leaderboardList .leaderboard-team-chips-v78{
+          display:flex!important;
+          grid-template-columns:none!important;
+          flex-wrap:wrap!important;
+          gap:3px!important;
+        }
+        #leaderboardList .leaderboard-player-chip-v78{
+          width:auto!important;
+          justify-content:flex-start!important;
+          border-radius:999px!important;
+          padding:3px 5px!important;
+          gap:3px!important;
+          font-size:.62rem!important;
+          max-width:calc(50vw - 34px)!important;
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+        }
+        #leaderboardList .leaderboard-player-chip-v78 span:nth-child(2){
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+        }
+        #leaderboardList .leaderboard-player-pos-v78,
+        #leaderboardList .leaderboard-player-rating-v78{
+          font-size:.61rem!important;
+          flex:0 0 auto!important;
+        }
+      }
+      @media(max-width:420px){
+        #leaderboardList .leaderboard-player-chip-v78{max-width:100%!important;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  function relabelTeamTitlesV79(){
+    document.querySelectorAll("#leaderboardList .leaderboard-team-title-v78").forEach(el=>{
+      if(el.textContent.trim().toLowerCase()!=="team:") el.textContent="Team:";
+    });
+  }
+  function scheduleV79(delay=80){setTimeout(()=>{injectStylesV79();relabelTeamTitlesV79();},delay);}
+  document.addEventListener("DOMContentLoaded",()=>scheduleV79(100));
+  document.addEventListener("click",event=>{
+    if(event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub]")){
+      scheduleV79(250);
+      scheduleV79(700);
+    }
+  },true);
+  const list=byId("leaderboardList");
+  if(list){new MutationObserver(()=>scheduleV79(40)).observe(list,{childList:true,subtree:true});}
+  injectStylesV79();
+  relabelTeamTitlesV79();
+})();
+
+// --- v80 mobile leaderboard team polish ---
+// Mobile-only refinement: make leaderboard metadata bolder, and make the player team list subtler,
+// flatter and more professional instead of chunky chips.
+(function leaderboardTeamMobilePolishV80(){
+  function byId(id){ return document.getElementById(id); }
+  function injectStylesV80(){
+    if (byId("leaderboardTeamMobilePolishStylesV80")) return;
+    const style = document.createElement("style");
+    style.id = "leaderboardTeamMobilePolishStylesV80";
+    style.textContent = `
+      /* Strengthen the important leaderboard info on all screens. */
+      #leaderboardList .leaderboard-row-v55 .leaderboard-rank,
+      #leaderboardList .leaderboard-row-v55 .leaderboard-name,
+      #leaderboardList .leaderboard-row-v55 .leaderboard-score{
+        font-weight:1000!important;
+      }
+      #leaderboardList .leaderboard-row-v55 .leaderboard-mode,
+      #leaderboardList .leaderboard-row-v55 .leaderboard-meta-v55{
+        font-weight:950!important;
+        color:#64748b!important;
+      }
+      #leaderboardList .leaderboard-row-v55 .leaderboard-name{
+        color:#0f172a!important;
+      }
+      #leaderboardList .leaderboard-row-v55 .leaderboard-score{
+        color:#166534!important;
+      }
+
+      /* Keep desktop compact, but make player chips a little less visually heavy. */
+      #leaderboardList .leaderboard-player-chip-v78{
+        font-weight:780!important;
+      }
+      #leaderboardList .leaderboard-player-chip-v78 span:nth-child(2){
+        color:#334155!important;
+      }
+
+      /* Mobile: turn the team into a slim text-style line rather than big pill badges. */
+      @media(max-width:720px){
+        #leaderboardList .leaderboard-row.leaderboard-row-v55.leaderboard-row-has-team-v78{
+          grid-template-columns:42px minmax(0,1fr) auto!important;
+          gap:4px 10px!important;
+          padding:13px 14px!important;
+          border-radius:18px!important;
+          align-items:start!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-rank{
+          grid-column:1!important;
+          grid-row:1!important;
+          font-size:1rem!important;
+          line-height:1.05!important;
+          color:#1e3a8a!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-name{
+          grid-column:2!important;
+          grid-row:1!important;
+          font-size:1.04rem!important;
+          line-height:1.06!important;
+          letter-spacing:-.02em!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-score{
+          grid-column:3!important;
+          grid-row:1!important;
+          font-size:1.08rem!important;
+          line-height:1.05!important;
+          text-align:right!important;
+          min-width:42px!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-mode{
+          grid-column:2 / span 2!important;
+          grid-row:2!important;
+          margin-top:4px!important;
+          font-size:.84rem!important;
+          line-height:1.08!important;
+          color:#64748b!important;
+          text-align:left!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-meta-v55{
+          grid-column:2 / span 2!important;
+          grid-row:3!important;
+          margin-top:0!important;
+          font-size:.82rem!important;
+          line-height:1.08!important;
+          color:#64748b!important;
+        }
+        #leaderboardList .leaderboard-team-v78{
+          grid-column:2 / span 2!important;
+          grid-row:4!important;
+          display:block!important;
+          margin-top:2px!important;
+          padding-top:0!important;
+          border-top:0!important;
+          line-height:1.28!important;
+        }
+        #leaderboardList .leaderboard-team-title-v78{
+          display:inline!important;
+          margin-right:4px!important;
+          color:#475569!important;
+          font-size:.74rem!important;
+          font-weight:1000!important;
+          letter-spacing:.01em!important;
+          text-transform:none!important;
+        }
+        #leaderboardList .leaderboard-team-chips-v78{
+          display:inline!important;
+        }
+        #leaderboardList .leaderboard-player-chip-v78{
+          display:inline!important;
+          width:auto!important;
+          max-width:none!important;
+          padding:0!important;
+          margin:0!important;
+          border:0!important;
+          border-radius:0!important;
+          background:transparent!important;
+          box-shadow:none!important;
+          color:#64748b!important;
+          font-size:.72rem!important;
+          font-weight:680!important;
+          line-height:1.28!important;
+          white-space:normal!important;
+        }
+        #leaderboardList .leaderboard-player-chip-v78:not(:last-child)::after{
+          content:", ";
+          color:#94a3b8;
+          font-weight:650;
+        }
+        #leaderboardList .leaderboard-player-pos-v78{
+          color:#2563eb!important;
+          font-size:.71rem!important;
+          font-weight:850!important;
+          margin-right:2px!important;
+        }
+        #leaderboardList .leaderboard-player-rating-v78{
+          color:#64748b!important;
+          font-size:.71rem!important;
+          font-weight:760!important;
+          margin-left:2px!important;
+        }
+        #leaderboardList .leaderboard-team-unavailable-v78{
+          color:#64748b!important;
+          font-size:.72rem!important;
+          font-weight:700!important;
+          line-height:1.2!important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function relabelV80(){
+    document.querySelectorAll("#leaderboardList .leaderboard-team-title-v78").forEach(el => {
+      if (el.textContent.trim().toLowerCase() !== "team:") el.textContent = "Team:";
+    });
+  }
+  function runV80(){ injectStylesV80(); relabelV80(); }
+  function scheduleV80(delay=80){ setTimeout(runV80, delay); }
+
+  document.addEventListener("DOMContentLoaded", () => scheduleV80(80));
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub]")) {
+      scheduleV80(250);
+      scheduleV80(700);
+    }
+  }, true);
+
+  const list = byId("leaderboardList");
+  if (list) new MutationObserver(() => scheduleV80(40)).observe(list, { childList:true, subtree:true });
+  runV80();
+})();
+
