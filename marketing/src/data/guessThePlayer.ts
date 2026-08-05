@@ -1,4 +1,4 @@
-/******************************************************************************
+/****************************************************************************
  * guessThePlayer.ts
  * =============================================================================
  * Data for the reusable Guess The Player marketing video.
@@ -12,12 +12,12 @@ export interface PlayerClue {
 }
 
 export const guessThePlayer = {
-  title: "GUESS THE PLAYER",
+  title: "GUESS THE PLAYER #2",
   subtitle: "Can you work it out?",
 
   nationalityLabel: "NATIONALITY",
-  nationality: "NORWAY",
-  nationalityFlag: "flags/norway.png",
+  nationality: "BRAZIL",
+  nationalityFlag: "flags/brazil.png",
 
   promptTitle: "HOW LONG DID IT TAKE YOU?",
   promptSubtitle: "COMMENT BELOW",
@@ -27,24 +27,29 @@ export const guessThePlayer = {
   buttonText: "PLAY FREE NOW",
 
   introFrames: 150,
-  framesPerClue: 60, // 2 seconds at 30fps
+  framesPerClue: 60,
   nationalityFrames: 90,
   promptFrames: 120,
   outroFrames: 120,
 
   career: [
-    {year: 2015, team: "Real Madrid", rating: 67, crest: "crest/real-madrid.png"},
-    {year: 2016, team: "Real Madrid", rating: 69, crest: "crest/real-madrid.png"},
-    {year: 2017, team: "Real Madrid", rating: 70, crest: "crest/real-madrid.png"},
-    {year: 2018, team: "SC Heerenveen", rating: 74, crest: "crest/sc-heerenveen.png"},
-    {year: 2019, team: "Vitesse", rating: 77, crest: "crest/vitesse.png"},
-    {year: 2020, team: "Real Sociedad", rating: 82, crest: "crest/real-sociedad.png"},
-    {year: 2021, team: "Arsenal", rating: 83, crest: "crest/arsenal.png"},
-    {year: 2022, team: "Arsenal", rating: 83, crest: "crest/arsenal.png"},
-    {year: 2023, team: "Arsenal", rating: 86, crest: "crest/arsenal.png"},
-    {year: 2024, team: "Arsenal", rating: 88, crest: "crest/arsenal.png"},
-    {year: 2025, team: "Arsenal", rating: 87, crest: "crest/arsenal.png"},
-    {year: 2026, team: "Arsenal", rating: 86, crest: "crest/arsenal.png"},
+    {year: 2010, team: "Santos", rating: 73, crest: "crest/santos.png"},
+    {year: 2011, team: "Santos", rating: 78, crest: "crest/santos.png"},
+    {year: 2012, team: "Santos", rating: 85, crest: "crest/santos.png"},
+    {year: 2013, team: "Santos", rating: 83, crest: "crest/santos.png"},
+    {year: 2014, team: "Barcelona", rating: 85, crest: "crest/barcelona.png"},
+    {year: 2015, team: "Barcelona", rating: 86, crest: "crest/barcelona.png"},
+    {year: 2016, team: "Barcelona", rating: 90, crest: "crest/barcelona.png"},
+    {year: 2017, team: "Barcelona", rating: 92, crest: "crest/barcelona.png"},
+    {year: 2018, team: "PSG", rating: 92, crest: "crest/psg.png"},
+    {year: 2019, team: "PSG", rating: 92, crest: "crest/psg.png"},
+    {year: 2020, team: "PSG", rating: 92, crest: "crest/psg.png"},
+    {year: 2021, team: "PSG", rating: 91, crest: "crest/psg.png"},
+    {year: 2022, team: "PSG", rating: 90, crest: "crest/psg.png"},
+    {year: 2023, team: "PSG", rating: 89, crest: "crest/psg.png"},
+    {year: 2024, team: "Al Hilal", rating: 88, crest: "crest/al-hilal.png"},
+    {year: 2025, team: "Al Hilal", rating: 84, crest: "crest/al-hilal.png"},
+    {year: 2026, team: "Santos", rating: 83, crest: "crest/santos.png"},
   ] as PlayerClue[],
 };
 
