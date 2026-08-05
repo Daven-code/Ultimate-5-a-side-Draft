@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>5-a-side Draft Game</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=leaderboard-team-v80-20260801" />
 </head>
 <body>
   <div class="background-glow glow-one"></div>
@@ -12,7 +12,7 @@
 
   <header class="app-header">
     <div style="display:flex;align-items:center;gap:16px;">
-      <img src="Ultimate 5-a-side LOGO.png" alt="Ultimate 5-a-side" style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(37,99,235,.35));">
+      <img src="Ultimate 5-a-side LOGO.png" alt="Ultimate 5-a-side" class="site-logo">
       <div>
       <h1>Ultimate 5-a-side Draft Game</h1>
       <p class="header-subtitle">Build your ultimate five-a-side team.</p>
@@ -20,7 +20,7 @@
     </div>
     <div class="header-actions">
       <button id="leaderboardBtn" class="btn btn-primary" type="button">🏆 Leaderboard</button>
-      <button id="resetBtn" class="btn btn-secondary" style="display: none;">Reset game</button>
+      <button id="resetBtn" class="btn btn-secondary" style="display: none;">Home</button>
     </div>
   </header>
 
@@ -147,6 +147,7 @@
       <div class="leaderboard-tabs" aria-label="Leaderboard filters">
   <button type="button" class="leaderboard-tab active" data-leaderboard-filter="all">All Time</button>
   <button type="button" class="leaderboard-tab" data-leaderboard-filter="solo">Solo Mode</button>
+  <button type="button" class="leaderboard-tab league-legends-leaderboard-tab" data-leaderboard-filter="League Legends Challenge">League Legends</button>
   <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Ultimate Draft">Online Ultimate Draft</button>
   <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Blind Bidding">Online Blind Bidding</button>
   <button type="button" class="leaderboard-tab" data-leaderboard-filter="Online Live Auction">Online Live Auction</button>
@@ -207,6 +208,6 @@
     <p>Player names, club names, ratings and related data are used for informational, descriptive and gameplay purposes only. No official logos, crests, player images, likenesses or other official branding are used. All trademarks, trade names, player-related rights, ratings, data and other intellectual property rights remain the property of their respective owners.</p>
   </footer>
 
-  <script src="app.js?v=game-stats-v1"></script>
+  <script src="app.js?v=leaderboard-team-v80-20260801"></script>
 </body>
 </html>

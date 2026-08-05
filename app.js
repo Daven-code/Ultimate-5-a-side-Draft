@@ -1,12 +1,9 @@
-// Ultimate 5-a-side Draft
-// app.js v46
-// Fixes:
-// - Online/local split front screen
-// - Online room/lobby flow
-// - Online Pick Player issue
-// - Firebase state safety issue: Cannot read properties of undefined reading 'map'
-// - Safe team arrays, safe declinedNames, safe acceptedPlayerNames
+// ============================================================
+// Ultimate 5-a-side main application
+// Clean rebuild: duplicate legacy function patches removed, grouped sections added, behaviour retained.
+// ============================================================
 
+// ----- Game constants and Firebase configuration -----
 const DECLINES_ALLOWED = 3;
 const AUCTION_BUDGET = 100;
 const BID_SKIPS_ALLOWED = 3;
@@ -23,6 +20,8 @@ const FIREBASE_CONFIG = {
   measurementId: "G-22516PSZD7"
 };
 
+
+// ----- Shared runtime state -----
 let players = [];
 let playersPromise = null;
 let selectedGameMode = "draft";
@@ -41,6 +40,8 @@ const online = {
   subscribed: false
 };
 
+
+// ----- Emergency fallback players if players.json cannot be loaded -----
 const samplePlayers = [
   {
     Player: "Lionel Messi",
@@ -107,6 +108,8 @@ const samplePlayers = [
   }
 ];
 
+
+// ----- DOM helpers and fixed page element lookups -----
 const $ = id => document.getElementById(id);
 
 const els = {
@@ -147,6 +150,7 @@ const els = {
   loadStatus: $("loadStatus")
 };
 
+// Wraps event handlers so errors show as on-page messages rather than breaking the app.
 function safe(fn) {
   return async (...args) => {
     try {
@@ -158,12 +162,14 @@ function safe(fn) {
   };
 }
 
+// Updates the main status/message area.
 function setMessage(text) {
   if (els.message) {
     els.message.textContent = text || "";
   }
 }
 
+// Escapes text before inserting it into HTML templates.
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, ch => ({
     "&": "&amp;",
@@ -174,6 +180,7 @@ function escapeHtml(value) {
   }[ch]));
 }
 
+// Creates Firebase-safe keys from player/user names.
 function safeKey(value) {
   return String(value || "")
     .trim()
@@ -181,6 +188,7 @@ function safeKey(value) {
     .replace(/[.#$\/[\]]/g, "_");
 }
 
+// Converts detailed positions into GK/DEF/MID/FWD buckets.
 function normalisePosition(pos, rawPosition = "") {
   const p = String(pos || rawPosition || "").toUpperCase();
 
@@ -197,6 +205,7 @@ function normalisePosition(pos, rawPosition = "") {
   return "FWD";
 }
 
+// Converts raw JSON rows into the compact player shape used by the game.
 function normalisePlayers(data) {
   const rows = Array.isArray(data) ? data : [];
 
@@ -217,6 +226,7 @@ function normalisePlayers(data) {
   }).filter(p => p.player && p.rating > 0 && TEAM_SHAPE.includes(p.mainPosition));
 }
 
+// Loads the main player pool and falls back to sample data if needed.
 async function loadPlayers() {
   if (playersPromise) return playersPromise;
 
@@ -254,11 +264,13 @@ async function loadPlayers() {
   return playersPromise;
 }
 
+// Ensures a player pool is available before starting actions.
 async function ensurePlayersReady() {
   await loadPlayers();
   return Array.isArray(players) && players.length > 0;
 }
 
+// Adds dynamic styles used by online/local entry screens.
 function injectStyles() {
   if ($("onlineLocalStyles")) return;
 
@@ -473,6 +485,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
+// Shows or hides a panel using the hidden class.
 function show(el, visible) {
   if (!el) return;
   el.classList.toggle("hidden", !visible);
@@ -482,6 +495,7 @@ function hideEntryPanel() {
   show($("gameEntryPanel"), false);
 }
 
+// Builds the home entry screen for online, local and challenge modes.
 function injectEntryPanel() {
   injectStyles();
 
@@ -501,7 +515,7 @@ function injectEntryPanel() {
 
     <div class="game-entry-grid">
       <article class="entry-card online-card">
-        <h3>Online game</h3>
+        <h3>Online Game</h3>
         <p>Create a room and share the link, or join using a room code.</p>
 
         <div class="online-room-box">
@@ -531,7 +545,6 @@ function injectEntryPanel() {
     </div>
 
 
-
     <div class="popular-challenges-v2">
       <h3>🔥 Popular Challenges</h3>
       <div class="challenge-grid-v2">
@@ -552,16 +565,11 @@ function injectEntryPanel() {
 
         <div class="challenge-card-v2 coming-soon">
           <span class="challenge-badge coming">COMING SOON</span>
-          <h4>🌍 Monthly Challenges</h4>
+          <h4>📅 Monthly Challenges</h4>
           <p>July 2026: World Cup 2026</p>
           <small>Future archive: August, September, October...</small>
         </div>
 
-        <div class="challenge-card-v2 coming-soon">
-          <span class="challenge-badge coming">COMING SOON</span>
-          <h4>⏪ Nostalgia Challenge</h4>
-          <p>Legendary players from 1994–2004.</p>
-        </div>
 
       </div>
     </div>
@@ -652,6 +660,7 @@ function loadScriptOnce(src) {
   });
 }
 
+// Loads Firebase scripts and initialises the realtime database.
 async function ensureFirebase() {
   if (!firebaseConfigured()) {
     throw new Error("Firebase is not configured.");
@@ -672,7 +681,6 @@ async function ensureFirebase() {
 function randomRoomId() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
-
 
 
 function validateUsername(name) {
@@ -696,6 +704,7 @@ async function submitLeaderboardScore(username, score, gameMode) {
   });
 }
 
+// Creates a hosted online room in Firebase.
 async function createOnlineRoom() {
   const name = $("onlineRoomName")?.value.trim();
 
@@ -734,6 +743,7 @@ async function createOnlineRoom() {
   showLobby("host", [name], invite);
 }
 
+// Joins an existing online room and registers the participant.
 async function joinOnlineRoom(code) {
   const name = $("onlineRoomName")?.value.trim();
 
@@ -762,6 +772,7 @@ async function joinOnlineRoom(code) {
   showLobby("player", [name], "");
 }
 
+// Listens for room changes and applies remote state.
 function subscribeToRoom() {
   if (!online.ref || online.subscribed) return;
 
@@ -806,6 +817,7 @@ function ensureLobby() {
   return lobby;
 }
 
+// Renders the online waiting room for host or player.
 function showLobby(mode, participants = [], invite = "") {
   injectStyles();
   hideEntryPanel();
@@ -906,74 +918,8 @@ function participantNamesFromObject(obj) {
   return unique;
 }
 
-async function startOnlineGameFromLobby() {
-  if (!online.enabled || !online.isHost || !online.ref) return;
 
-  await ensurePlayersReady();
-
-  const snapshot = await online.ref.child("participants").once("value");
-  const names = participantNamesFromObject(snapshot.val());
-
-  const minUsers = selectedGameMode === "bid" ? 2 : 1;
-
-  if (names.length < minUsers) {
-    throw new Error(selectedGameMode === "bid"
-      ? "Bid mode needs at least 2 players."
-      : "At least 1 player is needed.");
-  }
-
-  startNewGame(selectedGameMode, names.slice(0, 4), true);
-
-  await saveOnlineState("Online game started.");
-}
-
-function serialiseState() {
-  if (!state) return null;
-
-  return {
-    ...state,
-    acceptedPlayerNames: state.acceptedPlayerNames instanceof Set
-      ? [...state.acceptedPlayerNames]
-      : [],
-    users: Array.isArray(state.users)
-      ? state.users.map(user => ({
-          ...user,
-          team: Array.isArray(user.team) ? user.team : [],
-          declinedNames: user.declinedNames instanceof Set
-            ? [...user.declinedNames]
-            : []
-        }))
-      : []
-  };
-}
-
-function restoreState(raw) {
-  if (!raw) return null;
-
-  const users = Array.isArray(raw.users)
-    ? raw.users.map((user, index) => ({
-        name: user?.name || `User ${index + 1}`,
-        team: Array.isArray(user?.team) ? user.team : [],
-        declines: Number(user?.declines || 0),
-        declinedNames: new Set(Array.isArray(user?.declinedNames) ? user.declinedNames : []),
-        budget: Number(user?.budget ?? AUCTION_BUDGET),
-        spent: Number(user?.spent || 0),
-        bidSkips: Number(user?.bidSkips || 0)
-      }))
-    : [];
-
-  const safeIndex = users.length
-    ? Math.min(Math.max(Number(raw.currentUserIndex || 0), 0), users.length - 1)
-    : 0;
-
-  return {
-    ...raw,
-    users,
-    currentUserIndex: safeIndex,
-    acceptedPlayerNames: new Set(Array.isArray(raw.acceptedPlayerNames) ? raw.acceptedPlayerNames : [])
-  };
-}
-
+// Writes the current game state to Firebase.
 async function saveOnlineState(messageOverride = null) {
   if (!online.enabled || !online.ref || applyingRemote) return;
 
@@ -986,42 +932,8 @@ async function saveOnlineState(messageOverride = null) {
   });
 }
 
-function applyRemoteData(data) {
-  applyingRemote = true;
 
-  state = restoreState(data.state);
-  currentCandidate = data.currentCandidate || null;
-  ratingsRevealed = !!data.ratingsRevealed;
-
-  hideEntryPanel();
-
-  show(ensureLobby(), false);
-  show(els.setupPanel, false);
-  show(els.gamePanel, true);
-  show(els.resultsPanel, ratingsRevealed);
-
-  updateGameControls();
-  render();
-
-  if (currentCandidate) {
-    renderCandidate(currentCandidate);
-  } else {
-    clearCandidate(data.message || "Waiting for the next action...");
-  }
-
-  renderTeams();
-
-  if (ratingsRevealed) {
-    renderResults();
-  }
-
-  setMessage(data.message || "");
-
-  applyingRemote = false;
-
-  applyOnlinePermissions();
-}
-
+// Refreshes local setup controls when the game type changes.
 function updateSetupForMode() {
   if (!els.userCount || !els.userNameFields) return;
 
@@ -1074,6 +986,7 @@ function getLocalUserNames() {
   });
 }
 
+// Starts a local game after players are loaded.
 async function startGame() {
   await ensurePlayersReady();
 
@@ -1082,6 +995,7 @@ async function startGame() {
   startNewGame(selectedGameMode, getLocalUserNames(), false);
 }
 
+// Creates a fresh game state for draft or bidding modes.
 function startNewGame(gameMode, names, isOnlineGame) {
   ratingsRevealed = false;
   currentCandidate = null;
@@ -1138,32 +1052,6 @@ function startNewGame(gameMode, names, isOnlineGame) {
   render();
 }
 
-function resetGame() {
-  state = null;
-  currentCandidate = null;
-  ratingsRevealed = false;
-
-  show(ensureLobby(), false);
-  show(els.gamePanel, false);
-  show(els.resultsPanel, false);
-
-  setMessage("");
-
-  if (online.enabled) {
-    hideEntryPanel();
-    show(els.setupPanel, false);
-    saveOnlineState("Game reset.");
-
-    showLobby(
-      online.isHost ? "host" : "player",
-      online.myName ? [online.myName] : [],
-      `${location.origin}${location.pathname}?room=${online.roomId}`
-    );
-  } else {
-    show(els.setupPanel, false);
-    show($("gameEntryPanel"), true);
-  }
-}
 
 function shuffleArray(array) {
   const a = [...array];
@@ -1180,195 +1068,6 @@ function currentUser() {
   return state?.users?.[state.currentUserIndex];
 }
 
-function getNeededPositions(user) {
-  if (!user) return [];
-
-  if (!Array.isArray(user.team)) {
-    user.team = [];
-  }
-
-  const counts = {
-    GK: 0,
-    DEF: 0,
-    MID: 0,
-    FWD: 0
-  };
-
-  user.team.filter(Boolean).forEach(player => {
-    const pos = player.mainPosition || player.Main_Position || player.position || player.Position;
-    const normalised = normalisePosition(pos);
-
-    if (counts[normalised] !== undefined) {
-      counts[normalised] += 1;
-    }
-  });
-
-  const needed = [];
-
-  TEAM_SHAPE.forEach(pos => {
-    if (counts[pos] > 0) {
-      counts[pos] -= 1;
-    } else {
-      needed.push(pos);
-    }
-  });
-
-  return needed;
-}
-
-function isGameComplete() {
-  return !!state && Array.isArray(state.users) && state.users.every(user => {
-    return getNeededPositions(user).length === 0;
-  });
-}
-
-function currentPlayerCanAct() {
-  if (!online.enabled) return true;
-
-  const user = currentUser();
-
-  return online.isHost || (user && safeKey(user.name) === safeKey(online.myName));
-}
-
-async function pickRandomPlayer() {
-  await ensurePlayersReady();
-
-  if (!state || state.gameMode !== "draft") return;
-
-  if (isGameComplete()) {
-    completeGame();
-    return;
-  }
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  if (currentCandidate) {
-    setMessage("Please accept or decline the current player before picking another.");
-    return;
-  }
-
-  const user = currentUser();
-
-  if (!user) {
-    setMessage("No current user found.");
-    return;
-  }
-
-  const needs = getNeededPositions(user);
-
-  if (!needs.length) {
-    moveToNextUser();
-    await pickRandomPlayer();
-    return;
-  }
-
-  const pool = players.filter(p => {
-    if (!needs.includes(p.mainPosition)) return false;
-    if (state.acceptedPlayerNames.has(p.player)) return false;
-    if (state.excludeDeclines && user.declinedNames.has(p.player)) return false;
-    return true;
-  });
-
-  if (!pool.length) {
-    clearCandidate(`No available player found for ${user.name}. They need: ${needs.join(", ")}.`);
-    await saveOnlineState();
-    return;
-  }
-
-  currentCandidate = pool[Math.floor(Math.random() * pool.length)];
-
-  renderCandidate(currentCandidate);
-
-  setMessage(`${user.name} needs: ${needs.join(", ")}`);
-
-  render();
-
-  await saveOnlineState();
-
-  applyOnlinePermissions();
-}
-
-async function acceptPlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-
-  if (!user) return;
-
-  if (!Array.isArray(user.team)) {
-    user.team = [];
-  }
-
-  user.team.push(currentCandidate);
-  state.acceptedPlayerNames.add(currentCandidate.player);
-
-  state.history.push({
-    user: user.name,
-    decision: "ACCEPT",
-    player: currentCandidate
-  });
-
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-  } else {
-    moveToNextUser();
-    clearCandidate("Click Pick player to continue.");
-  }
-
-  render();
-
-  await saveOnlineState();
-}
-
-async function declinePlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-
-  if (!user) return;
-
-  if (user.declines >= DECLINES_ALLOWED) {
-    setMessage(`${user.name} has no declines left and must accept this player.`);
-    return;
-  }
-
-  user.declines += 1;
-
-  if (!(user.declinedNames instanceof Set)) {
-    user.declinedNames = new Set();
-  }
-
-  user.declinedNames.add(currentCandidate.player);
-
-  state.history.push({
-    user: user.name,
-    decision: "DECLINE",
-    player: currentCandidate
-  });
-
-  currentCandidate = null;
-
-  clearCandidate("Click Pick player to try another player.");
-
-  render();
-
-  await saveOnlineState();
-}
 
 function moveToNextUser() {
   if (!state || !Array.isArray(state.users)) return;
@@ -1383,21 +1082,6 @@ function moveToNextUser() {
   }
 }
 
-function completeGame() {
-  currentCandidate = null;
-
-  clearCandidate("Game complete. Reveal ratings to see the winner.");
-
-  if (els.revealBtn) {
-    els.revealBtn.classList.remove("hidden");
-  }
-
-  if (els.pickBtn) els.pickBtn.disabled = true;
-  if (els.acceptBtn) els.acceptBtn.disabled = true;
-  if (els.declineBtn) els.declineBtn.disabled = true;
-
-  saveOnlineState("Game complete. Reveal ratings to see the winner.");
-}
 
 function updateGameControls() {
   if (!state) return;
@@ -1414,66 +1098,6 @@ function updateGameControls() {
   show(els.budgetPill, isBid);
 }
 
-function applyOnlinePermissions() {
-  if (!online.enabled || !state) return;
-
-  const user = currentUser();
-  const canAct = currentPlayerCanAct();
-
-  let note = $("turnLockNote");
-
-  if (!note && els.message) {
-    note = document.createElement("div");
-    note.id = "turnLockNote";
-    note.className = "turn-lock-note";
-    els.message.insertAdjacentElement("afterend", note);
-  }
-
-  if (note) {
-    note.textContent = canAct
-      ? online.isHost && user && safeKey(user.name) !== safeKey(online.myName)
-        ? `Host control enabled. Current player is ${user.name}.`
-        : `It is your turn, ${online.myName}.`
-      : `Waiting for ${user?.name || "the current player"}. You joined as ${online.myName}.`;
-  }
-
-  if (state.gameMode === "draft") {
-    if (els.pickBtn) {
-      els.pickBtn.disabled = !canAct || !!currentCandidate || isGameComplete();
-    }
-
-    if (els.acceptBtn) {
-      els.acceptBtn.disabled = !canAct || !currentCandidate;
-    }
-
-    if (els.declineBtn) {
-      els.declineBtn.disabled = !canAct || !currentCandidate || currentUser().declines >= DECLINES_ALLOWED;
-    }
-  }
-}
-
-function render() {
-  if (!state) return;
-
-  updateGameControls();
-
-  const user = currentUser();
-
-  if (els.currentUserLabel) {
-    els.currentUserLabel.textContent = user?.name || "";
-  }
-
-  if (state.gameMode === "draft" && els.declinesLeft) {
-    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
-  }
-
-  if (state.gameMode === "bid" && els.currentBudgetLeft) {
-    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
-  }
-
-  renderTeams();
-  applyOnlinePermissions();
-}
 
 function clearCandidate(text) {
   if (!els.candidateCard) return;
@@ -1513,27 +1137,6 @@ function renderCandidate(p) {
   `;
 }
 
-function buildSlots(user) {
-  if (!user || !Array.isArray(user.team)) {
-    return [
-      { label: "GK", player: null },
-      { label: "DEF", player: null },
-      { label: "MID", player: null },
-      { label: "MID", player: null },
-      { label: "FWD", player: null }
-    ];
-  }
-
-  const mids = user.team.filter(p => p.mainPosition === "MID");
-
-  return [
-    { label: "GK", player: user.team.find(p => p.mainPosition === "GK") },
-    { label: "DEF", player: user.team.find(p => p.mainPosition === "DEF") },
-    { label: "MID", player: mids[0] },
-    { label: "MID", player: mids[1] },
-    { label: "FWD", player: user.team.find(p => p.mainPosition === "FWD") }
-  ];
-}
 
 function shortenName(name, max = 22) {
   if (!name || name.length <= max) return name || "";
@@ -1607,192 +1210,15 @@ function renderPitch(slots) {
   `;
 }
 
-function renderTeams() {
-  if (!els.teamsContainer || !state || !Array.isArray(state.users)) return;
-
-  els.teamsContainer.innerHTML = state.users.map(user => {
-    if (!Array.isArray(user.team)) {
-      user.team = [];
-    }
-
-    const total = user.team.reduce((sum, p) => sum + Number(p.rating || 0), 0);
-    const needs = getNeededPositions(user);
-
-    return `
-      <article class="team-card">
-        <div class="team-top-row">
-          <div>
-            <h3>${escapeHtml(user.name)}</h3>
-            <div class="team-meta">${needs.length ? `Needs ${needs.join(", ")}` : "Complete"}</div>
-          </div>
-          <div class="score">${ratingsRevealed ? total : "Hidden"}</div>
-        </div>
-
-        ${renderPitch(buildSlots(user))}
-
-        ${state.gameMode === "draft"
-          ? `<div class="score">Declines used: ${user.declines}/${DECLINES_ALLOWED}</div>`
-          : ""}
-      </article>
-    `;
-  }).join("");
-}
-
-function getFinalScores() {
-  if (!state || !Array.isArray(state.users)) return [];
-
-  return state.users
-    .map(user => ({
-      user,
-      total: Array.isArray(user.team)
-        ? user.team.reduce((sum, p) => sum + Number(p.rating || 0), 0)
-        : 0
-    }))
-    .sort((a, b) => b.total - a.total);
-}
-
-function renderResults() {
-  if (!els.resultsContainer || !state) return;
-
-  const scored = getFinalScores();
-  const top = scored[0]?.total ?? 0;
-
-  els.resultsContainer.innerHTML = scored.map(row => `
-    <article class="result-card ${row.total === top ? "winner" : ""}">
-      <h3>${escapeHtml(row.user.name)}${row.total === top ? " 🏆" : ""}</h3>
-      <p class="score">${row.total}</p>
-      <p class="muted">
-        ${Array.isArray(row.user.team)
-          ? row.user.team.map(p => `${escapeHtml(p.player)} ${p.rating}`).join(" • ")
-          : ""}
-      </p>
-    </article>
-  `).join("");
-}
-
-async function revealScores() {
-  ratingsRevealed = true;
-
-  show(els.resultsPanel, true);
-
-  if (els.revealBtn) {
-    els.revealBtn.classList.add("hidden");
-  }
-
-  render();
-  renderResults();
-
-  await saveOnlineState("Scores revealed.");
-}
 
 // Basic host-assisted bid mode retained.
-async function bidRandomPlayer() {
-  await ensurePlayersReady();
 
-  if (!state || state.gameMode !== "bid") return;
-
-  const user = currentUser();
-
-  if (!user) return;
-
-  const needs = getNeededPositions(user);
-
-  const pool = players.filter(p => {
-    return needs.includes(p.mainPosition) && !state.acceptedPlayerNames.has(p.player);
-  });
-
-  if (!pool.length) {
-    setMessage(`No available player for ${user.name}.`);
-    return;
-  }
-
-  currentCandidate = pool[Math.floor(Math.random() * pool.length)];
-
-  renderCandidate(currentCandidate);
-  renderBidInputs();
-
-  await saveOnlineState();
-}
-
-function renderBidInputs() {
-  if (!els.bidInputs || !state || !currentCandidate) return;
-
-  els.bidInputs.innerHTML = state.users.map((u, i) => `
-    <div class="bid-row">
-      <label for="bidUser${i}">
-        ${escapeHtml(u.name)}
-        <span class="bid-help">Budget left: £${u.budget}m</span>
-      </label>
-      <input id="bidUser${i}" type="number" min="0" max="${u.budget}" step="1" value="0" />
-    </div>
-  `).join("");
-}
 
 function getBid(index) {
   const input = $(`bidUser${index}`);
   return Number(input?.value || 0);
 }
 
-async function awardHighestBid() {
-  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
-
-  let best = null;
-
-  state.users.forEach((u, i) => {
-    const bid = getBid(i);
-
-    if (bid > 0 && bid <= u.budget && (!best || bid > best.bid)) {
-      best = { user: u, index: i, bid };
-    }
-  });
-
-  if (!best) {
-    setMessage("Enter at least one valid bid above £0m.");
-    return;
-  }
-
-  if (!Array.isArray(best.user.team)) {
-    best.user.team = [];
-  }
-
-  best.user.team.push({
-    ...currentCandidate,
-    price: best.bid
-  });
-
-  best.user.budget -= best.bid;
-  best.user.spent += best.bid;
-
-  state.acceptedPlayerNames.add(currentCandidate.player);
-
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-  } else {
-    rotateBidNominator();
-  }
-
-  clearCandidate("Click Randomise player to continue.");
-
-  render();
-
-  await saveOnlineState();
-}
-
-async function skipBidPlayer() {
-  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
-
-  currentCandidate = null;
-
-  rotateBidNominator();
-
-  clearCandidate("Player skipped. Click Randomise player to continue.");
-
-  render();
-
-  await saveOnlineState();
-}
 
 function rotateBidNominator() {
   if (!state?.bidOrder?.length) return;
@@ -1809,28 +1235,6 @@ function rotateBidNominator() {
   }
 }
 
-function createSummaryCanvas() {
-  const canvas = document.createElement("canvas");
-  canvas.width = 1200;
-  canvas.height = 700;
-
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "#0f172a";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#fff";
-  ctx.font = "900 42px Arial";
-  ctx.fillText("5-a-side Results", 50, 70);
-
-  ctx.font = "700 28px Arial";
-
-  getFinalScores().forEach((row, i) => {
-    ctx.fillText(`${i + 1}. ${row.user.name} - ${row.total}`, 60, 140 + i * 50);
-  });
-
-  return canvas;
-}
 
 async function saveSummaryImage() {
   if (!state || !ratingsRevealed) {
@@ -1870,6 +1274,7 @@ async function shareSummaryImage() {
   }
 }
 
+// Attaches core button and setup event listeners.
 function wireEvents() {
   els.startBtn?.addEventListener("click", safe(startGame));
   els.resetBtn?.addEventListener("click", resetGame);
@@ -1897,9 +1302,11 @@ function wireEvents() {
 }
 
 
-
+// ----- Compatibility patches and recent targeted fixes -----
 // --- v29 targeted local draft fix and safe state overrides ---
 // These override earlier functions while preserving the existing visual layout and app structure.
+
+// ----- Final active helper implementations retained from later patches -----
 function v29Array(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -1953,6 +1360,7 @@ function v29SafeState() {
   state.bidRoundIndex = Number(state.bidRoundIndex || 0);
 }
 
+// Converts in-memory Sets into arrays for Firebase storage.
 function serialiseState() {
   if (!state) return null;
   v29SafeState();
@@ -1969,6 +1377,7 @@ function serialiseState() {
   };
 }
 
+// Rebuilds saved Firebase state back into safe runtime objects.
 function restoreState(raw) {
   if (!raw) return null;
   const users = v29Array(raw.users).map((user, index) => v29SafeUser(user, index));
@@ -2016,6 +1425,7 @@ function setDraftActionButtons() {
   if (els.declineBtn) els.declineBtn.disabled = !canAct || !currentCandidate || (user?.declines || 0) >= DECLINES_ALLOWED;
 }
 
+// Draws a random eligible draft player for the current user.
 async function pickRandomPlayer() {
   await ensurePlayersReady();
   if (!state || state.gameMode !== "draft") return;
@@ -2072,83 +1482,6 @@ async function pickRandomPlayer() {
   await saveOnlineState();
 }
 
-async function acceptPlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  v29SafeState();
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-  if (!user) return;
-
-  const picked = v29NormalisePlayer(currentCandidate);
-  if (!picked) return;
-
-  user.team.push(picked);
-  state.acceptedPlayerNames.add(picked.player);
-  state.history.push({ user: user.name, decision: "ACCEPT", player: picked });
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-  } else {
-    moveToNextUser();
-    clearCandidate("Click Pick player to continue.");
-  }
-
-  render();
-  setDraftActionButtons();
-  await saveOnlineState();
-}
-
-async function declinePlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  v29SafeState();
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-  if (!user) return;
-
-  if (user.declines >= DECLINES_ALLOWED) {
-    setMessage(`${user.name} has no declines left and must accept this player.`);
-    setDraftActionButtons();
-    return;
-  }
-
-  user.declines += 1;
-  user.declinedNames.add(currentCandidate.player);
-  state.history.push({ user: user.name, decision: "DECLINE", player: currentCandidate });
-  currentCandidate = null;
-
-  clearCandidate("Click Pick player to try another player.");
-  render();
-  setDraftActionButtons();
-  await saveOnlineState();
-}
-
-function render() {
-  if (!state) return;
-  v29SafeState();
-  updateGameControls();
-  const user = currentUser();
-  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
-  if (state.gameMode === "draft" && els.declinesLeft) {
-    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
-  }
-  if (state.gameMode === "bid" && els.currentBudgetLeft) {
-    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
-  }
-  renderTeams();
-  setDraftActionButtons();
-  applyOnlinePermissions();
-}
 
 function buildSlots(user) {
   const safeUser = v29SafeUser(user || {}, 0);
@@ -2162,31 +1495,6 @@ function buildSlots(user) {
   ];
 }
 
-function renderTeams() {
-  if (!els.teamsContainer || !state || !Array.isArray(state.users)) return;
-  v29SafeState();
-  els.teamsContainer.innerHTML = state.users.map((user, index) => {
-    const safeUser = v29SafeUser(user, index);
-    state.users[index] = safeUser;
-    const total = safeUser.team.reduce((sum, p) => sum + Number(p.rating || 0), 0);
-    const needs = getNeededPositions(safeUser);
-    return `
-      <article class="team-card">
-        <div class="team-top-row">
-          <div>
-            <h3>${escapeHtml(safeUser.name)}</h3>
-            <div class="team-meta">${needs.length ? `Needs ${needs.join(", ")}` : "Complete"}</div>
-          </div>
-          <div class="score">${ratingsRevealed ? total : "Hidden"}</div>
-        </div>
-        ${renderPitch(buildSlots(safeUser))}
-        ${state.gameMode === "draft"
-          ? `<div class="score">Declines used: ${safeUser.declines}/${DECLINES_ALLOWED}</div>`
-          : ""}
-      </article>
-    `;
-  }).join("");
-}
 
 function getFinalScores() {
   if (!state || !Array.isArray(state.users)) return [];
@@ -2203,76 +1511,8 @@ function getFinalScores() {
 }
 
 
-
 // --- v30 smoother local draft flow overrides ---
 // After Accept or Decline, immediately randomise the next eligible player so the game flows smoothly.
-async function acceptPlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  v29SafeState();
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-  if (!user) return;
-
-  const picked = v29NormalisePlayer(currentCandidate);
-  if (!picked) return;
-
-  user.team.push(picked);
-  state.acceptedPlayerNames.add(picked.player);
-  state.history.push({ user: user.name, decision: "ACCEPT", player: picked });
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-    render();
-    await saveOnlineState();
-    return;
-  }
-
-  moveToNextUser();
-  render();
-  setDraftActionButtons();
-  await saveOnlineState();
-
-  // Smooth flow: automatically pick the next player for the next user's turn.
-  await pickRandomPlayer();
-}
-
-async function declinePlayer() {
-  if (!state || !currentCandidate || state.gameMode !== "draft") return;
-  v29SafeState();
-
-  if (online.enabled && !currentPlayerCanAct()) {
-    applyOnlinePermissions();
-    return;
-  }
-
-  const user = currentUser();
-  if (!user) return;
-
-  if (user.declines >= DECLINES_ALLOWED) {
-    setMessage(`${user.name} has no declines left and must accept this player.`);
-    setDraftActionButtons();
-    return;
-  }
-
-  user.declines += 1;
-  user.declinedNames.add(currentCandidate.player);
-  state.history.push({ user: user.name, decision: "DECLINE", player: currentCandidate });
-  currentCandidate = null;
-
-  render();
-  setDraftActionButtons();
-  await saveOnlineState();
-
-  // Smooth flow: automatically pick another player for the same user's turn.
-  await pickRandomPlayer();
-}
-
 
 
 // --- v32 explicit local + online draft flow overrides ---
@@ -2319,6 +1559,7 @@ function onlineDrawCandidateForCurrentTurnV32(messagePrefix = null) {
   return true;
 }
 
+// Accepts the current player into the active team.
 async function acceptPlayer() {
   if (!state || !currentCandidate || state.gameMode !== "draft") return;
   v29SafeState();
@@ -2360,6 +1601,7 @@ async function acceptPlayer() {
   }
 }
 
+// Declines the current player and tracks decline limits.
 async function declinePlayer() {
   if (!state || !currentCandidate || state.gameMode !== "draft") return;
   v29SafeState();
@@ -2397,8 +1639,9 @@ async function declinePlayer() {
 }
 
 
-
 // --- v33 finished-results page and improved share/save image overrides ---
+
+// ----- Finished results page rendering and share image styling -----
 function injectFinishedStylesV33() {
   if ($("finishedResultsStylesV33")) return;
   const style = document.createElement("style");
@@ -2541,33 +1784,8 @@ function playerRoleForFinishedV33(player) {
   return player?.mainPosition || player?.position || "";
 }
 
-function showFinishedResultsPageV33() {
-  if (!state) return;
-  injectFinishedStylesV33();
-  ratingsRevealed = true;
-  currentCandidate = null;
-  removeTurnLockNoteV33();
-  setMessage("");
 
-  show($("gameEntryPanel"), false);
-  show(ensureLobby(), false);
-  show(els.setupPanel, false);
-  show(els.gamePanel, false);
-  show(els.resultsPanel, true);
-
-  if (els.resultsPanel) els.resultsPanel.classList.add("finished-results-page");
-  if (els.revealBtn) els.revealBtn.classList.add("hidden");
-  if (els.pickBtn) els.pickBtn.disabled = true;
-  if (els.acceptBtn) els.acceptBtn.disabled = true;
-  if (els.declineBtn) els.declineBtn.disabled = true;
-  if (els.bidPickBtn) els.bidPickBtn.disabled = true;
-  if (els.awardBidBtn) els.awardBidBtn.disabled = true;
-  if (els.skipBidBtn) els.skipBidBtn.disabled = true;
-
-  renderResults();
-  setTimeout(() => els.resultsPanel?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-}
-
+// Renders final scorecards once ratings are revealed.
 function renderResults() {
   if (!els.resultsContainer || !state) return;
   const scored = getFinalScores();
@@ -2627,6 +1845,7 @@ function renderResults() {
   }).join("");
 }
 
+// Reveals ratings and final results.
 async function revealScores() {
   ratingsRevealed = true;
   currentCandidate = null;
@@ -2634,32 +1853,6 @@ async function revealScores() {
   await saveOnlineState("Scores revealed.");
 }
 
-function applyRemoteData(data) {
-  applyingRemote = true;
-  state = restoreState(data.state);
-  currentCandidate = data.currentCandidate || null;
-  ratingsRevealed = !!data.ratingsRevealed;
-
-  if (ratingsRevealed) {
-    applyingRemote = false;
-    showFinishedResultsPageV33();
-    return;
-  }
-
-  hideEntryPanel();
-  show(ensureLobby(), false);
-  show(els.setupPanel, false);
-  show(els.gamePanel, true);
-  show(els.resultsPanel, false);
-  updateGameControls();
-  render();
-  if (currentCandidate) renderCandidate(currentCandidate);
-  else clearCandidate(data.message || "Waiting for the next action...");
-  renderTeams();
-  setMessage(data.message || "");
-  applyingRemote = false;
-  applyOnlinePermissions();
-}
 
 function fitTextV33(ctx, text, x, y, maxWidth, font, color = "#0f172a") {
   ctx.font = font;
@@ -2682,6 +1875,7 @@ function roundRectV33(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// Builds the share/save image canvas.
 function createSummaryCanvas() {
   const scored = getFinalScores();
   const teamCount = Math.max(scored.length, 1);
@@ -2788,7 +1982,6 @@ function createSummaryCanvas() {
 }
 
 
-
 // --- v34 online turn ownership override ---
 // Host can still create/start the room, but cannot accept/decline/pick on behalf of another user.
 // Only the player whose name matches the current turn can control that turn.
@@ -2825,7 +2018,6 @@ function applyOnlinePermissions() {
     if (els.declineBtn) els.declineBtn.disabled = !canAct || !currentCandidate || (currentUser()?.declines || 0) >= DECLINES_ALLOWED;
   }
 }
-
 
 
 // --- v35 full reset-to-front-page override ---
@@ -2902,9 +2094,10 @@ function resetGame() {
 }
 
 
-
 // --- v36 improved 4-player results layout override ---
 // Keeps the v35 behaviour but makes the finished results page use a roomier 2-column layout on desktop.
+
+// ----- Results layout refinements -----
 function injectResultsLayoutStylesV36() {
   if ($("finishedResultsLayoutStylesV36")) return;
   const style = document.createElement("style");
@@ -2988,7 +2181,6 @@ function showFinishedResultsPageV33() {
 }
 
 
-
 // --- v37 allow any online user to reveal final results ---
 // Once all teams are complete, every joined online user sees and can click Reveal ratings.
 function syncRevealButtonV37() {
@@ -3003,52 +2195,8 @@ function syncRevealButtonV37() {
   els.revealBtn.disabled = !complete;
 }
 
-function render() {
-  if (!state) return;
-  v29SafeState();
-  updateGameControls();
-  const user = currentUser();
-  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
-  if (state.gameMode === "draft" && els.declinesLeft) {
-    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
-  }
-  if (state.gameMode === "bid" && els.currentBudgetLeft) {
-    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
-  }
-  renderTeams();
-  setDraftActionButtons();
-  applyOnlinePermissions();
-  syncRevealButtonV37();
-}
 
-function applyRemoteData(data) {
-  applyingRemote = true;
-  state = restoreState(data.state);
-  currentCandidate = data.currentCandidate || null;
-  ratingsRevealed = !!data.ratingsRevealed;
-
-  if (ratingsRevealed) {
-    applyingRemote = false;
-    showFinishedResultsPageV33();
-    return;
-  }
-
-  hideEntryPanel();
-  show(ensureLobby(), false);
-  show(els.setupPanel, false);
-  show(els.gamePanel, true);
-  show(els.resultsPanel, false);
-  updateGameControls();
-  render();
-  if (currentCandidate) renderCandidate(currentCandidate);
-  else clearCandidate(data.message || (isGameComplete() ? "Game complete. Reveal ratings to see the winner." : "Waiting for the next action..."));
-  renderTeams();
-  setMessage(data.message || "");
-  applyingRemote = false;
-  applyOnlinePermissions();
-  syncRevealButtonV37();
-}
-
+// Locks drafting and enables the reveal button.
 function completeGame() {
   currentCandidate = null;
   clearCandidate("Game complete. Reveal ratings to see the winner.");
@@ -3060,9 +2208,10 @@ function completeGame() {
 }
 
 
-
 // --- v38 online blind bidding mode override ---
 // Online bid mode only: all eligible users submit bids in parallel, then bids are revealed together.
+
+// ----- Online blind bidding helpers -----
 function userNeedsPositionV38(user, position) {
   return getNeededPositions(user).includes(position);
 }
@@ -3131,234 +2280,8 @@ async function drawOnlineBlindBidCandidateV38() {
   await saveOnlineState(`Blind bidding open for ${currentCandidate.player}.`);
 }
 
-function renderOnlineBidControlsV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid") return;
-  initialiseBlindBidStateV38();
 
-  show(els.draftControls, false);
-  show(els.bidControls, true);
-  show(els.declinesPill, false);
-  show(els.budgetPill, false);
-
-  if (els.bidPickBtn) els.bidPickBtn.classList.add("hidden");
-  if (els.awardBidBtn) els.awardBidBtn.classList.add("hidden");
-  if (els.skipBidBtn) els.skipBidBtn.classList.add("hidden");
-
-  const me = currentOnlineUserV38();
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(online.myName);
-  const myBid = state.blindBids?.[myKey];
-  const submittedCount = eligible.filter(user => state.blindBids?.[safeKey(user.name)]?.submitted).length;
-  const totalCount = eligible.length;
-  const outcome = state.bidOutcome;
-
-  if (els.bidOrderDisplay) {
-    els.bidOrderDisplay.innerHTML = `
-      <div class="bid-status-summary">
-        <strong>Blind bidding</strong>
-        <span>${submittedCount}/${totalCount} eligible bids submitted</span>
-      </div>
-    `;
-  }
-
-  if (!els.bidInputs) return;
-
-  if (!currentCandidate && isGameComplete()) {
-    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
-    syncRevealButtonV37?.();
-    return;
-  }
-
-  if (!currentCandidate && !outcome) {
-    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
-    return;
-  }
-
-  const statusRows = state.users.map(user => {
-    const key = safeKey(user.name);
-    const isEligible = eligibleKeys.has(key);
-    const submitted = !!state.blindBids?.[key]?.submitted;
-    const budget = Number(user.budget || 0);
-    return `
-      <div class="bid-row">
-        <label>
-          ${escapeHtml(user.name)}
-          <span class="bid-help">Budget left: £${budget}m</span>
-        </label>
-        <div class="bid-submit-status ${submitted ? "submitted" : "waiting"}">
-          ${isEligible ? (submitted ? "Bid submitted ✅" : "Waiting for bid") : "Not eligible for this position"}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (outcome) {
-    const bidRevealRows = outcome.bids.map(row => `
-      <div class="bid-row">
-        <label>${escapeHtml(row.name)}</label>
-        <div class="bid-submit-status submitted">£${Number(row.bid || 0)}m</div>
-      </div>
-    `).join("");
-
-    els.bidInputs.innerHTML = `
-      <div class="bid-order-card">
-        <p class="eyebrow">Bids revealed</p>
-        <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
-        <p class="message">
-          ${outcome.winnerName
-            ? `${escapeHtml(outcome.winnerName)} wins ${escapeHtml(outcome.player?.player || "the player")} for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
-            : `No valid bids above £0m. ${escapeHtml(outcome.player?.player || "The player")} was skipped.`}
-        </p>
-        ${bidRevealRows}
-        <p class="muted">Next player loading...</p>
-      </div>
-    `;
-    return;
-  }
-
-  const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
-  const myBudget = Number(me?.budget || 0);
-
-  const submitBox = canSubmit ? `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <h3>${escapeHtml(currentCandidate.player)}</h3>
-      <p class="muted">Enter your bid privately. Other users will only see that you have submitted.</p>
-      <div class="bid-row">
-        <label for="onlineBlindBidInput">
-          Your bid
-          <span class="bid-help">Budget left: £${myBudget}m</span>
-        </label>
-        <input id="onlineBlindBidInput" type="number" min="0" max="${myBudget}" step="1" value="0" />
-      </div>
-      <button id="submitBlindBidBtn" class="btn btn-primary" type="button">Submit blind bid</button>
-    </div>
-  ` : `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <p class="muted">
-        ${myBid?.submitted
-          ? "Your bid has been submitted. Waiting for everyone else."
-          : eligibleKeys.has(myKey)
-            ? "Bidding is locked while results are being calculated."
-            : "You are not eligible for this player because your team does not need this position, or you have no budget left."}
-      </p>
-    </div>
-  `;
-
-  els.bidInputs.innerHTML = submitBox + `<div class="bid-order-card"><p class="eyebrow">Submission status</p>${statusRows}</div>`;
-
-  $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
-}
-
-async function submitOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  const me = currentOnlineUserV38();
-  if (!me) throw new Error("You are not listed in this online game.");
-
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(me.name);
-
-  if (!eligibleKeys.has(myKey)) throw new Error("You are not eligible to bid for this player.");
-  if (state.blindBids?.[myKey]?.submitted) return;
-
-  const input = $("onlineBlindBidInput");
-  const rawBid = Number(input?.value || 0);
-  const bid = Math.max(0, Math.floor(rawBid));
-
-  if (!Number.isFinite(bid)) throw new Error("Enter a valid bid.");
-  if (bid > Number(me.budget || 0)) throw new Error(`Your bid cannot exceed your remaining budget of £${me.budget}m.`);
-
-  state.blindBids[myKey] = {
-    name: me.name,
-    bid,
-    submitted: true,
-    submittedAt: Date.now()
-  };
-
-  const allSubmitted = eligible.every(user => state.blindBids?.[safeKey(user.name)]?.submitted);
-
-  if (allSubmitted) {
-    await resolveOnlineBlindBidV38();
-  } else {
-    renderOnlineBidControlsV38();
-    await saveOnlineState(`${me.name} submitted a blind bid.`);
-  }
-}
-
-async function resolveOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  state.bidSubmittingLocked = true;
-  const candidate = v29NormalisePlayer(currentCandidate);
-  const eligible = eligibleBidUsersV38(candidate);
-  const bids = eligible.map(user => {
-    const entry = state.blindBids?.[safeKey(user.name)] || { name: user.name, bid: 0, submitted: false };
-    return {
-      name: user.name,
-      bid: Math.max(0, Math.floor(Number(entry.bid || 0))),
-      budget: Number(user.budget || 0)
-    };
-  });
-
-  let validBids = bids.filter(row => row.bid > 0 && row.bid <= row.budget);
-  validBids.sort((a, b) => b.bid - a.bid || a.name.localeCompare(b.name));
-
-  let winnerName = null;
-  let winningBid = 0;
-  let tie = false;
-
-  if (validBids.length) {
-    const highest = validBids[0].bid;
-    const tied = validBids.filter(row => row.bid === highest);
-    tie = tied.length > 1;
-    const winnerRow = tied[Math.floor(Math.random() * tied.length)];
-    winnerName = winnerRow.name;
-    winningBid = winnerRow.bid;
-
-    const winner = state.users.find(user => safeKey(user.name) === safeKey(winnerName));
-    if (winner && candidate) {
-      winner.team.push({ ...candidate, price: winningBid });
-      winner.budget = Math.max(0, Number(winner.budget || 0) - winningBid);
-      winner.spent = Number(winner.spent || 0) + winningBid;
-      state.acceptedPlayerNames.add(candidate.player);
-    }
-  }
-
-  state.bidOutcome = {
-    player: candidate,
-    bids,
-    winnerName,
-    winningBid,
-    tie,
-    resolvedAt: Date.now()
-  };
-
-  currentCandidate = null;
-  renderOnlineBidControlsV38();
-  renderTeams();
-  await saveOnlineState(winnerName ? `${winnerName} won ${candidate.player} for £${winningBid}m.` : `${candidate.player} was skipped.`);
-
-  if (isGameComplete()) {
-    setTimeout(async () => {
-      completeGame();
-      render();
-      await saveOnlineState("Bidding complete. Reveal ratings to see the winner.");
-    }, 3500);
-  } else {
-    setTimeout(async () => {
-      await drawOnlineBlindBidCandidateV38();
-    }, 3500);
-  }
-}
-
+// Starts an online game from the lobby participant list.
 async function startOnlineGameFromLobby() {
   if (!online.enabled || !online.isHost || !online.ref) return;
 
@@ -3387,48 +2310,8 @@ async function startOnlineGameFromLobby() {
   }
 }
 
-async function bidRandomPlayer() {
-  if (online.enabled && state?.gameMode === "bid") {
-    await drawOnlineBlindBidCandidateV38();
-    return;
-  }
-  await ensurePlayersReady();
-  if (!state || state.gameMode !== "bid") return;
-  const user = currentUser();
-  if (!user) return;
-  const needs = getNeededPositions(user);
-  const pool = players.filter(p => {
-    return needs.includes(p.mainPosition) && !state.acceptedPlayerNames.has(p.player);
-  });
-  if (!pool.length) {
-    setMessage(`No available player for ${user.name}.`);
-    return;
-  }
-  currentCandidate = pool[Math.floor(Math.random() * pool.length)];
-  renderCandidate(currentCandidate);
-  renderBidInputs();
-  await saveOnlineState();
-}
 
-function render() {
-  if (!state) return;
-  v29SafeState();
-  updateGameControls();
-  const user = currentUser();
-  if (els.currentUserLabel) els.currentUserLabel.textContent = user?.name || "";
-  if (state.gameMode === "draft" && els.declinesLeft) {
-    els.declinesLeft.textContent = DECLINES_ALLOWED - (user?.declines || 0);
-  }
-  if (state.gameMode === "bid" && els.currentBudgetLeft) {
-    els.currentBudgetLeft.textContent = `£${user?.budget || 0}m`;
-  }
-  renderTeams();
-  if (online.enabled && state.gameMode === "bid") renderOnlineBidControlsV38();
-  else setDraftActionButtons();
-  applyOnlinePermissions();
-  syncRevealButtonV37();
-}
-
+// Applies Firebase data to the local UI.
 function applyRemoteData(data) {
   applyingRemote = true;
   state = restoreState(data.state);
@@ -3459,9 +2342,10 @@ function applyRemoteData(data) {
 }
 
 
-
 // --- v39 preserve unsubmitted blind bid input during remote updates ---
 // Fixes: When another online user submits, Firebase refresh re-renders the controls. Any typed-but-unsubmitted bid now persists locally.
+
+// ----- Local draft persistence for blind-bid entries -----
 function blindBidDraftKeyV39() {
   const playerKey = currentCandidate?.player ? safeKey(currentCandidate.player) : "no_player";
   const roomKey = online.roomId || "local_room";
@@ -3493,205 +2377,10 @@ function clearBlindBidDraftV39() {
   }
 }
 
-function renderOnlineBidControlsV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid") return;
-  initialiseBlindBidStateV38();
-
-  show(els.draftControls, false);
-  show(els.bidControls, true);
-  show(els.declinesPill, false);
-  show(els.budgetPill, false);
-
-  if (els.bidPickBtn) els.bidPickBtn.classList.add("hidden");
-  if (els.awardBidBtn) els.awardBidBtn.classList.add("hidden");
-  if (els.skipBidBtn) els.skipBidBtn.classList.add("hidden");
-
-  const me = currentOnlineUserV38();
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(online.myName);
-  const myBid = state.blindBids?.[myKey];
-  const submittedCount = eligible.filter(user => state.blindBids?.[safeKey(user.name)]?.submitted).length;
-  const totalCount = eligible.length;
-  const outcome = state.bidOutcome;
-
-  if (els.bidOrderDisplay) {
-    els.bidOrderDisplay.innerHTML = `
-      <div class="bid-status-summary">
-        <strong>Blind bidding</strong>
-        <span>${submittedCount}/${totalCount} eligible bids submitted</span>
-      </div>
-    `;
-  }
-
-  if (!els.bidInputs) return;
-
-  if (!currentCandidate && isGameComplete()) {
-    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
-    syncRevealButtonV37?.();
-    return;
-  }
-
-  if (!currentCandidate && !outcome) {
-    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
-    return;
-  }
-
-  const statusRows = state.users.map(user => {
-    const key = safeKey(user.name);
-    const isEligible = eligibleKeys.has(key);
-    const submitted = !!state.blindBids?.[key]?.submitted;
-    const budget = Number(user.budget || 0);
-    return `
-      <div class="bid-row">
-        <label>
-          ${escapeHtml(user.name)}
-          <span class="bid-help">Budget left: £${budget}m</span>
-        </label>
-        <div class="bid-submit-status ${submitted ? "submitted" : "waiting"}">
-          ${isEligible ? (submitted ? "Bid submitted ✅" : "Waiting for bid") : "Not eligible for this position"}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (outcome) {
-    clearBlindBidDraftV39();
-    const bidRevealRows = outcome.bids.map(row => `
-      <div class="bid-row">
-        <label>${escapeHtml(row.name)}</label>
-        <div class="bid-submit-status submitted">£${Number(row.bid || 0)}m</div>
-      </div>
-    `).join("");
-
-    els.bidInputs.innerHTML = `
-      <div class="bid-order-card">
-        <p class="eyebrow">Bids revealed</p>
-        <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
-        <p class="message">
-          ${outcome.winnerName
-            ? `${escapeHtml(outcome.winnerName)} wins ${escapeHtml(outcome.player?.player || "the player")} for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
-            : `No valid bids above £0m. ${escapeHtml(outcome.player?.player || "The player")} was skipped.`}
-        </p>
-        ${bidRevealRows}
-        <p class="muted">Next player loading...</p>
-      </div>
-    `;
-    return;
-  }
-
-  const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
-  const myBudget = Number(me?.budget || 0);
-  const draftValue = getBlindBidDraftV39("0");
-
-  const submitBox = canSubmit ? `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <h3>${escapeHtml(currentCandidate.player)}</h3>
-      <p class="muted">Enter your bid privately. Other users will only see that you have submitted.</p>
-      <div class="bid-row">
-        <label for="onlineBlindBidInput">
-          Your bid
-          <span class="bid-help">Budget left: £${myBudget}m</span>
-        </label>
-        <input id="onlineBlindBidInput" type="number" min="0" max="${myBudget}" step="1" value="${escapeHtml(draftValue)}" />
-      </div>
-      <button id="submitBlindBidBtn" class="btn btn-primary" type="button">Submit blind bid</button>
-    </div>
-  ` : `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <p class="muted">
-        ${myBid?.submitted
-          ? "Your bid has been submitted. Waiting for everyone else."
-          : eligibleKeys.has(myKey)
-            ? "Bidding is locked while results are being calculated."
-            : "You are not eligible for this player because your team does not need this position, or you have no budget left."}
-      </p>
-    </div>
-  `;
-
-  els.bidInputs.innerHTML = submitBox + `<div class="bid-order-card"><p class="eyebrow">Submission status</p>${statusRows}</div>`;
-
-  const bidInput = $("onlineBlindBidInput");
-  if (bidInput) {
-    bidInput.addEventListener("input", event => setBlindBidDraftV39(event.target.value));
-    bidInput.addEventListener("change", event => setBlindBidDraftV39(event.target.value));
-  }
-
-  $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
-}
-
-async function submitOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  const me = currentOnlineUserV38();
-  if (!me) throw new Error("You are not listed in this online game.");
-
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(me.name);
-
-  if (!eligibleKeys.has(myKey)) throw new Error("You are not eligible to bid for this player.");
-  if (state.blindBids?.[myKey]?.submitted) return;
-
-  const input = $("onlineBlindBidInput");
-  const rawValue = input?.value ?? getBlindBidDraftV39("0");
-  const rawBid = Number(rawValue || 0);
-  const bid = Math.max(0, Math.floor(rawBid));
-
-  if (!Number.isFinite(bid)) throw new Error("Enter a valid bid.");
-  if (bid > Number(me.budget || 0)) throw new Error(`Your bid cannot exceed your remaining budget of £${me.budget}m.`);
-
-  state.blindBids[myKey] = {
-    name: me.name,
-    bid,
-    submitted: true,
-    submittedAt: Date.now()
-  };
-  clearBlindBidDraftV39();
-
-  const allSubmitted = eligible.every(user => state.blindBids?.[safeKey(user.name)]?.submitted);
-
-  if (allSubmitted) {
-    await resolveOnlineBlindBidV38();
-  } else {
-    renderOnlineBidControlsV38();
-    await saveOnlineState(`${me.name} submitted a blind bid.`);
-  }
-}
-
-
 
 // --- v42 local bid controls fix ---
 // Fixes local bid mode where Award highest bid and Skip player stayed disabled.
 // Online blind bidding from v39 is deliberately left unchanged.
-function setBidActionButtonsV42() {
-  if (!state || state.gameMode !== "bid") return;
-
-  // Online bid mode uses its own blind bidding controls, so don't interfere with it.
-  if (online.enabled) return;
-
-  const hasCandidate = !!currentCandidate;
-  const complete = isGameComplete();
-
-  if (els.bidPickBtn) {
-    els.bidPickBtn.classList.remove("hidden");
-    els.bidPickBtn.disabled = hasCandidate || complete;
-  }
-
-  if (els.awardBidBtn) {
-    els.awardBidBtn.classList.remove("hidden");
-    els.awardBidBtn.disabled = !hasCandidate || complete;
-  }
-
-  if (els.skipBidBtn) {
-    els.skipBidBtn.classList.remove("hidden");
-    els.skipBidBtn.disabled = !hasCandidate || complete;
-  }
-}
 
 function clearLocalBidInputsV42(message = "") {
   if (!online.enabled && state?.gameMode === "bid" && els.bidInputs) {
@@ -3699,28 +2388,8 @@ function clearLocalBidInputsV42(message = "") {
   }
 }
 
-function renderBidInputs() {
-  if (!els.bidInputs || !state || state.gameMode !== "bid") return;
 
-  if (!currentCandidate) {
-    clearLocalBidInputsV42("Randomise a player to enter bids.");
-    setBidActionButtonsV42();
-    return;
-  }
-
-  els.bidInputs.innerHTML = state.users.map((u, i) => `
-    <div class="bid-row">
-      <label for="bidUser${i}">
-        ${escapeHtml(u.name)}
-        <span class="bid-help">Budget left: £${u.budget}m</span>
-      </label>
-      <input id="bidUser${i}" type="number" min="0" max="${u.budget}" step="1" value="0" />
-    </div>
-  `).join("");
-
-  setBidActionButtonsV42();
-}
-
+// Draws a candidate for local blind bidding.
 async function bidRandomPlayer() {
   if (online.enabled && state?.gameMode === "bid") {
     await drawOnlineBlindBidCandidateV38();
@@ -3766,77 +2435,8 @@ async function bidRandomPlayer() {
   await saveOnlineState();
 }
 
-async function awardHighestBid() {
-  // Keep online mode completely separate.
-  if (online.enabled) return;
-  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
-  v29SafeState();
 
-  let best = null;
-
-  state.users.forEach((u, i) => {
-    const bid = getBid(i);
-    if (bid > 0 && bid <= u.budget && (!best || bid > best.bid)) {
-      best = { user: u, index: i, bid };
-    }
-  });
-
-  if (!best) {
-    setMessage("Enter at least one valid bid above £0m.");
-    setBidActionButtonsV42();
-    return;
-  }
-
-  const awardedPlayer = v29NormalisePlayer(currentCandidate);
-  if (!awardedPlayer) return;
-
-  best.user.team.push({
-    ...awardedPlayer,
-    price: best.bid
-  });
-
-  best.user.budget = Math.max(0, Number(best.user.budget || 0) - best.bid);
-  best.user.spent = Number(best.user.spent || 0) + best.bid;
-  state.acceptedPlayerNames.add(awardedPlayer.player);
-
-  const winnerName = best.user.name;
-  const playerName = awardedPlayer.player;
-  currentCandidate = null;
-
-  if (isGameComplete()) {
-    completeGame();
-    clearLocalBidInputsV42("Bidding complete. Reveal ratings to see the winner.");
-  } else {
-    rotateBidNominator();
-    clearCandidate("Click Randomise player to continue.");
-    clearLocalBidInputsV42("Randomise the next player to enter bids.");
-    setMessage(`${winnerName} won ${playerName} for £${best.bid}m.`);
-  }
-
-  render();
-  setBidActionButtonsV42();
-  await saveOnlineState();
-}
-
-async function skipBidPlayer() {
-  // Keep online mode completely separate.
-  if (online.enabled) return;
-  if (!state || state.gameMode !== "bid" || !currentCandidate) return;
-  v29SafeState();
-
-  const skippedName = currentCandidate.player;
-  currentCandidate = null;
-
-  rotateBidNominator();
-  clearCandidate("Player skipped. Click Randomise player to continue.");
-  clearLocalBidInputsV42("Randomise the next player to enter bids.");
-  setMessage(`${skippedName} was skipped.`);
-
-  render();
-  setBidActionButtonsV42();
-  await saveOnlineState();
-}
-
+// Refreshes the main game panels.
 function render() {
   if (!state) return;
   v29SafeState();
@@ -3866,7 +2466,6 @@ function render() {
   applyOnlinePermissions();
   syncRevealButtonV37();
 }
-
 
 
 // --- v43 restore local bid skip lives ---
@@ -3906,6 +2505,8 @@ function localIncrementSkipsV43(users) {
   });
 }
 
+
+// ----- Local bidding controls and skip logic -----
 function setBidActionButtonsV42() {
   if (!state || state.gameMode !== "bid") return;
   if (online.enabled) return;
@@ -3967,6 +2568,7 @@ function renderBidInputs() {
   setBidActionButtonsV42();
 }
 
+// Awards the candidate to the highest valid local bid.
 async function awardHighestBid() {
   // Keep online mode completely separate.
   if (online.enabled) return;
@@ -4052,6 +2654,7 @@ async function awardHighestBid() {
   await saveOnlineState();
 }
 
+// Skips the current local bid candidate.
 async function skipBidPlayer() {
   // Keep online mode completely separate.
   if (online.enabled) return;
@@ -4082,6 +2685,7 @@ async function skipBidPlayer() {
   await saveOnlineState();
 }
 
+// Renders all teams and pitch layouts.
 function renderTeams() {
   if (!els.teamsContainer || !state || !Array.isArray(state.users)) return;
   v29SafeState();
@@ -4109,10 +2713,11 @@ function renderTeams() {
 }
 
 
-
 // --- v44 online blind bid skip lives ---
 // Extends the v43 3-skip rule to ONLINE blind bidding.
 // If an eligible online user submits £0m, they lose one skip. If they have used all 3 skips, they must bid above £0m.
+
+// ----- Online bidding skip/reserve rules -----
 function onlineBidSkipsUsedV44(user) {
   return Math.max(0, Number(user?.bidSkips || 0));
 }
@@ -4124,262 +2729,6 @@ function onlineBidSkipsLeftV44(user) {
 function onlineIncrementSkipV44(user) {
   if (!user) return;
   user.bidSkips = Math.min(BID_SKIPS_ALLOWED, onlineBidSkipsUsedV44(user) + 1);
-}
-
-function renderOnlineBidControlsV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid") return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  show(els.draftControls, false);
-  show(els.bidControls, true);
-  show(els.declinesPill, false);
-  show(els.budgetPill, false);
-
-  if (els.bidPickBtn) els.bidPickBtn.classList.add("hidden");
-  if (els.awardBidBtn) els.awardBidBtn.classList.add("hidden");
-  if (els.skipBidBtn) els.skipBidBtn.classList.add("hidden");
-
-  const me = currentOnlineUserV38();
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(online.myName);
-  const myBid = state.blindBids?.[myKey];
-  const submittedCount = eligible.filter(user => state.blindBids?.[safeKey(user.name)]?.submitted).length;
-  const totalCount = eligible.length;
-  const outcome = state.bidOutcome;
-
-  if (els.bidOrderDisplay) {
-    els.bidOrderDisplay.innerHTML = `
-      <div class="bid-status-summary">
-        <strong>Blind bidding</strong>
-        <span>${submittedCount}/${totalCount} eligible bids submitted</span>
-      </div>
-    `;
-  }
-
-  if (!els.bidInputs) return;
-
-  if (!currentCandidate && isGameComplete()) {
-    els.bidInputs.innerHTML = `<p class="muted">Bidding complete. Reveal ratings to see the winner.</p>`;
-    syncRevealButtonV37?.();
-    return;
-  }
-
-  if (!currentCandidate && !outcome) {
-    els.bidInputs.innerHTML = `<p class="muted">Waiting for the next player...</p>`;
-    return;
-  }
-
-  const statusRows = state.users.map(user => {
-    const key = safeKey(user.name);
-    const isEligible = eligibleKeys.has(key);
-    const submitted = !!state.blindBids?.[key]?.submitted;
-    const budget = Number(user.budget || 0);
-    const skipsLeft = onlineBidSkipsLeftV44(user);
-    return `
-      <div class="bid-row">
-        <label>
-          ${escapeHtml(user.name)}
-          <span class="bid-help">Budget left: £${budget}m • Skips left: ${skipsLeft}/${BID_SKIPS_ALLOWED}</span>
-        </label>
-        <div class="bid-submit-status ${submitted ? "submitted" : "waiting"}">
-          ${isEligible ? (submitted ? "Bid submitted ✅" : (skipsLeft <= 0 ? "Must bid above £0m" : "Waiting for bid")) : "Not eligible for this position"}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (outcome) {
-    clearBlindBidDraftV39();
-    const bidRevealRows = outcome.bids.map(row => `
-      <div class="bid-row">
-        <label>${escapeHtml(row.name)}</label>
-        <div class="bid-submit-status submitted">£${Number(row.bid || 0)}m</div>
-      </div>
-    `).join("");
-
-    els.bidInputs.innerHTML = `
-      <div class="bid-order-card">
-        <p class="eyebrow">Bids revealed</p>
-        <h3>${escapeHtml(outcome.player?.player || "Player")}</h3>
-        <p class="message">
-          ${outcome.winnerName
-            ? `${escapeHtml(outcome.winnerName)} wins ${escapeHtml(outcome.player?.player || "the player")} for £${outcome.winningBid}m${outcome.tie ? " after a tied highest bid" : ""}.`
-            : `No valid bids above £0m. ${escapeHtml(outcome.player?.player || "The player")} was skipped.`}
-        </p>
-        ${bidRevealRows}
-        ${outcome.zeroBidNames?.length ? `<p class="muted">${escapeHtml(outcome.zeroBidNames.join(", "))} ${outcome.zeroBidNames.length === 1 ? "loses" : "lose"} one skip for bidding £0m.</p>` : ""}
-        <p class="muted">Next player loading...</p>
-      </div>
-    `;
-    return;
-  }
-
-  const canSubmit = !!me && eligibleKeys.has(myKey) && !myBid?.submitted && !state.bidSubmittingLocked;
-  const myBudget = Number(me?.budget || 0);
-  const mySkipsLeft = onlineBidSkipsLeftV44(me);
-  const draftValue = getBlindBidDraftV39("0");
-
-  const submitBox = canSubmit ? `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <h3>${escapeHtml(currentCandidate.player)}</h3>
-      <p class="muted">Enter your bid privately. Other users will only see that you have submitted.</p>
-      <div class="bid-row">
-        <label for="onlineBlindBidInput">
-          Your bid
-          <span class="bid-help">Budget left: £${myBudget}m • Skips left: ${mySkipsLeft}/${BID_SKIPS_ALLOWED}${mySkipsLeft <= 0 ? " • must bid above £0m" : ""}</span>
-        </label>
-        <input id="onlineBlindBidInput" type="number" min="0" max="${myBudget}" step="1" value="${escapeHtml(draftValue)}" />
-      </div>
-      <button id="submitBlindBidBtn" class="btn btn-primary" type="button">Submit blind bid</button>
-    </div>
-  ` : `
-    <div class="bid-order-card">
-      <p class="eyebrow">Your blind bid</p>
-      <p class="muted">
-        ${myBid?.submitted
-          ? "Your bid has been submitted. Waiting for everyone else."
-          : eligibleKeys.has(myKey)
-            ? "Bidding is locked while results are being calculated."
-            : "You are not eligible for this player because your team does not need this position, or you have no budget left."}
-      </p>
-    </div>
-  `;
-
-  els.bidInputs.innerHTML = submitBox + `<div class="bid-order-card"><p class="eyebrow">Submission status</p>${statusRows}</div>`;
-
-  const bidInput = $("onlineBlindBidInput");
-  if (bidInput) {
-    bidInput.addEventListener("input", event => setBlindBidDraftV39(event.target.value));
-    bidInput.addEventListener("change", event => setBlindBidDraftV39(event.target.value));
-  }
-
-  $("submitBlindBidBtn")?.addEventListener("click", safe(submitOnlineBlindBidV38));
-}
-
-async function submitOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  const me = currentOnlineUserV38();
-  if (!me) throw new Error("You are not listed in this online game.");
-
-  const eligible = eligibleBidUsersV38();
-  const eligibleKeys = new Set(eligible.map(user => safeKey(user.name)));
-  const myKey = safeKey(me.name);
-
-  if (!eligibleKeys.has(myKey)) throw new Error("You are not eligible to bid for this player.");
-  if (state.blindBids?.[myKey]?.submitted) return;
-
-  const input = $("onlineBlindBidInput");
-  const rawValue = input?.value ?? getBlindBidDraftV39("0");
-  const rawBid = Number(rawValue || 0);
-  const bid = Math.max(0, Math.floor(rawBid));
-
-  if (!Number.isFinite(bid)) throw new Error("Enter a valid bid.");
-  if (bid > Number(me.budget || 0)) throw new Error(`Your bid cannot exceed your remaining budget of £${me.budget}m.`);
-  if (bid <= 0 && onlineBidSkipsLeftV44(me) <= 0) throw new Error("You have used all 3 skips and must bid above £0m.");
-
-  state.blindBids[myKey] = {
-    name: me.name,
-    bid,
-    submitted: true,
-    submittedAt: Date.now()
-  };
-  clearBlindBidDraftV39();
-
-  const allSubmitted = eligible.every(user => state.blindBids?.[safeKey(user.name)]?.submitted);
-
-  if (allSubmitted) {
-    await resolveOnlineBlindBidV38();
-  } else {
-    renderOnlineBidControlsV38();
-    await saveOnlineState(`${me.name} submitted a blind bid.`);
-  }
-}
-
-async function resolveOnlineBlindBidV38() {
-  if (!online.enabled || !state || state.gameMode !== "bid" || !currentCandidate) return;
-  initialiseBlindBidStateV38();
-  v29SafeState();
-
-  state.bidSubmittingLocked = true;
-  const candidate = v29NormalisePlayer(currentCandidate);
-  const eligible = eligibleBidUsersV38(candidate);
-  const bids = eligible.map(user => {
-    const entry = state.blindBids?.[safeKey(user.name)] || { name: user.name, bid: 0, submitted: false };
-    return {
-      name: user.name,
-      bid: Math.max(0, Math.floor(Number(entry.bid || 0))),
-      budget: Number(user.budget || 0)
-    };
-  });
-
-  const zeroBidNames = [];
-  bids.forEach(row => {
-    if (row.bid <= 0) {
-      const user = state.users.find(u => safeKey(u.name) === safeKey(row.name));
-      if (user) {
-        onlineIncrementSkipV44(user);
-        zeroBidNames.push(user.name);
-      }
-    }
-  });
-
-  let validBids = bids.filter(row => row.bid > 0 && row.bid <= row.budget);
-  validBids.sort((a, b) => b.bid - a.bid || a.name.localeCompare(b.name));
-
-  let winnerName = null;
-  let winningBid = 0;
-  let tie = false;
-
-  if (validBids.length) {
-    const highest = validBids[0].bid;
-    const tied = validBids.filter(row => row.bid === highest);
-    tie = tied.length > 1;
-    const winnerRow = tied[Math.floor(Math.random() * tied.length)];
-    winnerName = winnerRow.name;
-    winningBid = winnerRow.bid;
-
-    const winner = state.users.find(user => safeKey(user.name) === safeKey(winnerName));
-    if (winner && candidate) {
-      winner.team.push({ ...candidate, price: winningBid });
-      winner.budget = Math.max(0, Number(winner.budget || 0) - winningBid);
-      winner.spent = Number(winner.spent || 0) + winningBid;
-      state.acceptedPlayerNames.add(candidate.player);
-    }
-  }
-
-  state.bidOutcome = {
-    player: candidate,
-    bids,
-    winnerName,
-    winningBid,
-    tie,
-    zeroBidNames,
-    resolvedAt: Date.now()
-  };
-
-  currentCandidate = null;
-  renderOnlineBidControlsV38();
-  renderTeams();
-  const zeroText = zeroBidNames.length ? ` ${zeroBidNames.join(", ")} ${zeroBidNames.length === 1 ? "loses" : "lose"} one skip.` : "";
-  await saveOnlineState(winnerName ? `${winnerName} won ${candidate.player} for £${winningBid}m.${zeroText}` : `${candidate.player} was skipped.${zeroText}`);
-
-  if (isGameComplete()) {
-    setTimeout(async () => {
-      completeGame();
-      render();
-      await saveOnlineState("Bidding complete. Reveal ratings to see the winner.");
-    }, 3500);
-  } else {
-    setTimeout(async () => {
-      await drawOnlineBlindBidCandidateV38();
-    }, 3500);
-  }
 }
 
 
@@ -4645,6 +2994,8 @@ async function resolveOnlineBlindBidV38() {
   }
 }
 
+
+// ----- Application startup wiring -----
 function init() {
   injectEntryPanel();
   wireEvents();
@@ -8063,6 +6414,9 @@ if (els.startBtn) {
 (function () {
   function leaderboardGameModeLabelStep19() {
     if (!state) return "Unknown";
+    if (state.challengePreset === "leaguelegends" || window.challengePreset === "leaguelegends") {
+      return "League Legends Challenge";
+    }
     if (!online.enabled &&
     state.gameMode === "draft" &&
     Number(state.userCount || 0) === 1) {
@@ -8253,6 +6607,10 @@ if (els.startBtn) {
           timestamp: Number(entry.timestamp || 0)
         }));
 
+      if (!filter || filter === "all") {
+        entries = entries.filter(entry => entry.gameMode !== "League Legends Challenge");
+      }
+
       if (filter && filter !== "all") {
 
         if (filter === "solo") {
@@ -8263,6 +6621,7 @@ if (els.startBtn) {
             entry.gameMode === "Easy Solo Challenge" ||
             entry.gameMode === "World Cup 2026 Challenge"
           );
+          entries = entries.filter(entry => entry.gameMode !== "League Legends Challenge");
 
         } else {
 
@@ -8360,7 +6719,8 @@ if (els.startBtn) {
   }
 
   function wireLeaderboardPageStep20() {
-    $("leaderboardBtn")?.addEventListener("click", safe(openLeaderboardStep20));
+    // v64: disabled older leaderboard opener to avoid a brief flash before the rebuilt leaderboard renders.
+    // The final leaderboard click handler below opens and renders the v55/v64 leaderboard directly.
     $("leaderboardBackBtn")?.addEventListener("click", closeLeaderboardStep20);
 
     document.querySelectorAll(".leaderboard-tab[data-leaderboard-filter]").forEach(tab => {
@@ -8442,7 +6802,6 @@ document.addEventListener('click', function(e){
     }
 
 });
-
 
 
 /* =====================================================================
@@ -9194,7 +7553,7 @@ document.addEventListener('click', function(e){
       const button = document.createElement("button");
       button.type = "button";
       button.className = "challenge-card-v2 monthly-challenges-entry active-monthly-challenge";
-      button.innerHTML = `<span class="challenge-badge">LIVE</span><h4>Monthly Challenges</h4><p>July 2026: World Cup 2026</p><span class="challenge-action">Play Now &rarr;</span>`;
+      button.innerHTML = `<span class="challenge-badge">LIVE</span><h4>📅 Monthly Challenges</h4><p>July 2026: World Cup 2026</p><span class="challenge-action">Play Now &rarr;</span>`;
       monthly.replaceWith(button);
       button.addEventListener("click", openMonthlyChallenges);
       panel.dataset.worldCupMonthlyPatched = "1";
@@ -9324,6 +7683,12 @@ document.addEventListener('click', function(e){
     if (!state) return "Unknown";
 
     if (!online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1) {
+      if (window.challengePreset === "leaguelegends" || state.challengePreset === "leaguelegends") {
+        return "League Legends Challenge";
+      }
+      if (window.challengePreset === "league" || state.challengePreset === "league") {
+        return "League Challenge";
+      }
       if (window.challengePreset === "worldcup2026" || state.challengePreset === "worldcup2026") {
         return "World Cup 2026 Challenge";
       }
@@ -9439,7 +7804,6 @@ document.addEventListener('click', function(e){
     };
   }
 })();
-
 
 
 // --- v53 safe solo labels + cleaner saved/share pitch image ---
@@ -9903,7 +8267,7 @@ document.addEventListener('click', function(e){
     card.type="button";
     card.className="challenge-card-v2 active-challenge league-challenge-card-v52";
     card.dataset.challenge=PRESET;
-    card.innerHTML=`<span class="challenge-badge">LIVE</span><h4>🏟️ League Challenge</h4><p>Filter the all-years player pool by Premier League, La Liga and other eligible leagues.</p><span class="challenge-action">Play Now →</span>`;
+    card.innerHTML=`<span class="challenge-badge challenge-badge-new">NEW</span><h4>🏟️ League Challenge</h4><p>Filter the all-years player pool by Premier League, La Liga and other eligible leagues.</p><span class="challenge-action">Play Now →</span>`;
     const cards=grid.querySelectorAll(".challenge-card-v2");
     if (cards[2]) grid.insertBefore(card,cards[2]); else grid.appendChild(card);
   }
@@ -10348,22 +8712,8 @@ document.addEventListener('click', function(e){
     loadLeaderboardWithMetadataV53(filter);
   }, true);
 
-  document.addEventListener("click", function(event){
-    if (!event.target?.closest?.("#leaderboardBtn")) return;
-    setTimeout(() => {
-      removeWorldCupMainTabV53();
-      ensureLeagueSubTabV53();
-      ensureMetadataStylesV53();
-      const activeMain = document.querySelector(".leaderboard-tab[data-leaderboard-filter].active");
-      const filter = activeMain?.dataset?.leaderboardFilter || "all";
-      if (filter === "solo") {
-        const activeSub = document.querySelector(".solo-sub-tab.active");
-        loadLeaderboardWithMetadataV53(activeSub?.dataset?.soloLeaderboardFilter || "solo");
-      } else {
-        loadLeaderboardWithMetadataV53(filter);
-      }
-    }, 120);
-  }, true);
+  // v64: older v53 leaderboard button refresh disabled.
+
 
   ensureMetadataStylesV53();
   ensureLeagueSubTabV53();
@@ -10429,8 +8779,8 @@ document.addEventListener('click', function(e){
     const gameMode = mode(entry);
 
     if (gameMode === "League Challenge") {
-      const labels = leagueLabels(entry);
-      return labels.length ? `Leagues: ${labels.join(", ")}` : "Leagues: selected leagues";
+      const labels = leagueLabels(entry).filter(label => !/^unknown league$/i.test(String(label || "").trim()));
+      return labels.length ? `Leagues: ${labels.join(", ")}` : "";
     }
 
     const years = yearRangeText(entry);
@@ -10610,27 +8960,1903 @@ document.addEventListener('click', function(e){
     }
   }, true);
 
-  window.addEventListener("click", function(event){
-    if (!event.target?.closest?.("#leaderboardBtn")) return;
+  // v64: older v54 leaderboard button refresh disabled. The v55/v64 handler below opens and renders once.
 
-    setTimeout(() => {
-      ensureStyles();
-      ensureLeagueSubTab();
-      removeWorldCupMainTab();
-
-      const activeMain = document.querySelector(".leaderboard-tab[data-leaderboard-filter].active");
-      const filter = activeMain?.dataset?.leaderboardFilter || "all";
-
-      if (filter === "solo") {
-        const activeSolo = document.querySelector(".solo-sub-tab.active");
-        loadLeaderboardWithMeta(activeSolo?.dataset?.soloLeaderboardFilter || "solo");
-      } else {
-        loadLeaderboardWithMeta(filter);
-      }
-    }, 150);
-  }, true);
 
   ensureStyles();
   ensureLeagueSubTab();
   removeWorldCupMainTab();
 })();
+
+// --- League Legends Challenge full implementation ---
+(function leagueLegendsChallengeFull(){
+  const PRESET = 'leaguelegends';
+  const MODE_LABEL = 'League Legends Challenge';
+  const DATA_FILE = 'league_players.json';
+  const LEAGUES = ['Premier League', 'La Liga', 'Serie A', 'Ligue 1', 'Bundesliga'];
+  const TEAM = ['GK', 'DEF', 'MID', 'MID', 'FWD'];
+  let legends = [];
+  let legendsPromise = null;
+  let selectedLeague = 'Premier League';
+
+  function esc(v){ return String(v ?? '').replace(/[&<>'\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c])); }
+  function roleLabel(role){ return role === 'FWD' ? 'ST' : role; }
+  function isActive(){ return window.challengePreset === PRESET || state?.challengePreset === PRESET; }
+  function normalMain(pos){
+    const p = String(pos || '').toUpperCase();
+    if (p.includes('GK')) return 'GK';
+    if (['CB','LB','RB','LWB','RWB','SW'].some(x => p.includes(x))) return 'DEF';
+    if (['DM','CDM','CM','AM','CAM','LM','RM'].some(x => p.includes(x))) return 'MID';
+    return 'FWD';
+  }
+  function normaliseLegendRows(rows){
+    return (Array.isArray(rows) ? rows : []).map((p, index) => {
+      const multipliers = p.Position_Multipliers || p.positionMultipliers || {};
+      const position = String(p.Position || p.position || '').trim();
+      const main = String(p.Main_Position || p.mainPosition || p.MainPosition || normalMain(position)).toUpperCase();
+      return {
+        id: `legend-${index + 1}`,
+        player: String(p.Player || p.player || '').trim(),
+        rank: Number(p.Rank || p.rank || 0),
+        baseRating: Number(p.Rating_OVR || p.rating || 0),
+        rating: Number(p.Rating_OVR || p.rating || 0),
+        position,
+        naturalPosition: position,
+        naturalMainPosition: main,
+        mainPosition: main,
+        club: String(p.Club || p.club || '').trim(),
+        nation: String(p.Nation || p.nation || '').trim(),
+        league: String(p.League || p.league || '').trim(),
+        multipliers: {
+          DEF: Number(multipliers.DEF ?? 0),
+          MID: Number(multipliers.MID ?? 0),
+          FWD: Number(multipliers.FWD ?? multipliers.ST ?? 0),
+          ST: Number(multipliers.ST ?? multipliers.FWD ?? 0)
+        }
+      };
+    }).filter(p => p.player && p.rating > 0 && LEAGUES.includes(p.league));
+  }
+  async function loadLegends(){
+    if (legendsPromise) return legendsPromise;
+    legendsPromise = (async () => {
+      const response = await fetch(DATA_FILE, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Could not load ${DATA_FILE}`);
+      legends = normaliseLegendRows(await response.json());
+      if (!legends.length) throw new Error(`${DATA_FILE} loaded but no valid players were found.`);
+      return legends;
+    })();
+    return legendsPromise;
+  }
+  function currentPool(){ return legends.filter(p => p.league === selectedLeague); }
+  function currentTeam(){ return Array.isArray(state?.users?.[0]?.team) ? state.users[0].team : []; }
+  function neededRoles(){
+    const counts = { GK:0, DEF:0, MID:0, FWD:0 };
+    currentTeam().forEach(p => { const r = p.selectedRole || p.mainPosition; if (counts[r] !== undefined) counts[r] += 1; });
+    const needed = [];
+    TEAM.forEach(role => { if (counts[role] > 0) counts[role] -= 1; else needed.push(role); });
+    return needed;
+  }
+  function finalScore(user){ return (Array.isArray(user?.team) ? user.team : []).reduce((sum, p) => sum + Number(p.adjustedRating ?? p.rating ?? 0), 0); }
+  function multiplierFor(player, role){
+    if (!player) return 0;
+    if (player.naturalMainPosition === 'GK') return role === 'GK' ? 1 : 0;
+    if (role === 'GK') return 0;
+    return Number(player.multipliers?.[role] ?? (role === 'FWD' ? player.multipliers?.ST : undefined) ?? 0.75);
+  }
+  function adjustedPlayer(player, role){
+    const base = Number(player.baseRating || player.rating || 0);
+    const multiplier = multiplierFor(player, role);
+    const adjusted = Math.round(base * multiplier);
+    return { ...player, selectedRole: role, mainPosition: role, rating: adjusted, adjustedRating: adjusted, baseRating: base, positionMultiplier: multiplier };
+  }
+  function availableCandidates(){
+    const selectedNames = new Set(currentTeam().map(p => p.player));
+    const needed = neededRoles();
+    const onlyGkLeft = needed.length === 1 && needed[0] === 'GK';
+    const gkAlreadyPicked = !needed.includes('GK');
+    return currentPool().filter(p => {
+      if (selectedNames.has(p.player)) return false;
+      if (onlyGkLeft) return p.naturalMainPosition === 'GK';
+      if (gkAlreadyPicked) return p.naturalMainPosition !== 'GK';
+      return true;
+    });
+  }
+
+  function removeOldSmallCard(){ document.querySelectorAll('.challenge-grid-v2 [data-challenge="leaguelegends"]').forEach(card => card.remove()); }
+  function addStandaloneSection(){
+    const entry = document.getElementById('gameEntryPanel');
+    if (!entry) return;
+    removeOldSmallCard();
+    let section = document.getElementById('leagueLegendsHome');
+    if (!section) {
+      section = document.createElement('section');
+      section.id = 'leagueLegendsHome';
+      section.className = 'league-legends-hero-card';
+      const popular = entry.querySelector('.popular-challenges-v2');
+      if (popular) entry.insertBefore(section, popular);
+      else {
+        const how = entry.querySelector('.landing-how-play-inline');
+        if (how) entry.insertBefore(section, how); else entry.appendChild(section);
+      }
+    }
+    section.className = 'league-legends-hero-card';
+    section.style.display = '';
+    section.innerHTML = `
+      <div class="league-legends-hero-copy">
+        <div class="league-legends-title-line"><span class="league-legends-new-badge">NEW</span><p class="eyebrow">Game mode</p></div>
+        <h3>League Legends</h3>
+        <p>Choose a league. Draft its legends. Pick their positions - but out-of-position picks affect the final rating.</p>
+      </div>
+      <div class="league-legends-hero-action">
+        <button type="button" class="btn btn-primary" data-challenge="leaguelegends">Play League Legends</button>
+      </div>`;
+  }
+  function addLeaderboardTab(){
+    const tabs = document.getElementById('soloLeaderboardSubTabs');
+    if (!tabs || tabs.querySelector(`[data-solo-leaderboard-filter="${MODE_LABEL}"]`)) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'leaderboard-tab solo-sub-tab';
+    btn.dataset.soloLeaderboardFilter = MODE_LABEL;
+    btn.textContent = 'League Legends';
+    tabs.appendChild(btn);
+  }
+  function hideNormalSetupBits(){
+    document.getElementById('soloSetupIntroStep7')?.remove();
+    const firstLabel = document.querySelector('.setup-panel-card > label:first-child');
+    if (firstLabel) firstLabel.style.display = 'none';
+    if (els.gameModeCards) els.gameModeCards.style.display = 'none';
+    els.userCount?.closest('div')?.classList.add('hidden');
+    els.userNameFields?.classList.add('hidden');
+    els.excludeDeclinesLabel?.classList.add('hidden');
+    const year = document.getElementById('localYearSlicerHolderStep4');
+    if (year) year.style.display = 'none';
+  }
+  function renderLeagueSelector(){
+    const panel = document.querySelector('.setup-panel-card');
+    if (!panel) return;
+    let holder = document.getElementById('leagueLegendsSelector');
+    if (!holder) {
+      holder = document.createElement('div');
+      holder.id = 'leagueLegendsSelector';
+      holder.className = 'league-legends-selector-card';
+      panel.insertBefore(holder, els.startBtn || panel.firstChild);
+    }
+    holder.innerHTML = `<h3>Choose your league</h3><div class="league-legends-league-grid">${LEAGUES.map(lg => `<button type="button" class="league-legends-league-btn ${lg === selectedLeague ? 'selected' : ''}" data-legend-league="${esc(lg)}"><span>${esc(lg)}</span></button>`).join('')}</div><div class="league-legends-rule-note"><strong>Rules:</strong> 3 declines only. GK is fixed. Outfield players can be placed DEF, MID or ST, with position multipliers applied at reveal.</div><div class="league-legends-rating-note"><strong>Ratings note:</strong> League Legends ratings are relative to the selected league and are different to the normal game mode ratings. They are based on prime ability, legacy and longevity.</div>`;
+    holder.querySelectorAll('[data-legend-league]').forEach(btn => btn.addEventListener('click', () => { selectedLeague = btn.dataset.legendLeague; renderLeagueSelector(); }));
+  }
+  async function openLeagueLegendsSetup(){
+    window.challengePreset = PRESET;
+    selectedGameMode = 'draft';
+    online.enabled = false;
+    await loadLegends();
+    hideEntryPanel();
+    show($('leaderboardPanel'), false);
+    show(els.resultsPanel, false);
+    show(els.gamePanel, false);
+    show(els.setupPanel, true);
+    if (els.resetBtn) els.resetBtn.style.display = '';
+    hideNormalSetupBits();
+    const eyebrow = document.querySelector('#setupPanel .setup-copy .eyebrow');
+    const title = document.querySelector('#setupPanel .setup-copy h2');
+    const lead = document.querySelector('#setupPanel .setup-copy .setup-lead');
+    if (eyebrow) eyebrow.textContent = MODE_LABEL;
+    if (title) title.textContent = 'Draft your legends';
+    if (lead) lead.textContent = "Choose a league, then draft from its legends. Choose their positions, but be careful - the ratings will be affected if they're out of position.";
+    if (els.gameModeDescription) els.gameModeDescription.textContent = 'Choose a league, then place each randomised legend into your five-a-side team.';
+    if (els.startBtn) els.startBtn.textContent = 'Start League Legends';
+    renderLeagueSelector();
+    setTimeout(() => els.setupPanel?.scrollIntoView({ behavior:'smooth', block:'start' }), 30);
+  }
+  async function startLeagueLegendsGame(){
+    await loadLegends();
+    ratingsRevealed = false;
+    currentCandidate = null;
+    state = {
+      gameMode: 'draft', challengePreset: PRESET, challengeName: MODE_LABEL,
+      selectedLegendLeague: selectedLeague,
+      leagueSelection: { labels:[selectedLeague], keys:[selectedLeague.toLowerCase().replace(/[^a-z0-9]+/g, '_')], playerCount: currentPool().length },
+      yearRange: null, userCount: 1, currentUserIndex: 0, excludeDeclines: false,
+      users: [{ name:selectedLeague, team:[], declines:0, declinedNames:new Set(), budget:AUCTION_BUDGET, spent:0, bidSkips:0 }],
+      acceptedPlayerNames: new Set(), history: [], bidOrder: [], bidRoundIndex: 0, leaderboardSubmitted: false
+    };
+    show(ensureLobby(), false);
+    show(els.setupPanel, false);
+    show(els.gamePanel, true);
+    show(els.resultsPanel, false);
+    if (els.resetBtn) els.resetBtn.style.display = '';
+    if (els.pickBtn) els.pickBtn.textContent = 'Randomise player';
+    clearCandidate('Click Randomise player to begin.');
+    render();
+  }
+  function setLegendButtons(){
+    if (!isActive()) return;
+    const user = state?.users?.[0];
+    if (els.pickBtn) els.pickBtn.disabled = !!currentCandidate || neededRoles().length === 0;
+    if (els.acceptBtn) els.acceptBtn.disabled = !currentCandidate || !currentCandidate.legendRole;
+    if (els.declineBtn) els.declineBtn.disabled = !currentCandidate || (user?.declines || 0) >= DECLINES_ALLOWED;
+  }
+  async function pickLegend(){
+    await loadLegends();
+    if (!isActive()) return;
+    if (neededRoles().length === 0) { completeLegendGame(); return; }
+    if (currentCandidate) { setMessage('Place or decline the current player first.'); return; }
+    const pool = availableCandidates();
+    if (!pool.length) { clearCandidate('No available player found for the remaining position.'); return; }
+    currentCandidate = { ...pool[Math.floor(Math.random() * pool.length)], legendRole: null };
+    if (currentCandidate.naturalMainPosition === 'GK') currentCandidate.legendRole = 'GK';
+    renderCandidate(currentCandidate);
+    render();
+    setMessage(currentCandidate.naturalMainPosition === 'GK' ? 'Goalkeeper candidate - accept to place in GK.' : `Choose an empty pitch slot. Remaining: ${neededRoles().map(roleLabel).join(', ')}`);
+    setLegendButtons();
+  }
+  function chooseLegendRole(role){
+    if (!currentCandidate || !isActive()) return;
+    if (currentCandidate.naturalMainPosition === 'GK' && role !== 'GK') return;
+    if (currentCandidate.naturalMainPosition !== 'GK' && role === 'GK') return;
+    if (!neededRoles().includes(role)) return;
+    currentCandidate.legendRole = role;
+    renderCandidate(currentCandidate);
+    render();
+    setMessage(`${currentCandidate.player} selected for ${roleLabel(role)}. Click Accept to confirm.`);
+    setLegendButtons();
+  }
+  async function acceptLegend(){
+    if (!currentCandidate || !isActive()) return;
+    const role = currentCandidate.legendRole;
+    if (!role) { setMessage('Choose a pitch position first.'); return; }
+    const user = state.users[0];
+    const picked = adjustedPlayer(currentCandidate, role);
+    user.team.push(picked);
+    state.acceptedPlayerNames.add(picked.player);
+    state.history.push({ user:user.name, decision:'ACCEPT', player:picked, selectedRole:role });
+    currentCandidate = null;
+    if (neededRoles().length === 0) { completeLegendGame(); render(); return; }
+    render();
+    await pickLegend();
+  }
+  async function declineLegend(){
+    if (!currentCandidate || !isActive()) return;
+    const user = state.users[0];
+    if ((user.declines || 0) >= DECLINES_ALLOWED) { setMessage('No declines left - choose a position and accept this player.'); setLegendButtons(); return; }
+    user.declines += 1;
+    user.declinedNames.add(currentCandidate.player);
+    state.history.push({ user:user.name, decision:'DECLINE', player:currentCandidate });
+    currentCandidate = null;
+    render();
+    await pickLegend();
+  }
+  function completeLegendGame(){
+    currentCandidate = null;
+    clearCandidate('Team complete. Reveal ratings to see the adjusted score.');
+    els.revealBtn?.classList.remove('hidden');
+    if (els.pickBtn) els.pickBtn.disabled = true;
+    if (els.acceptBtn) els.acceptBtn.disabled = true;
+    if (els.declineBtn) els.declineBtn.disabled = true;
+  }
+  const previousRenderCandidate = renderCandidate;
+  renderCandidate = function(p){
+    if (!isActive()) return previousRenderCandidate.apply(this, arguments);
+    if (!els.candidateCard || !p) return;
+    els.candidateCard.classList.remove('blank');
+    els.candidateCard.innerHTML = `<p class="eyebrow">${MODE_LABEL}</p><h3 class="player-name">${esc(p.player)}</h3><div class="badge-row"><span class="badge dark">${esc(p.league)}</span><span class="badge">Natural: ${esc(p.naturalPosition || p.position)}</span></div><div class="detail-grid"><div class="detail"><span>Club(s)</span>${esc(p.club)}</div><div class="detail"><span>Selected role</span>${p.legendRole ? esc(roleLabel(p.legendRole)) : (p.naturalMainPosition === 'GK' ? 'GK' : 'Pick from pitch')}</div></div>`;
+  };
+  function slotPlayer(role, midIndex = 0){
+    if (role === 'MID') return currentTeam().filter(p => (p.selectedRole || p.mainPosition) === 'MID')[midIndex] || null;
+    return currentTeam().find(p => (p.selectedRole || p.mainPosition) === role) || null;
+  }
+  function slotMarkup(role, cls, midIndex = 0){
+    const p = slotPlayer(role, midIndex);
+    const can = !!currentCandidate && !p && neededRoles().includes(role) && ((currentCandidate.naturalMainPosition === 'GK' && role === 'GK') || (currentCandidate.naturalMainPosition !== 'GK' && role !== 'GK'));
+    if (!p) return `<button type="button" class="pitch-player ${cls} empty-slot legend-slot ${can ? 'selectable' : ''} ${currentCandidate?.legendRole === role && can ? 'selected' : ''}" data-legend-slot="${role}" ${can ? '' : 'disabled'}><span class="pos">${roleLabel(role)}</span><span class="name">${can ? 'Place here' : 'Empty'}</span></button>`;
+    const rating = ratingsRevealed ? `<span class="rating">${p.adjustedRating} (${p.baseRating} x ${Number(p.positionMultiplier || 0).toFixed(2)})</span>` : '';
+    return `<div class="pitch-player ${cls} legend-filled"><span class="pos">${roleLabel(role)}</span><span class="name">${esc(shortenName(p.player))}</span><span class="club">${esc(shortenClub(p.club))}</span><span class="year">${esc(p.naturalPosition || p.position)}</span>${rating}</div>`;
+  }
+  const previousRenderTeams = renderTeams;
+  renderTeams = function(){
+    if (!isActive()) return previousRenderTeams.apply(this, arguments);
+    const user = state?.users?.[0];
+    if (!els.teamsContainer || !user) return;
+    const needText = neededRoles().map(roleLabel);
+    els.teamsContainer.innerHTML = `<article class="team-card legend-team"><div class="team-top-row"><div><h3>${esc(selectedLeague)}</h3><div class="team-meta">${needText.length ? `Needs ${needText.join(', ')}` : 'Complete'}</div></div><div class="score">${ratingsRevealed ? finalScore(user) : 'Hidden'}</div></div><div class="pitch legend-pitch"><div class="penalty-box top"></div><div class="penalty-box bottom"></div>${slotMarkup('GK','gk')}${slotMarkup('DEF','def')}${slotMarkup('MID','mid1',0)}${slotMarkup('MID','mid2',1)}${slotMarkup('FWD','fwd')}</div><div class="score">Declines used: ${user.declines}/${DECLINES_ALLOWED}</div></article>`;
+    setLegendButtons();
+  };
+  const previousRender = render;
+  render = function(...args){
+    const result = previousRender.apply(this, args);
+    if (isActive()) {
+      if (els.turnEyebrow) els.turnEyebrow.textContent = MODE_LABEL;
+      if (els.currentUserLabel) els.currentUserLabel.textContent = state?.selectedLegendLeague || selectedLeague;
+      if (els.pickBtn) els.pickBtn.textContent = 'Randomise player';
+      document.getElementById('activeYearRangePillStep5')?.remove();
+      document.getElementById('soloSetupIntroStep7')?.remove();
+    }
+    return result;
+  };
+  const previousGetFinalScores = getFinalScores;
+  getFinalScores = function(){
+    if (!isActive()) return previousGetFinalScores.apply(this, arguments);
+    const user = state?.users?.[0] || { name:selectedLeague, team:[] };
+    return [{ user, total: finalScore(user) }];
+  };
+  const previousRenderResults = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResults.apply(this, args);
+    if (state?.challengePreset === PRESET) {
+      const eyebrow = document.querySelector('#resultsPanel .finished-hero .eyebrow');
+      if (eyebrow) eyebrow.textContent = MODE_LABEL;
+      const btn = document.getElementById('submitLeaderboardBtnStep19');
+      if (btn) btn.onclick = safe(submitLegendLeaderboard);
+      document.querySelectorAll('.finished-player-row').forEach((row, index) => {
+        const p = currentTeam()[index];
+        const meta = row.querySelector('.finished-player-meta');
+        if (p && meta) meta.textContent = `${roleLabel(p.selectedRole || p.mainPosition)} from ${p.naturalPosition}`;
+        const rating = row.querySelector('.finished-player-rating');
+        if (p && rating) {
+          row.classList.add('league-legends-result-row');
+          rating.innerHTML = `<span class="league-legends-score-main">${p.adjustedRating}</span><span class="league-legends-score-multiplier">${Number(p.positionMultiplier || 0).toFixed(2)} x ${p.baseRating}</span>`;
+        }
+      });
+    }
+    return result;
+  };
+  async function submitLegendLeaderboard(){
+    if (!state || !ratingsRevealed) { alert('Reveal the ratings first.'); return; }
+    if (state.leaderboardSubmitted) { alert('This result has already been submitted from this screen.'); return; }
+    const username = prompt('Enter leaderboard name (3-18 letters/numbers):', '');
+    if (username === null) return;
+    if (!validateUsername(username)) { alert('Invalid username. Use 3-18 characters: letters, numbers, spaces, underscores or hyphens. Avoid reserved names.'); return; }
+    await ensureFirebase();
+    await firebase.database().ref('leaderboard').push({ username:username.trim(), score:finalScore(state.users[0]), gameMode:MODE_LABEL, online:false, roomId:'', yearRange:null, selectedLegendLeague:state.selectedLegendLeague || selectedLeague || '', league:state.selectedLegendLeague || selectedLeague || '', leagueSelection:state.leagueSelection || { labels:[state.selectedLegendLeague || selectedLeague].filter(Boolean) }, team:currentTeam().map(p => ({ name:p.player, selectedRole:roleLabel(p.selectedRole || p.mainPosition), naturalPosition:p.naturalPosition, baseRating:p.baseRating, multiplier:p.positionMultiplier, rating:p.adjustedRating, club:p.club, league:p.league || state.selectedLegendLeague || selectedLeague || '' })), timestamp:Date.now() });
+    state.leaderboardSubmitted = true;
+    const btn = document.getElementById('submitLeaderboardBtnStep19');
+    if (btn) { btn.textContent = 'Submitted ✅'; btn.disabled = true; }
+    alert('League Legends Challenge score submitted to leaderboard.');
+  }
+  const previousReset = resetGame;
+  resetGame = function(...args){
+    if (isActive()) {
+      window.challengePreset = null;
+      document.getElementById('leagueLegendsSelector')?.remove();
+      if (els.pickBtn) els.pickBtn.textContent = 'Pick player';
+    }
+    return previousReset.apply(this, args);
+  };
+  document.addEventListener('click', event => {
+    const card = event.target?.closest?.('[data-challenge="leaguelegends"]');
+    if (!card) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openLeagueLegendsSetup().catch(err => { console.error(err); alert(err.message || err); });
+  }, true);
+  document.addEventListener('click', event => {
+    if (!isActive()) return;
+    const slot = event.target?.closest?.('[data-legend-slot]');
+    if (!slot) return;
+    event.preventDefault(); event.stopImmediatePropagation(); chooseLegendRole(slot.dataset.legendSlot);
+  }, true);
+  document.addEventListener('click', event => {
+    const id = event.target?.id;
+    if (!['startBtn','pickBtn','acceptBtn','declineBtn'].includes(id)) return;
+    const leagueLegendsSetupIsVisible = !!document.getElementById('leagueLegendsSelector');
+    const leagueLegendsGameIsRunning = state?.challengePreset === PRESET;
+    if (!isActive() || (!leagueLegendsSetupIsVisible && !leagueLegendsGameIsRunning)) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    const fn = { startBtn:startLeagueLegendsGame, pickBtn:pickLegend, acceptBtn:acceptLegend, declineBtn:declineLegend }[id];
+    fn().catch(err => { console.error(err); setMessage(err.message || String(err)); });
+  }, true);
+  document.addEventListener('click', event => { if (event.target?.closest?.('#leaderboardBtn')) setTimeout(addLeaderboardTab, 0); }, true);
+  const previousInjectEntry = injectEntryPanel;
+  injectEntryPanel = function(...args){ const result = previousInjectEntry.apply(this, args); addStandaloneSection(); addLeaderboardTab(); return result; };
+  setTimeout(() => { addStandaloneSection(); addLeaderboardTab(); }, 80);
+})();
+
+
+// --- League Legends leaderboard separation hotfix ---
+// Keeps League Legends out of the All Time/Solo leaderboards and submits it under its own main leaderboard tab.
+(function leagueLegendsLeaderboardSeparation(){
+  const MODE = "League Legends Challenge";
+  const PRESET = "leaguelegends";
+  function isLeagueLegendsActive(){
+    return state?.challengePreset === PRESET || window.challengePreset === PRESET;
+  }
+  function scoreLeagueLegends(){
+    const team = Array.isArray(state?.users?.[0]?.team) ? state.users[0].team : [];
+    return team.reduce((sum, p) => sum + Number(p.adjustedRating ?? p.rating ?? 0), 0);
+  }
+  function roleLabel(role){ return role === "FWD" ? "ST" : role; }
+  async function submitLeagueLegendsLeaderboard(){
+    if (!state || !ratingsRevealed) { alert("Reveal the ratings first."); return; }
+    if (state.leaderboardSubmitted) { alert("This result has already been submitted from this screen."); return; }
+    const username = prompt("Enter leaderboard name (3-18 letters/numbers):", "");
+    if (username === null) return;
+    if (!validateUsername(username)) {
+      alert("Invalid username. Use 3-18 characters: letters, numbers, spaces, underscores or hyphens. Avoid reserved names.");
+      return;
+    }
+    const team = Array.isArray(state?.users?.[0]?.team) ? state.users[0].team : [];
+    await ensureFirebase();
+    await firebase.database().ref("leaderboard").push({
+      username: username.trim(),
+      score: scoreLeagueLegends(),
+      gameMode: MODE,
+      online: false,
+      roomId: "",
+      yearRange: null,
+      selectedLegendLeague: state.selectedLegendLeague || state.leagueSelection?.labels?.[0] || "",
+      league: state.selectedLegendLeague || state.leagueSelection?.labels?.[0] || "",
+      leagueSelection: state.leagueSelection || (state.selectedLegendLeague ? { labels: [state.selectedLegendLeague] } : null),
+      leaderboardGroup: "leagueLegends",
+      separateFromAllTime: true,
+      team: team.map(p => ({
+        name: p.player || "",
+        selectedRole: roleLabel(p.selectedRole || p.mainPosition || p.position || ""),
+        naturalPosition: p.naturalPosition || p.position || "",
+        baseRating: Number(p.baseRating || 0),
+        multiplier: Number(p.positionMultiplier || 0),
+        rating: Number(p.adjustedRating ?? p.rating ?? 0),
+        club: p.club || "",
+        league: p.league || state.selectedLegendLeague || state.leagueSelection?.labels?.[0] || ""
+      })),
+      timestamp: Date.now()
+    });
+    state.leaderboardSubmitted = true;
+    const btn = document.getElementById("submitLeaderboardBtnStep19");
+    if (btn) { btn.textContent = "Submitted ✅"; btn.disabled = true; }
+    alert("League Legends Challenge score submitted to leaderboard.");
+  }
+  function wireLeagueLegendsSubmit(){
+    if (!isLeagueLegendsActive()) return;
+    const btn = document.getElementById("submitLeaderboardBtnStep19");
+    if (btn) btn.onclick = safe(submitLeagueLegendsLeaderboard);
+  }
+  const previousRenderResults = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResults.apply(this, args);
+    wireLeagueLegendsSubmit();
+    return result;
+  };
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const previousShowFinished = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function(...args){
+      const result = previousShowFinished.apply(this, args);
+      wireLeagueLegendsSubmit();
+      return result;
+    };
+  }
+})();
+
+
+// --- v73 synchronous League Legends league resolver ---
+// This is placed before the active leaderboard renderer uses metadataTextV55, so the selected league is available on the first draw.
+window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
+  const NAME_TO_LEAGUE = {"thierry henry":"Premier League","alan shearer":"Premier League","mohamed salah":"Premier League","steven gerrard":"Premier League","wayne rooney":"Premier League","frank lampard":"Premier League","cristiano ronaldo":"Premier League","kevin de bruyne":"Premier League","roy keane":"Premier League","sergio aguero":"Premier League","paul scholes":"Premier League","john terry":"Premier League","eric cantona":"Premier League","virgil van dijk":"Premier League","patrick vieira":"Premier League","david silva":"Premier League","dennis bergkamp":"Premier League","harry kane":"Premier League","rio ferdinand":"Premier League","petr cech":"Premier League","ryan giggs":"Premier League","eden hazard":"Premier League","peter schmeichel":"Premier League","ashley cole":"Premier League","robin van persie":"Premier League","n golo kante":"Premier League","didier drogba":"Premier League","cesc fabregas":"Premier League","sol campbell":"Premier League","rodri":"Premier League","yaya toure":"Premier League","nemanja vidic":"Premier League","michael owen":"Premier League","vincent kompany":"Premier League","andrew cole":"Premier League","luis suarez":"Premier League","ruud van nistelrooy":"Premier League","robert pires":"Premier League","alisson becker":"Premier League","sadio mane":"Premier League","son heung min":"Premier League","david beckham":"Premier League","tony adams":"Premier League","david seaman":"Premier League","gareth bale":"Premier League","riyad mahrez":"Premier League","carlos tevez":"Premier League","robbie fowler":"Premier League","ian wright":"Premier League","jamie vardy":"Premier League","dwight yorke":"Premier League","edwin van der sar":"Premier League","jamie carragher":"Premier League","gary neville":"Premier League","michael essien":"Premier League","david de gea":"Premier League","claude makelele":"Premier League","mesut ozil":"Premier League","matt le tissier":"Premier League","jimmy floyd hasselbaink":"Premier League","bruno fernandes":"Premier League","dimitar berbatov":"Premier League","bernardo silva":"Premier League","trent alexander arnold":"Premier League","pepe reina":"Premier League","juan mata":"Premier League","kyle walker":"Premier League","marcus rashford":"Premier League","joe hart":"Premier League","raheem sterling":"Premier League","jermain defoe":"Premier League","teddy sheringham":"Premier League","gary speed":"Premier League","gareth barry":"Premier League","james milner":"Premier League","fernando torres":"Premier League","alexis sanchez":"Premier League","david ginola":"Premier League","luka modric":"Premier League","juninho paulista":"Premier League","xabi alonso":"Premier League","marcel desailly":"Premier League","coutinho":"Premier League","ricardo carvalho":"Premier League","andy robertson":"Premier League","les ferdinand":"Premier League","nicolas anelka":"Premier League","cesar azpilicueta":"Premier League","denis irwin":"Premier League","gianfranco zola":"Premier League","ledley king":"Premier League","kevin phillips":"Premier League","steve mcmanaman":"Premier League","paolo di canio":"Premier League","emmanuel adebayor":"Premier League","branislav ivanovic":"Premier League","laurent koscielny":"Premier League","chris sutton":"Premier League","ilkay gundogan":"Premier League","christian eriksen":"Premier League","lionel messi":"La Liga","alfredo di stefano":"La Liga","xavi":"La Liga","andres iniesta":"La Liga","johan cruyff":"La Liga","zinedine zidane":"La Liga","ronaldinho":"La Liga","karim benzema":"La Liga","raul":"La Liga","ferenc puskas":"La Liga","sergio ramos":"La Liga","iker casillas":"La Liga","sergio busquets":"La Liga","neymar":"La Liga","ronaldo nazario":"La Liga","romario":"La Liga","samuel eto o":"La Liga","ladislav kubala":"La Liga","luis figo":"La Liga","hugo sanchez":"La Liga","telmo zarra":"La Liga","paco gento":"La Liga","pirri":"La Liga","emilio butragueno":"La Liga","santillana":"La Liga","fernando hierro":"La Liga","carles puyol":"La Liga","dani alves":"La Liga","roberto carlos":"La Liga","marcelo":"La Liga","gerard pique":"La Liga","david villa":"La Liga","antoine griezmann":"La Liga","diego godin":"La Liga","jan oblak":"La Liga","thibaut courtois":"La Liga","diego simeone":"La Liga","koke":"La Liga","luis aragones":"La Liga","quini":"La Liga","cesar rodriguez":"La Liga","rivaldo":"La Liga","hristo stoichkov":"La Liga","michael laudrup":"La Liga","bernd schuster":"La Liga","gheorghe hagi":"La Liga","fernando redondo":"La Liga","deco":"La Liga","juan roman riquelme":"La Liga","diego forlan":"La Liga","joaquin":"La Liga","toni kroos":"La Liga","santi cazorla":"La Liga","juan carlos valeron":"La Liga","gaizka mendieta":"La Liga","pablo aimar":"La Liga","ivan rakitic":"La Liga","dani carvajal":"La Liga","juanito":"La Liga","luis enrique":"La Liga","pep guardiola":"La Liga","jordi alba":"La Liga","seydou keita":"La Liga","rafael marquez":"La Liga","javier mascherano":"La Liga","javier saviola":"La Liga","patrick kluivert":"La Liga","rafael van der vaart":"La Liga","arjen robben":"La Liga","isco":"La Liga","marco asensio":"La Liga","casemiro":"La Liga","vinicius junior":"La Liga","rodrygo":"La Liga","jude bellingham":"La Liga","kylian mbappe":"La Liga","robert lewandowski":"La Liga","pedri":"La Liga","gavi":"La Liga","lamine yamal":"La Liga","aritz aduriz":"La Liga","iago aspas":"La Liga","diego tristan":"La Liga","roy makaay":"La Liga","djalminha":"La Liga","fran":"La Liga","mauro silva":"La Liga","donato":"La Liga","jose antonio reyes":"La Liga","diego maradona":"Serie A","paolo maldini":"Serie A","francesco totti":"Serie A","roberto baggio":"Serie A","gianluigi buffon":"Serie A","alessandro del piero":"Serie A","michel platini":"Serie A","marco van basten":"Serie A","franco baresi":"Serie A","giuseppe meazza":"Serie A","silvio piola":"Serie A","gunnar nordahl":"Serie A","gianni rivera":"Serie A","andrea pirlo":"Serie A","gabriel batistuta":"Serie A","kaka":"Serie A","ruud gullit":"Serie A","lothar matthaus":"Serie A","javier zanetti":"Serie A","alessandro nesta":"Serie A","fabio cannavaro":"Serie A","paolo rossi":"Serie A","gigi riva":"Serie A","roberto mancini":"Serie A","christian vieri":"Serie A","zlatan ibrahimovic":"Serie A","andriy shevchenko":"Serie A","clarence seedorf":"Serie A","cafu":"Serie A","pavel nedved":"Serie A","dino zoff":"Serie A","gaetano scirea":"Serie A","sandro mazzola":"Serie A","giampiero boniperti":"Serie A","alessandro altobelli":"Serie A","giacinto facchetti":"Serie A","giuseppe bergomi":"Serie A","tarcisio burgnich":"Serie A","claudio gentile":"Serie A","antonio cabrini":"Serie A","marco tardelli":"Serie A","roberto donadoni":"Serie A","demetrio albertini":"Serie A","filippo inzaghi":"Serie A","ciro immobile":"Serie A","antonio di natale":"Serie A","hernan crespo":"Serie A","edinson cavani":"Serie A","gonzalo higuain":"Serie A","lautaro martinez":"Serie A","mauro icardi":"Serie A","paulo dybala":"Serie A","lorenzo insigne":"Serie A","dries mertens":"Serie A","marek hamsik":"Serie A","fabio quagliarella":"Serie A","alberto gilardino":"Serie A","luca toni":"Serie A","vincenzo montella":"Serie A","giuseppe signori":"Serie A","sinisa mihajlovic":"Serie A","dejan stankovic":"Serie A","juan sebastian veron":"Serie A","edgar davids":"Serie A","frank rijkaard":"Serie A","george weah":"Serie A","maicon":"Serie A","walter samuel":"Serie A","lucio":"Serie A","wesley sneijder":"Serie A","diego milito":"Serie A","esteban cambiasso":"Serie A","julio cesar":"Serie A","samir handanovic":"Serie A","giorgio chiellini":"Serie A","leonardo bonucci":"Serie A","andrea barzagli":"Serie A","paul pogba":"Serie A","arturo vidal":"Serie A","claudio marchisio":"Serie A","federico chiesa":"Serie A","dusan vlahovic":"Serie A","khvicha kvaratskhelia":"Serie A","victor osimhen":"Serie A","kim min jae":"Serie A","kalidou koulibaly":"Serie A","jorginho":"Serie A","thiago silva":"Serie A","zvonimir boban":"Serie A","dejan savicevic":"Serie A","jean pierre papin":"Serie A","oliver bierhoff":"Serie A","just fontaine":"Ligue 1","raymond kopa":"Ligue 1","delio onnis":"Ligue 1","bernard lacombe":"Ligue 1","alain giresse":"Ligue 1","juninho pernambucano":"Ligue 1","pauleta":"Ligue 1","carlos bianchi":"Ligue 1","josip skoblar":"Ligue 1","roger piantoni":"Ligue 1","herve revelli":"Ligue 1","dominique rocheteau":"Ligue 1","didier deschamps":"Ligue 1","laurent blanc":"Ligue 1","lilian thuram":"Ligue 1","fabien barthez":"Ligue 1","hugo lloris":"Ligue 1","steve mandanda":"Ligue 1","marquinhos":"Ligue 1","safet susic":"Ligue 1","mustapha dahleb":"Ligue 1","rai":"Ligue 1","sonny anderson":"Ligue 1","alexandre lacazette":"Ligue 1","wissam ben yedder":"Ligue 1","david trezeguet":"Ligue 1","youri djorkaeff":"Ligue 1","djibril cisse":"Ligue 1","bafetimbi gomis":"Ligue 1","andre pierre gignac":"Ligue 1","dimitri payet":"Ligue 1","florian thauvin":"Ligue 1","franck ribery":"Ligue 1","samir nasri":"Ligue 1","hatem ben arfa":"Ligue 1","ludovic giuly":"Ligue 1","sylvain wiltord":"Ligue 1","emmanuel petit":"Ligue 1","blaise matuidi":"Ligue 1","marco verratti":"Ligue 1","angel di maria":"Ligue 1","ousmane dembele":"Ligue 1","vitinha":"Ligue 1","bradley barcola":"Ligue 1","olivier giroud":"Ligue 1","gervinho":"Ligue 1","pierre emerick aubameyang":"Ligue 1","radamel falcao":"Ligue 1","james rodriguez":"Ligue 1","fabinho":"Ligue 1","joao moutinho":"Ligue 1","nabil fekir":"Ligue 1","memphis depay":"Ligue 1","lisandro lopez":"Ligue 1","mamadou niang":"Ligue 1","moussa sow":"Ligue 1","yoann gourcuff":"Ligue 1","mickael landreau":"Ligue 1","gregory coupet":"Ligue 1","joel bats":"Ligue 1","bernard lama":"Ligue 1","jean tigana":"Ligue 1","marius tresor":"Ligue 1","maxime bossis":"Ligue 1","dominique bathenay":"Ligue 1","luis fernandez":"Ligue 1","jean marc guillou":"Ligue 1","jean michel larque":"Ligue 1","robert herbin":"Ligue 1","salif keita":"Ligue 1","rachid mekhloufi":"Ligue 1","fleury di nallo":"Ligue 1","roger courtois":"Ligue 1","thadee cisowski":"Ligue 1","joseph ujlaki":"Ligue 1","gunnar andersson":"Ligue 1","hassan akesbi":"Ligue 1","jean baratte":"Ligue 1","andre guy":"Ligue 1","jacky vergnes":"Ligue 1","lucien cossou":"Ligue 1","gerd muller":"Bundesliga","franz beckenbauer":"Bundesliga","manuel neuer":"Bundesliga","karl heinz rummenigge":"Bundesliga","philipp lahm":"Bundesliga","oliver kahn":"Bundesliga","uwe seeler":"Bundesliga","matthias sammer":"Bundesliga","thomas muller":"Bundesliga","bastian schweinsteiger":"Bundesliga","jupp heynckes":"Bundesliga","klaus fischer":"Bundesliga","sepp maier":"Bundesliga","jurgen klinsmann":"Bundesliga","kevin keegan":"Bundesliga","miroslav klose":"Bundesliga","paul breitner":"Bundesliga","michael ballack":"Bundesliga","andreas moller":"Bundesliga","rudi voller":"Bundesliga","marco reus":"Bundesliga","gunter netzer":"Bundesliga","wolfgang overath":"Bundesliga","dieter muller":"Bundesliga","claudio pizarro":"Bundesliga","giovane elber":"Bundesliga","mario gomez":"Bundesliga","ulf kirsten":"Bundesliga","stefan kuntz":"Bundesliga","klaus allofs":"Bundesliga","manfred burgsmuller":"Bundesliga","horst hrubesch":"Bundesliga","hannes lohr":"Bundesliga","bernd holzenbein":"Bundesliga","mehmet scholl":"Bundesliga","stefan effenberg":"Bundesliga","mats hummels":"Bundesliga","jerome boateng":"Bundesliga","david alaba":"Bundesliga","joshua kimmich":"Bundesliga","florian wirtz":"Bundesliga","erling haaland":"Bundesliga","l cio":"Bundesliga","z roberto":"Bundesliga","tom rosick":"Bundesliga","sebastian deisler":"Bundesliga","franck rib ry":"Bundesliga","christoph metzelder":"Bundesliga","daniel van buyten":"Bundesliga","marcelinho":"Bundesliga","christian w rns":"Bundesliga","j r me boateng":"Bundesliga","michael olise":"Bundesliga","andr s d alessandro":"Bundesliga","fernando meira":"Bundesliga","jens nowotny":"Bundesliga","timo hildebrand":"Bundesliga","marcelo bordon":"Bundesliga","jon dahl tomasson":"Bundesliga","lukas podolski":"Bundesliga","marek mintal":"Bundesliga","diego":"Bundesliga","thiago alc ntara":"Bundesliga","leon goretzka":"Bundesliga","jamal musiala":"Bundesliga","willy sagnol":"Bundesliga","val rien isma l":"Bundesliga","bernd schneider":"Bundesliga","per mertesacker":"Bundesliga","thomas m ller":"Bundesliga","james rodr guez":"Bundesliga","jadon sancho":"Bundesliga","sadio man":"Bundesliga","gregor kobel":"Bundesliga","jonathan tah":"Bundesliga","luis d az":"Bundesliga","ailton":"Bundesliga","d d":"Bundesliga","markus babbel":"Bundesliga","mladen krstajic":"Bundesliga","roman weidenfeller":"Bundesliga","torsten frings":"Bundesliga","ren adler":"Bundesliga","bernd leno":"Bundesliga","yann sommer":"Bundesliga","serge gnabry":"Bundesliga","timo werner":"Bundesliga"};
+  function clean(value) {
+    const text = String(value ?? "").trim();
+    if (!text) return "";
+    if (["selected league", "selected leagues", "unknown league", "undefined", "null"].includes(text.toLowerCase())) return "";
+    return text;
+  }
+  function normName(value) {
+    return clean(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  }
+  const selection = entry?.leagueSelection || {};
+  const values = [
+    entry?.selectedLegendLeague,
+    entry?.legendLeague,
+    entry?.selectedLeague,
+    entry?.league,
+    selection.labels,
+    selection.label,
+    selection.selectedLegendLeague,
+    selection.selectedLeague,
+    selection.league
+  ];
+  const direct = [];
+  values.forEach(value => {
+    if (Array.isArray(value)) direct.push(...value);
+    else if (value && typeof value === "object") direct.push(...Object.values(value));
+    else direct.push(value);
+  });
+  if (Array.isArray(entry?.team)) {
+    entry.team.forEach(player => direct.push(player?.league, player?.League, player?.selectedLegendLeague, player?.legendLeague));
+  }
+  const cleanDirect = [...new Set(direct.map(clean).filter(Boolean))];
+  if (cleanDirect.length) return cleanDirect.join(", ");
+
+  const counts = new Map();
+  const team = Array.isArray(entry?.team) ? entry.team : [];
+  team.forEach(player => {
+    const name = normName(player?.name || player?.player || player?.Player);
+    const league = NAME_TO_LEAGUE[name];
+    if (league) counts.set(league, (counts.get(league) || 0) + 1);
+  });
+  if (!counts.size) return "";
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+};
+
+// --- v55 leaderboard tab restructure ---
+// Replaces the previous mixed leaderboard tabs with four clean categories:
+// Solo Mode, Online Battles, League Legends, Monthly Challenges.
+(function leaderboardTabRestructureV55(){
+  const GROUPS = {
+    solo: {
+      label: "Solo Mode",
+      defaultSub: "all",
+      subs: [
+        { key: "all", label: "All", modes: ["Solo Challenge", "Ultimate Solo Mode", "Easy Solo Challenge", "League Challenge"] },
+        { key: "standard", label: "Standard Solo", modes: ["Solo Challenge"] },
+        { key: "ultimate", label: "Ultimate Solo", modes: ["Ultimate Solo Mode"] },
+        { key: "easy", label: "Easy Solo", modes: ["Easy Solo Challenge"] },
+        { key: "league", label: "League Challenge", modes: ["League Challenge"] }
+      ]
+    },
+    online: {
+      label: "Online Battles",
+      defaultSub: "all",
+      subs: [
+        { key: "all", label: "All", modes: ["Online Ultimate Draft", "Online Blind Bidding", "Online Live Auction"] },
+        { key: "draft", label: "Ultimate Draft", modes: ["Online Ultimate Draft"] },
+        { key: "blind", label: "Blind Bidding", modes: ["Online Blind Bidding"] },
+        { key: "live", label: "Live Auction", modes: ["Online Live Auction"] }
+      ]
+    },
+    legends: {
+      label: "League Legends",
+      defaultSub: "all",
+      subs: [
+        { key: "all", label: "All", modes: ["League Legends Challenge"] }
+      ]
+    },
+    monthly: {
+      label: "Monthly Challenges",
+      defaultSub: "all",
+      subs: [
+        { key: "all", label: "All", modes: ["World Cup 2026 Challenge"] },
+        { key: "worldcup2026", label: "World Cup 2026", modes: ["World Cup 2026 Challenge"] }
+      ]
+    }
+  };
+
+  let activeGroup = "solo";
+  let activeSubByGroup = { solo: "all", online: "all", legends: "all", monthly: "all" };
+
+  function escV55(value) {
+    return String(value ?? "").replace(/[&<>'\"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+  }
+  function modeV55(entry) { return String(entry?.gameMode || "Unknown").trim() || "Unknown"; }
+  function yearRangeTextV55(entry) {
+    const range = entry?.yearRange;
+    if (!range || typeof range !== "object") return "";
+    const start = Number(range.start ?? range.from ?? range.min ?? 0);
+    const end = Number(range.end ?? range.to ?? range.max ?? 0);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || !start || !end) return "";
+    const a = Math.min(start, end); const b = Math.max(start, end);
+    return a === b ? `Year: ${a}` : `Years: ${a} - ${b}`;
+  }
+  function leagueLabelsV55(entry) {
+    const selection = entry?.leagueSelection || {};
+    const candidates = [
+      selection.labels,
+      selection.label,
+      selection.selectedLeague,
+      selection.league,
+      entry?.selectedLegendLeague,
+      entry?.legendLeague,
+      entry?.league
+    ];
+    let output = [];
+    candidates.forEach(value => {
+      if (Array.isArray(value)) output.push(...value);
+      else if (value && typeof value === "object") output.push(...Object.values(value));
+      else if (typeof value === "string") output.push(value);
+    });
+    if (Array.isArray(entry?.team)) {
+      output.push(...entry.team.map(player => player?.league));
+    }
+    return [...new Set(output.map(x => String(x || "").trim()).filter(Boolean))];
+  }
+  function metadataTextV55(entry) {
+    const mode = modeV55(entry);
+    if (mode === "League Challenge") {
+      const labels = leagueLabelsV55(entry).filter(label => !/^unknown league$/i.test(String(label || "").trim()));
+      return labels.length ? `Leagues: ${labels.join(", ")}` : "";
+    }
+    if (mode === "League Legends Challenge") {
+      const resolvedLeague = typeof window.getLeagueLegendsLeaderboardLeagueV73 === "function"
+        ? window.getLeagueLegendsLeaderboardLeagueV73(entry)
+        : "";
+      if (resolvedLeague) return `League: ${resolvedLeague}`;
+      const labels = leagueLabelsV55(entry).filter(label => !/^(selected league|unknown league)$/i.test(String(label || "").trim()));
+      return labels.length ? `League: ${labels.join(", ")}` : "";
+    }
+    if (mode === "World Cup 2026 Challenge") return "Player pool: World Cup 2026";
+    const yearText = yearRangeTextV55(entry);
+    if (yearText) return yearText;
+    if (mode === "Ultimate Solo Mode") return "Years: all years";
+    return "";
+  }
+  function currentSubConfigV55() {
+    const group = GROUPS[activeGroup] || GROUPS.solo;
+    const subKey = activeSubByGroup[activeGroup] || group.defaultSub || "all";
+    return group.subs.find(sub => sub.key === subKey) || group.subs[0];
+  }
+  function ensureStylesV55() {
+    if (document.getElementById("leaderboardStructureStylesV55")) return;
+    const style = document.createElement("style");
+    style.id = "leaderboardStructureStylesV55";
+    style.textContent = `
+      .leaderboard-main-tabs-v55{margin-bottom:10px!important}.leaderboard-subtabs-v55{margin-top:-4px!important;margin-bottom:16px!important;padding:10px 12px!important;background:rgba(248,250,252,.92)!important;border:1px solid rgba(226,232,240,.95)!important;border-radius:16px!important}.leaderboard-tab-v55.active{background:linear-gradient(135deg,var(--primary),var(--primary-dark))!important;color:#fff!important;border-color:transparent!important;box-shadow:0 10px 24px rgba(37,99,235,.22)!important}.leaderboard-tab-v55[data-leaderboard-group="legends"].active{background:linear-gradient(135deg,#f59e0b,#ea580c)!important;color:#111827!important}.leaderboard-row.leaderboard-row-v55{grid-template-columns:54px minmax(0,1fr) minmax(170px,max-content) 74px!important;align-items:center!important;column-gap:14px!important;row-gap:3px}.leaderboard-row.leaderboard-row-v55 .leaderboard-mode{text-align:right!important;justify-self:end!important;white-space:nowrap!important}.leaderboard-row.leaderboard-row-v55 .leaderboard-score{text-align:right!important;justify-self:end!important;min-width:58px!important;font-variant-numeric:tabular-nums}.leaderboard-meta-v55{grid-column:2 / span 3;color:#64748b;font-size:.78rem;font-weight:850;line-height:1.25;overflow-wrap:anywhere}@media(max-width:720px){.leaderboard-row.leaderboard-row-v55{grid-template-columns:44px minmax(0,1fr) 72px!important;column-gap:10px!important}.leaderboard-row.leaderboard-row-v55 .leaderboard-name{grid-column:2}.leaderboard-row.leaderboard-row-v55 .leaderboard-score{grid-column:3;grid-row:1;text-align:right!important}.leaderboard-row.leaderboard-row-v55 .leaderboard-mode{grid-column:2 / span 2;grid-row:2;text-align:left!important;justify-self:start!important;white-space:normal!important}.leaderboard-meta-v55{grid-column:2 / span 2}}
+    `;
+    document.head.appendChild(style);
+  }
+  function rebuildLeaderboardTabsV55() {
+    ensureStylesV55();
+    const panel = document.getElementById("leaderboardPanel"); if (!panel) return false;
+    const rows = panel.querySelectorAll(".leaderboard-tabs");
+    const mainTabs = rows[0]; const subTabs = document.getElementById("soloLeaderboardSubTabs") || rows[1];
+    if (!mainTabs || !subTabs) return false;
+    mainTabs.classList.add("leaderboard-main-tabs-v55");
+    mainTabs.innerHTML = Object.entries(GROUPS).map(([key, group]) => `<button type="button" class="leaderboard-tab leaderboard-tab-v55 ${key === activeGroup ? "active" : ""}" data-leaderboard-group="${escV55(key)}">${escV55(group.label)}</button>`).join("");
+    const group = GROUPS[activeGroup] || GROUPS.solo;
+    const activeSub = activeSubByGroup[activeGroup] || group.defaultSub || "all";
+    subTabs.className = "leaderboard-tabs solo-leaderboard-subtabs leaderboard-subtabs-v55";
+    subTabs.classList.remove("hidden");
+    subTabs.setAttribute("aria-label", `${group.label} leaderboard filters`);
+    subTabs.innerHTML = group.subs.map(sub => `<button type="button" class="leaderboard-tab leaderboard-tab-v55 leaderboard-sub-tab-v55 ${sub.key === activeSub ? "active" : ""}" data-leaderboard-sub="${escV55(sub.key)}">${escV55(sub.label)}</button>`).join("");
+    return true;
+  }
+  async function loadLeaderboardV55() {
+    const list = document.getElementById("leaderboardList"); if (!list) return;
+    const allowedModes = new Set(currentSubConfigV55().modes || []);
+    list.innerHTML = `<div class="leaderboard-empty">Loading leaderboard...</div>`;
+    try {
+      await ensureFirebase();
+      const snapshot = await firebase.database().ref("leaderboard").once("value");
+      if (!snapshot.exists()) { list.innerHTML = `<div class="leaderboard-empty">No scores submitted yet.</div>`; return; }
+      let entries = Object.values(snapshot.val() || {})
+        .filter(entry => Number.isFinite(Number(entry.score)))
+        .map(entry => ({ ...entry, username: String(entry.username || "Player").trim() || "Player", score: Number(entry.score || 0), gameMode: modeV55(entry), timestamp: Number(entry.timestamp || 0) }))
+        .filter(entry => allowedModes.has(entry.gameMode));
+      entries.sort((a,b) => b.score !== a.score ? b.score - a.score : b.timestamp - a.timestamp);
+      const top20 = entries.slice(0,20);
+      if (!top20.length) { list.innerHTML = `<div class="leaderboard-empty">No scores yet for this leaderboard.</div>`; return; }
+      list.innerHTML = top20.map((entry, index) => {
+        const meta = metadataTextV55(entry);
+        return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${index + 1}</span><span class="leaderboard-name">${escV55(entry.username)}</span><span class="leaderboard-mode">${escV55(entry.gameMode)}</span><span class="leaderboard-score">${entry.score}</span>${meta ? `<span class="leaderboard-meta-v55">${escV55(meta)}</span>` : ""}</div>`;
+      }).join("");
+    } catch (error) {
+      list.innerHTML = `<div class="leaderboard-error">Could not load leaderboard. ${escV55(error.message || error)}</div>`;
+    }
+  }
+  function refreshLeaderboardV55() { if (rebuildLeaderboardTabsV55()) loadLeaderboardV55(); }
+  window.addEventListener("click", function(event){
+    const panel = document.getElementById("leaderboardPanel"); if (!panel || panel.classList.contains("hidden")) return;
+    const mainTab = event.target?.closest?.("[data-leaderboard-group]");
+    const subTab = event.target?.closest?.("[data-leaderboard-sub]");
+    if (!mainTab && !subTab) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    if (mainTab) { const next = mainTab.dataset.leaderboardGroup; if (GROUPS[next]) { activeGroup = next; activeSubByGroup[activeGroup] = activeSubByGroup[activeGroup] || GROUPS[activeGroup].defaultSub || "all"; } }
+    if (subTab) { const group = GROUPS[activeGroup] || GROUPS.solo; const next = subTab.dataset.leaderboardSub || group.defaultSub || "all"; activeSubByGroup[activeGroup] = group.subs.some(sub => sub.key === next) ? next : group.defaultSub || "all"; }
+    refreshLeaderboardV55();
+  }, true);
+  window.addEventListener("click", function(event){
+    if (!event.target?.closest?.("#leaderboardBtn")) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    hideEntryPanel();
+    show(ensureLobby(), false);
+    show(els.setupPanel, false);
+    show(els.gamePanel, false);
+    show(els.resultsPanel, false);
+    show(document.getElementById("leaderboardPanel"), true);
+    refreshLeaderboardV55();
+    setTimeout(() => document.getElementById("leaderboardPanel")?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
+  }, true);
+  setTimeout(rebuildLeaderboardTabsV55, 0);
+})();
+
+
+// --- homepage layout polish: League Legends above Popular Challenges ---
+(function homepageLeagueLegendsLayoutPolish(){
+  function tidyHomepageLayout(){
+    const entry = document.getElementById("gameEntryPanel");
+    if (!entry) return;
+
+    const popular = entry.querySelector(".popular-challenges-v2");
+    const legends = document.getElementById("leagueLegendsHome");
+    if (popular && legends && legends.nextElementSibling !== popular) {
+      entry.insertBefore(legends, popular);
+    }
+
+    if (legends) {
+      const title = legends.querySelector(".league-legends-hero-copy h3");
+      if (title) title.textContent = "League Legends";
+      const eyebrow = legends.querySelector(".league-legends-title-line .eyebrow");
+      if (eyebrow) eyebrow.textContent = "Game mode";
+      const button = legends.querySelector('[data-challenge="leaguelegends"]');
+      if (button) button.textContent = "Play League Legends";
+      legends.setAttribute("aria-label", "League Legends game mode");
+    }
+
+    entry.querySelectorAll(".challenge-card-v2").forEach(card => {
+      const text = (card.textContent || "").toLowerCase();
+      if (text.includes("nostalgia challenge")) card.remove();
+    });
+  }
+
+  const previousInjectEntryPanelHomepagePolish = injectEntryPanel;
+  injectEntryPanel = function(...args){
+    const result = previousInjectEntryPanelHomepagePolish.apply(this, args);
+    setTimeout(tidyHomepageLayout, 0);
+    setTimeout(tidyHomepageLayout, 80);
+    return result;
+  };
+
+  document.addEventListener("DOMContentLoaded", () => setTimeout(tidyHomepageLayout, 0));
+  setTimeout(tidyHomepageLayout, 120);
+})();
+
+
+// --- homepage title casing polish ---
+(function homepageTitleCasingPolish(){
+  function fixOnlineGameTitle(){
+    const heading = document.querySelector('#gameEntryPanel .online-card h3');
+    if (heading && heading.textContent.trim() === 'Online game') heading.textContent = 'Online Game';
+  }
+  const previousInjectEntryPanelTitleCase = injectEntryPanel;
+  injectEntryPanel = function(...args){
+    const result = previousInjectEntryPanelTitleCase.apply(this, args);
+    setTimeout(fixOnlineGameTitle, 0);
+    return result;
+  };
+  setTimeout(fixOnlineGameTitle, 120);
+})();
+
+
+// --- League Legends reset button visibility fix ---
+// Ensures League Legends shows the same top-right Reset game button as the other modes.
+(function leagueLegendsResetButtonVisibilityV61(){
+  const PRESET = "leaguelegends";
+  function ensureResetVisibleForLeagueLegends(){
+    if ((window.challengePreset === PRESET || state?.challengePreset === PRESET) && els?.resetBtn) {
+      els.resetBtn.style.display = "";
+    }
+  }
+  const previousRenderLeagueLegendsResetV61 = render;
+  render = function(...args){
+    const result = previousRenderLeagueLegendsResetV61.apply(this, args);
+    ensureResetVisibleForLeagueLegends();
+    return result;
+  };
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.('[data-challenge="leaguelegends"]')) {
+      setTimeout(ensureResetVisibleForLeagueLegends, 0);
+    }
+  }, true);
+})();
+
+
+// --- Global mode transition cleanup and all-mode Firebase stats fix ---
+// Keeps mode-specific setup UIs isolated and records completed games for all current game modes.
+(function allModesCleanupAndStatsV63(){
+  const LEGENDS_PRESET = "leaguelegends";
+  const STATS_NODE = "stats";
+
+  function statsKey(label){
+    return String(label || "unknown")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "unknown";
+  }
+
+  function ukDateKey(date = new Date()){
+    try {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(date);
+    } catch (err) {
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  function detectCurrentModeLabel(){
+    if (!state) return "Unknown";
+
+    const preset = state.challengePreset || window.challengePreset || "";
+
+    if (!online.enabled && state.gameMode === "draft" && Number(state.userCount || 0) === 1) {
+      if (preset === "leaguelegends") return "League Legends Challenge";
+      if (preset === "league") return "League Challenge";
+      if (preset === "worldcup2026") return "World Cup 2026 Challenge";
+      if (preset === "ultimate") return "Ultimate Solo Mode";
+      if (preset === "easy") return "Easy Solo Challenge";
+      return "Solo Challenge";
+    }
+
+    if (online.enabled && state.gameMode === "draft") return "Online Ultimate Draft";
+    if (online.enabled && state.gameMode === "bid" && state.onlineBidMode === "live") return "Online Live Auction";
+    if (online.enabled && state.gameMode === "bid") return "Online Blind Bidding";
+    if (!online.enabled && state.gameMode === "bid") return "Local Bidding";
+    if (!online.enabled && state.gameMode === "draft") return "Local Ultimate Draft";
+
+    return state.challengeName || state.gameMode || "Unknown";
+  }
+
+  function topScoreForStats(){
+    try {
+      if (typeof getFinalScores === "function") {
+        const scored = getFinalScores();
+        const total = Number(scored?.[0]?.total || 0);
+        if (total) return total;
+      }
+    } catch (err) {}
+
+    const teams = Array.isArray(state?.users) ? state.users : [];
+    return teams.reduce((best, user) => {
+      const team = Array.isArray(user?.team) ? user.team : [];
+      const total = team.reduce((sum, player) => sum + Number(player.adjustedRating ?? player.rating ?? 0), 0);
+      return Math.max(best, total);
+    }, 0);
+  }
+
+  function isCompleteEnoughForStats(){
+    if (!state || state.statsRecorded) return false;
+    if (typeof isGameComplete === "function") {
+      try { if (isGameComplete()) return true; } catch (err) {}
+    }
+    if (state.challengePreset === LEGENDS_PRESET) {
+      const team = Array.isArray(state.users?.[0]?.team) ? state.users[0].team : [];
+      return team.length >= 5 && !!ratingsRevealed;
+    }
+    return !!ratingsRevealed;
+  }
+
+  async function recordCompletedGameStatsFallback(){
+    if (!isCompleteEnoughForStats()) return;
+
+    const label = detectCurrentModeLabel();
+    const key = statsKey(label);
+    const today = ukDateKey();
+    const now = Date.now();
+
+    state.statsRecorded = true;
+    state.statsRecordedAt = now;
+    state.statsMode = label;
+
+    try {
+      await ensureFirebase();
+      const increment = firebase.database.ServerValue.increment(1);
+      const recentRef = firebase.database().ref(`${STATS_NODE}/recent`).push();
+      const updates = {};
+
+      updates[`${STATS_NODE}/totals/all`] = increment;
+      updates[`${STATS_NODE}/totals/byMode/${key}`] = increment;
+      updates[`${STATS_NODE}/modeLabels/${key}`] = label;
+      updates[`${STATS_NODE}/daily/${today}/total`] = increment;
+      updates[`${STATS_NODE}/daily/${today}/byMode/${key}`] = increment;
+      updates[`${STATS_NODE}/lastCompletedAt`] = now;
+      updates[`${STATS_NODE}/lastCompletedMode`] = label;
+      updates[`${STATS_NODE}/daily/${today}/lastCompletedAt`] = now;
+      updates[`${STATS_NODE}/recent/${recentRef.key}`] = {
+        mode: label,
+        modeKey: key,
+        online: !!online.enabled,
+        roomId: online.enabled ? (online.roomId || "") : "",
+        userCount: Number(state.userCount || (Array.isArray(state.users) ? state.users.length : 0) || 0),
+        topScore: topScoreForStats(),
+        challengePreset: state.challengePreset || window.challengePreset || "",
+        leagueSelection: state.leagueSelection || null,
+        yearRange: state.yearRange || null,
+        completedAt: now,
+        dateKey: today
+      };
+
+      await firebase.database().ref().update(updates);
+      console.log("Completed game stats recorded:", label);
+    } catch (err) {
+      state.statsRecorded = false;
+      console.warn("Could not record completed game stats", err);
+    }
+  }
+
+  function cleanupLeagueLegendsUiIfInactive(){
+    if (window.challengePreset === LEGENDS_PRESET || state?.challengePreset === LEGENDS_PRESET) return;
+
+    document.getElementById("leagueLegendsSelector")?.remove();
+
+    const year = document.getElementById("localYearSlicerHolderStep4");
+    if (year) {
+      year.style.display = "";
+      year.style.opacity = "";
+      year.style.pointerEvents = "";
+      year.querySelectorAll('input[type="range"]').forEach(input => { input.disabled = false; });
+    }
+
+    if (els?.pickBtn && els.pickBtn.textContent === "Randomise player") {
+      els.pickBtn.textContent = "Pick player";
+    }
+  }
+
+  function leavingLegendsFromClick(event){
+    const challengeCard = event.target?.closest?.("[data-challenge]");
+    if (challengeCard && challengeCard.dataset.challenge !== LEGENDS_PRESET) return true;
+    if (event.target?.closest?.("#startLocalGameBtn, #createOnlineRoomBtn, #joinOnlineRoomBtn, #leaderboardBtn")) return true;
+    return false;
+  }
+
+  document.addEventListener("click", event => {
+    if (!leavingLegendsFromClick(event)) return;
+    const challengeCard = event.target?.closest?.("[data-challenge]");
+    if (!challengeCard && window.challengePreset === LEGENDS_PRESET && !state) {
+      window.challengePreset = "standard";
+    }
+    setTimeout(cleanupLeagueLegendsUiIfInactive, 0);
+  }, true);
+
+  const previousUpdateSetupForModeAllModesV63 = updateSetupForMode;
+  updateSetupForMode = function(...args){
+    const result = previousUpdateSetupForModeAllModesV63.apply(this, args);
+    setTimeout(cleanupLeagueLegendsUiIfInactive, 0);
+    return result;
+  };
+
+  const previousRenderResultsAllModesV63 = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResultsAllModesV63.apply(this, args);
+    setTimeout(recordCompletedGameStatsFallback, 0);
+    return result;
+  };
+
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const previousShowFinishedAllModesV63 = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function(...args){
+      const result = previousShowFinishedAllModesV63.apply(this, args);
+      setTimeout(recordCompletedGameStatsFallback, 0);
+      return result;
+    };
+  }
+
+  const previousResetAllModesV63 = resetGame;
+  resetGame = function(...args){
+    const result = previousResetAllModesV63.apply(this, args);
+    setTimeout(cleanupLeagueLegendsUiIfInactive, 0);
+    return result;
+  };
+})();
+
+
+// --- v65 leaderboard subtab polish and duplicate cleanup ---
+// Keeps the new v55 leaderboard structure tidy after older leaderboard patches and makes subtabs visually distinct.
+(function leaderboardSubtabPolishAndLegendsLeagueV65(){
+  function injectSubtabPolishStylesV65(){
+    if (document.getElementById("leaderboardSubtabPolishStylesV65")) return;
+    const style = document.createElement("style");
+    style.id = "leaderboardSubtabPolishStylesV65";
+    style.textContent = `
+      .leaderboard-subtabs-v55{
+        gap:8px!important;
+        padding:8px 10px!important;
+        background:#f8fbff!important;
+        border-color:#dbeafe!important;
+      }
+      .leaderboard-subtabs-v55 .leaderboard-tab-v55{
+        min-height:34px!important;
+        padding:7px 11px!important;
+        border-radius:14px!important;
+        font-size:.78rem!important;
+        line-height:1!important;
+        background:#f1f7ff!important;
+        border-color:#bfdbfe!important;
+        color:#1e3a8a!important;
+        box-shadow:none!important;
+      }
+      .leaderboard-subtabs-v55 .leaderboard-tab-v55.active{
+        background:linear-gradient(135deg,#dbeafe,#bfdbfe)!important;
+        border-color:#93c5fd!important;
+        color:#0f3b75!important;
+        box-shadow:0 6px 14px rgba(37,99,235,.12)!important;
+      }
+      .leaderboard-subtabs-v55 .leaderboard-tab-v55:hover{
+        background:#e0efff!important;
+      }
+      @media(max-width:720px){
+        .leaderboard-subtabs-v55{gap:6px!important;padding:7px!important;}
+        .leaderboard-subtabs-v55 .leaderboard-tab-v55{font-size:.74rem!important;padding:7px 9px!important;min-height:32px!important;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function removeLegacyDuplicateSubtabsV65(){
+    const holder = document.getElementById("soloLeaderboardSubTabs");
+    if (!holder) return;
+
+    // Older code appends legacy solo-sub-tab buttons using data-solo-leaderboard-filter.
+    // The current v55 subtabs use data-leaderboard-sub. Remove the legacy duplicate buttons.
+    holder.querySelectorAll('[data-solo-leaderboard-filter="League Challenge"]').forEach(button => button.remove());
+
+    // Extra safety: if duplicate visual labels still exist in the current v55 set, keep the first one only.
+    const seen = new Set();
+    holder.querySelectorAll('[data-leaderboard-sub]').forEach(button => {
+      const key = `${button.dataset.leaderboardSub || ""}|${(button.textContent || "").trim().toLowerCase()}`;
+      if (seen.has(key)) button.remove();
+      else seen.add(key);
+    });
+  }
+
+  function applyV65(){
+    injectSubtabPolishStylesV65();
+    removeLegacyDuplicateSubtabsV65();
+  }
+
+  document.addEventListener("click", event => {
+    if (!event.target?.closest?.("#leaderboardPanel, #leaderboardBtn")) return;
+    setTimeout(applyV65, 0);
+    setTimeout(applyV65, 80);
+    setTimeout(applyV65, 180);
+  }, true);
+
+  setTimeout(applyV65, 0);
+  setTimeout(applyV65, 150);
+})();
+
+
+// --- v66 authoritative results mode labels + League Legends league persistence ---
+// Fixes any final-results/saved-image label that is overwritten by older solo-result patches.
+// Also keeps the selected League Legends league explicit in state before leaderboard/stats saves.
+(function resultsModeLabelsAndLegendLeagueV66(){
+  const PRESET_LABELS_V66 = {
+    leaguelegends: "League Legends Challenge",
+    league: "League Challenge",
+    worldcup2026: "World Cup 2026 Challenge",
+    ultimate: "Ultimate Solo Mode",
+    easy: "Easy Solo Challenge",
+    standard: "Solo Challenge"
+  };
+
+  function cleanTextV66(value){
+    return String(value || "").trim();
+  }
+
+  function getPresetV66(){
+    return cleanTextV66(state?.challengePreset || window.challengePreset || "").toLowerCase();
+  }
+
+  function getModeLabelV66(){
+    if (!state) return "Ultimate 5-a-side Draft";
+
+    const preset = getPresetV66();
+    if (PRESET_LABELS_V66[preset]) return PRESET_LABELS_V66[preset];
+    if (state.challengeName) return cleanTextV66(state.challengeName);
+
+    if (online.enabled && state.gameMode === "draft") return "Online Ultimate Draft";
+    if (online.enabled && state.gameMode === "bid" && state.onlineBidMode === "live") return "Online Live Auction";
+    if (online.enabled && state.gameMode === "bid") return "Online Blind Bidding";
+    if (!online.enabled && state.gameMode === "bid") return "Local Bidding";
+    if (!online.enabled && state.gameMode === "draft" && Number(state.userCount || state.users?.length || 0) === 1) return "Solo Challenge";
+    if (!online.enabled && state.gameMode === "draft") return "Local Ultimate Draft";
+
+    return "Ultimate 5-a-side Draft";
+  }
+
+  function selectedLegendLeagueV66(){
+    const direct = cleanTextV66(state?.selectedLegendLeague || state?.league || state?.legendLeague);
+    if (direct && direct.toLowerCase() !== "selected league") return direct;
+
+    const labels = state?.leagueSelection?.labels;
+    if (Array.isArray(labels)) {
+      const label = labels.map(cleanTextV66).find(Boolean);
+      if (label && label.toLowerCase() !== "selected league") return label;
+    }
+    if (labels && typeof labels === "object") {
+      const label = Object.values(labels).map(cleanTextV66).find(Boolean);
+      if (label && label.toLowerCase() !== "selected league") return label;
+    }
+
+    const team = Array.isArray(state?.users?.[0]?.team) ? state.users[0].team : [];
+    const fromTeam = team.map(player => cleanTextV66(player?.league)).find(Boolean);
+    if (fromTeam && fromTeam.toLowerCase() !== "selected league") return fromTeam;
+
+    return "";
+  }
+
+  function ensureLegendLeagueStateV66(){
+    if (!state || getPresetV66() !== "leaguelegends") return;
+    const league = selectedLegendLeagueV66();
+    if (!league) return;
+
+    state.selectedLegendLeague = league;
+    state.league = league;
+    if (!state.leagueSelection || typeof state.leagueSelection !== "object") {
+      state.leagueSelection = { labels: [league] };
+    }
+    if (!Array.isArray(state.leagueSelection.labels) || !state.leagueSelection.labels.length) {
+      state.leagueSelection.labels = [league];
+    }
+    if (!Array.isArray(state.leagueSelection.keys) || !state.leagueSelection.keys.length) {
+      state.leagueSelection.keys = [league.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")];
+    }
+
+    const team = Array.isArray(state.users?.[0]?.team) ? state.users[0].team : [];
+    team.forEach(player => {
+      if (player && !cleanTextV66(player.league)) player.league = league;
+    });
+  }
+
+  function applyResultLabelsV66(){
+    if (!state || !ratingsRevealed) return;
+    ensureLegendLeagueStateV66();
+
+    const label = getModeLabelV66();
+    const league = selectedLegendLeagueV66();
+
+    const hero = document.querySelector("#resultsPanel .finished-hero");
+    if (hero) {
+      const eyebrow = hero.querySelector(".eyebrow");
+      const intro = hero.querySelector(".muted");
+      if (eyebrow) eyebrow.textContent = label;
+      if (intro && getPresetV66() === "leaguelegends" && league) {
+        intro.textContent = `Ratings are revealed. League: ${league}.`;
+      }
+    }
+
+    const resultsPanel = document.getElementById("resultsPanel");
+    if (resultsPanel) {
+      resultsPanel.dataset.gameModeLabel = label;
+      if (league) resultsPanel.dataset.selectedLegendLeague = league;
+    }
+  }
+
+  // Keep Firebase writes explicit without changing Firebase rules or schema.
+  const previousEnsureFirebaseV66 = ensureFirebase;
+  ensureFirebase = async function(...args){
+    ensureLegendLeagueStateV66();
+    return await previousEnsureFirebaseV66.apply(this, args);
+  };
+
+  const previousSerialiseStateV66 = serialiseState;
+  serialiseState = function(...args){
+    ensureLegendLeagueStateV66();
+    const raw = previousSerialiseStateV66.apply(this, args);
+    if (raw && raw.challengePreset === "leaguelegends") {
+      const league = selectedLegendLeagueV66();
+      if (league) {
+        raw.selectedLegendLeague = league;
+        raw.league = league;
+        raw.leagueSelection = raw.leagueSelection || { labels: [league] };
+        raw.leagueSelection.labels = Array.isArray(raw.leagueSelection.labels) && raw.leagueSelection.labels.length ? raw.leagueSelection.labels : [league];
+      }
+    }
+    return raw;
+  };
+
+  const previousRenderResultsV66 = renderResults;
+  renderResults = function(...args){
+    const result = previousRenderResultsV66.apply(this, args);
+    applyResultLabelsV66();
+    return result;
+  };
+
+  if (typeof showFinishedResultsPageV33 === "function") {
+    const previousShowFinishedResultsPageV66 = showFinishedResultsPageV33;
+    showFinishedResultsPageV33 = function(...args){
+      ensureLegendLeagueStateV66();
+      const result = previousShowFinishedResultsPageV66.apply(this, args);
+      applyResultLabelsV66();
+      setTimeout(applyResultLabelsV66, 0);
+      setTimeout(applyResultLabelsV66, 80);
+      return result;
+    };
+  }
+
+  const previousRevealScoresV66 = revealScores;
+  revealScores = async function(...args){
+    ensureLegendLeagueStateV66();
+    const result = await previousRevealScoresV66.apply(this, args);
+    applyResultLabelsV66();
+    return result;
+  };
+
+  const previousCreateSummaryCanvasV66 = createSummaryCanvas;
+  createSummaryCanvas = function(...args){
+    ensureLegendLeagueStateV66();
+    const canvas = previousCreateSummaryCanvasV66.apply(this, args);
+    try {
+      const ctx = canvas.getContext("2d");
+      const label = getModeLabelV66();
+      const league = selectedLegendLeagueV66();
+      const subtitle = getPresetV66() === "leaguelegends" && league ? `${label} - ${league}` : label;
+
+      // Cover the old mode text and redraw the authoritative label in the saved/share image header.
+      ctx.save();
+      ctx.fillStyle = "rgba(15,23,42,.98)";
+      ctx.fillRect(195, 92, 980, 48);
+      ctx.font = "850 28px Arial";
+      ctx.fillStyle = "#d1fae5";
+      ctx.fillText(subtitle, 204, 122);
+      ctx.restore();
+    } catch (err) {
+      console.warn("Could not apply saved image mode label fix", err);
+    }
+    return canvas;
+  };
+
+  const previousSubmitLeaderboardScoreV66 = typeof submitLeaderboardScore === "function" ? submitLeaderboardScore : null;
+  if (previousSubmitLeaderboardScoreV66) {
+    submitLeaderboardScore = async function(...args){
+      ensureLegendLeagueStateV66();
+      return await previousSubmitLeaderboardScoreV66.apply(this, args);
+    };
+  }
+
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.("#revealBtn, #saveSummaryBtn, #shareSummaryBtn, #submitLeaderboardBtnStep19")) {
+      ensureLegendLeagueStateV66();
+      setTimeout(applyResultLabelsV66, 0);
+      setTimeout(applyResultLabelsV66, 120);
+    }
+  }, true);
+})();
+
+
+// --- v75 stable leaderboard + Firebase readiness fix ---
+// Replaces the heavy observer/interval leaderboard patches with one lightweight, direct implementation.
+(function stableLeaderboardFirebaseFixV75(){
+  let firebaseReadyPromiseV75 = null;
+
+  function hasFirebaseDatabaseV75(){
+    return typeof window.firebase !== "undefined" && typeof firebase.database === "function";
+  }
+
+  // Robust Firebase loader: avoids the intermittent "firebase.database is not a function" error.
+  const previousEnsureFirebaseV75 = ensureFirebase;
+  ensureFirebase = async function(){
+    if (hasFirebaseDatabaseV75() && firebase.apps && firebase.apps.length) {
+      online.loaded = true;
+      return;
+    }
+    if (firebaseReadyPromiseV75) return firebaseReadyPromiseV75;
+
+    firebaseReadyPromiseV75 = (async () => {
+      if (!firebaseConfigured()) throw new Error("Firebase is not configured.");
+
+      await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
+      await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js");
+
+      if (typeof window.firebase === "undefined") {
+        online.loaded = false;
+        throw new Error("Firebase app script did not load.");
+      }
+      if (typeof firebase.database !== "function") {
+        online.loaded = false;
+        firebaseReadyPromiseV75 = null;
+        throw new Error("Firebase database script did not load. Please refresh and try again.");
+      }
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      online.loaded = true;
+    })();
+
+    return firebaseReadyPromiseV75;
+  };
+
+  function elV75(id){ return document.getElementById(id); }
+
+  function isVisibleV75(el){
+    return !!el && !el.classList.contains("hidden") && el.style.display !== "none";
+  }
+
+  function showV75(el){
+    if (!el) return;
+    el.classList.remove("hidden");
+    el.style.display = "";
+    el.removeAttribute("aria-hidden");
+  }
+
+  function hideV75(el){
+    if (!el) return;
+    el.classList.add("hidden");
+    el.style.display = "none";
+    el.setAttribute("aria-hidden", "true");
+  }
+
+  function injectStylesV75(){
+    if (document.getElementById("stableLeaderboardStylesV75")) return;
+    const style = document.createElement("style");
+    style.id = "stableLeaderboardStylesV75";
+    style.textContent = `
+      #soloLeaderboardSubTabs.leaderboard-subtabs-v55::before,
+      .leaderboard-subtabs-v55::before{content:""!important;display:none!important;}
+      #soloLeaderboardSubTabs [data-solo-leaderboard-filter],
+      #soloLeaderboardSubTabs .solo-sub-tab:not([data-leaderboard-sub]){display:none!important;}
+      .leaderboard-subtabs-v55{background:linear-gradient(135deg,#eaf3ff,#f7fbff)!important;border:1.5px solid #93c5fd!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 8px 20px rgba(37,99,235,.08)!important;border-radius:18px!important;}
+      #leaderboardList .leaderboard-row-v55 .leaderboard-meta-v55{display:block!important;visibility:visible!important;}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function cleanupSubtabsV75(){
+    const holder = elV75("soloLeaderboardSubTabs");
+    if (!holder) return;
+    holder.classList.add("leaderboard-subtabs-v55");
+    holder.querySelectorAll('[data-solo-leaderboard-filter], .solo-sub-tab:not([data-leaderboard-sub])').forEach(btn => btn.remove());
+
+    const seen = new Set();
+    Array.from(holder.querySelectorAll('button')).forEach(btn => {
+      const key = `${btn.dataset.leaderboardSub || ""}|${(btn.textContent || "").trim().toLowerCase()}`;
+      if (seen.has(key)) btn.remove();
+      else seen.add(key);
+    });
+  }
+
+  function hideLeaderboardIfHomeVisibleV75(){
+    const entry = elV75("gameEntryPanel");
+    const panel = elV75("leaderboardPanel");
+    if (isVisibleV75(entry) && isVisibleV75(panel) && !document.body.dataset.openingLeaderboardV75) {
+      hideV75(panel);
+    }
+  }
+
+  function backFromLeaderboardV75(event){
+    if (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+    const entry = elV75("gameEntryPanel");
+    const setup = elV75("setupPanel");
+    const game = elV75("gamePanel");
+    const results = elV75("resultsPanel");
+    const leaderboard = elV75("leaderboardPanel");
+
+    hideV75(leaderboard);
+
+    if (state) {
+      hideV75(entry);
+      hideV75(setup);
+      if (ratingsRevealed) { hideV75(game); showV75(results); }
+      else { showV75(game); hideV75(results); }
+    } else {
+      showV75(entry);
+      hideV75(setup);
+      hideV75(game);
+      hideV75(results);
+    }
+  }
+
+  function openLeaderboardV75(){
+    document.body.dataset.openingLeaderboardV75 = "1";
+    setTimeout(() => { delete document.body.dataset.openingLeaderboardV75; }, 500);
+    injectStylesV75();
+    cleanupSubtabsV75();
+  }
+
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn")) {
+      openLeaderboardV75();
+      setTimeout(cleanupSubtabsV75, 0);
+      setTimeout(cleanupSubtabsV75, 100);
+      return;
+    }
+    if (event.target?.closest?.("#leaderboardBackBtn")) {
+      backFromLeaderboardV75(event);
+      return;
+    }
+    if (event.target?.closest?.("[data-leaderboard-group], [data-leaderboard-sub]")) {
+      cleanupSubtabsV75();
+      return;
+    }
+    setTimeout(hideLeaderboardIfHomeVisibleV75, 0);
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    injectStylesV75();
+    cleanupSubtabsV75();
+    hideLeaderboardIfHomeVisibleV75();
+  });
+
+  injectStylesV75();
+})();
+
+
+// --- v76 panel display-state fix after leaderboard navigation ---
+// Root cause: recent leaderboard guards used style.display="none" as well as .hidden.
+// Older app navigation only removed .hidden, leaving panels stuck invisible.
+(function panelDisplayStateFixV76(){
+  const originalShowV76 = show;
+
+  show = function(el, visible){
+    if (!el) return;
+    el.classList.toggle("hidden", !visible);
+    if (visible) {
+      el.style.display = "";
+      el.removeAttribute("aria-hidden");
+    } else {
+      el.style.display = "none";
+      el.setAttribute("aria-hidden", "true");
+    }
+  };
+
+  function fixVisiblePanelDisplayV76(){
+    [
+      "gameEntryPanel",
+      "setupPanel",
+      "gamePanel",
+      "resultsPanel",
+      "leaderboardPanel",
+      "onlineLobbyPanel",
+      "monthlyChallengesPanel"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (!el.classList.contains("hidden") && el.style.display === "none") {
+        el.style.display = "";
+        el.removeAttribute("aria-hidden");
+      }
+    });
+  }
+
+  function openLeaderboardCleanlyV76(){
+    const panel = document.getElementById("leaderboardPanel");
+    if (!panel) return;
+    panel.classList.remove("hidden");
+    panel.style.display = "";
+    panel.removeAttribute("aria-hidden");
+  }
+
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn")) {
+      // Let the existing v55 leaderboard handler do the actual load, then repair any stale inline display state.
+      setTimeout(openLeaderboardCleanlyV76, 0);
+      setTimeout(openLeaderboardCleanlyV76, 80);
+      setTimeout(fixVisiblePanelDisplayV76, 120);
+    }
+
+    if (event.target?.closest?.("#leaderboardBackBtn, #startLocalGameBtn, #createOnlineRoomBtn, #joinOnlineRoomBtn, #startBtn, [data-challenge], .challenge-card-v2")) {
+      setTimeout(fixVisiblePanelDisplayV76, 0);
+      setTimeout(fixVisiblePanelDisplayV76, 100);
+      setTimeout(fixVisiblePanelDisplayV76, 300);
+    }
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", fixVisiblePanelDisplayV76);
+  setTimeout(fixVisiblePanelDisplayV76, 0);
+})();
+
+
+// --- v77 Home button rename and current-mode Restart flow ---
+// Adds a dedicated Restart button inside the active game/results cards.
+// Home still returns to the front page; Restart returns to the current mode setup/lobby.
+(function currentModeRestartV77(){
+  function byId(id){ return document.getElementById(id); }
+  function setHomeButtonLabelV77(){ const btn = byId("resetBtn"); if (btn) { btn.textContent = "Home"; btn.setAttribute("aria-label", "Go back to home screen"); btn.title = "Go back to the home screen"; } }
+  function injectRestartStylesV77(){
+    if (byId("restartStylesV77")) return;
+    const style = document.createElement("style");
+    style.id = "restartStylesV77";
+    style.textContent = `.game-card-restart-row-v77{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 14px}.restart-current-btn-v77{background:linear-gradient(135deg,#0ea5e9,#2563eb)!important;color:#fff!important;border:0!important;min-height:42px;padding:10px 16px!important;border-radius:14px!important;box-shadow:0 10px 24px rgba(37,99,235,.22)!important}.finished-actions .restart-current-btn-v77{background:linear-gradient(135deg,#0ea5e9,#2563eb)!important}@media(max-width:720px){.game-card-restart-row-v77{justify-content:stretch;margin:0 0 12px}.game-card-restart-row-v77 .btn{width:100%}}`;
+    document.head.appendChild(style);
+  }
+  function currentPresetV77(){ return state?.challengePreset || window.challengePreset || "standard"; }
+  function clickFirstV77(selectors){ for (const selector of selectors){ const el=document.querySelector(selector); if(el){ el.click(); return true; } } return false; }
+  function clearTransientGameUiV77(){ byId("turnLockNote")?.remove(); byId("activeYearRangePillStep5")?.remove(); byId("onlineRoomMiniStep12")?.remove(); document.querySelectorAll(".online-action-banner-step16").forEach(el=>el.remove()); document.body.classList.remove("solo-challenge-active-step8","solo-results-centred-step9","online-game-active-step12","worldcup-challenge-active"); }
+  async function restartOnlineGameToLobbyV77(){
+    const ref=online?.ref; const roomId=online?.roomId; const isHost=!!online?.isHost; const myName=online?.myName || "";
+    if(!ref || !roomId){ resetGame(); return; }
+    let participants=[];
+    try{ const snap=await ref.child("participants").once("value"); participants=participantNamesFromObject(snap.val()); }
+    catch(err){ console.warn("Could not read room participants during restart",err); if(myName) participants=[myName]; }
+    state=null; currentCandidate=null; ratingsRevealed=false; applyingRemote=false; clearTransientGameUiV77();
+    try{ await ref.update({updatedAt:Date.now(),state:null,currentCandidate:null,ratingsRevealed:false,message:"Game restarted. Back in the lobby."}); }
+    catch(err){ console.warn("Could not update room during restart",err); }
+    const invite=`${location.origin}${location.pathname}?room=${roomId}`;
+    showLobby(isHost ? "host" : "player", participants, invite);
+    setHomeButtonLabelV77(); setTimeout(refreshRestartButtonsV77,0);
+  }
+  function reopenCurrentLocalSetupV77(preset){
+    window.challengePreset=preset || "standard";
+    if(preset==="leaguelegends" && clickFirstV77(['[data-challenge="leaguelegends"]'])) return;
+    if(preset==="league" && clickFirstV77(['[data-challenge="league"]'])) return;
+    if(preset==="worldcup2026"){
+      const monthly=document.querySelector(".active-monthly-challenge"); if(monthly) monthly.click();
+      setTimeout(()=>{ if(!clickFirstV77(["#playWorldCup2026ChallengeBtn"])){ window.challengePreset="standard"; byId("startLocalGameBtn")?.click(); } },80);
+      return;
+    }
+    if((preset==="ultimate" || preset==="easy") && clickFirstV77([`[data-challenge="${preset}"]`])) return;
+    window.challengePreset="standard"; byId("startLocalGameBtn")?.click();
+  }
+  async function restartCurrentModeV77(){ const preset=currentPresetV77(); if(online?.enabled){ await restartOnlineGameToLobbyV77(); return; } clearTransientGameUiV77(); resetGame(); setTimeout(()=>reopenCurrentLocalSetupV77(preset),120); }
+  function ensureGameRestartButtonV77(){
+    injectRestartStylesV77(); setHomeButtonLabelV77();
+    const gamePanel=byId("gamePanel"); const draftCard=document.querySelector("#gamePanel .draft-card");
+    if(!gamePanel || !draftCard || gamePanel.classList.contains("hidden") || ratingsRevealed){ byId("restartGameTopRowV77")?.remove(); return; }
+    let row=byId("restartGameTopRowV77");
+    if(!row){ row=document.createElement("div"); row.id="restartGameTopRowV77"; row.className="game-card-restart-row-v77"; row.innerHTML=`<button id="restartCurrentGameBtnV77" type="button" class="btn restart-current-btn-v77">Restart</button>`; draftCard.insertBefore(row,draftCard.firstChild); }
+  }
+  function ensureResultsRestartButtonV77(){
+    injectRestartStylesV77(); setHomeButtonLabelV77(); const actions=document.querySelector("#resultsPanel .finished-actions"); if(!actions) return;
+    const oldNewGame=byId("resetBtnResults");
+    if(oldNewGame){ oldNewGame.textContent="Restart"; oldNewGame.classList.add("restart-current-btn-v77"); oldNewGame.setAttribute("aria-label","Restart this game mode"); oldNewGame.title="Restart this game mode"; }
+    if(!byId("restartResultsBtnV77") && !oldNewGame){ const btn=document.createElement("button"); btn.id="restartResultsBtnV77"; btn.type="button"; btn.className="btn restart-current-btn-v77"; btn.textContent="Restart"; actions.appendChild(btn); }
+  }
+  function refreshRestartButtonsV77(){ setHomeButtonLabelV77(); ensureGameRestartButtonV77(); ensureResultsRestartButtonV77(); }
+  document.addEventListener("click",event=>{ if(event.target?.closest?.("#restartCurrentGameBtnV77, #restartResultsBtnV77, #resetBtnResults")){ event.preventDefault(); event.stopImmediatePropagation(); safe(restartCurrentModeV77)(); return; } if(event.target?.closest?.("#resetBtn")) setHomeButtonLabelV77(); },true);
+  const previousRenderV77=render; render=function(...args){ const result=previousRenderV77.apply(this,args); refreshRestartButtonsV77(); return result; };
+  const previousStartNewGameV77=startNewGame; startNewGame=function(...args){ const result=previousStartNewGameV77.apply(this,args); refreshRestartButtonsV77(); return result; };
+  const previousApplyRemoteDataV77=applyRemoteData; applyRemoteData=function(...args){ const result=previousApplyRemoteDataV77.apply(this,args); refreshRestartButtonsV77(); return result; };
+  if(typeof showFinishedResultsPageV33==="function"){ const previousShowFinishedV77=showFinishedResultsPageV33; showFinishedResultsPageV33=function(...args){ const result=previousShowFinishedV77.apply(this,args); refreshRestartButtonsV77(); return result; }; }
+  if(typeof renderResults==="function"){ const previousRenderResultsV77=renderResults; renderResults=function(...args){ const result=previousRenderResultsV77.apply(this,args); refreshRestartButtonsV77(); return result; }; }
+  const previousResetGameV77=resetGame; resetGame=function(...args){ const result=previousResetGameV77.apply(this,args); setHomeButtonLabelV77(); byId("restartGameTopRowV77")?.remove(); return result; };
+  document.addEventListener("DOMContentLoaded",refreshRestartButtonsV77); setTimeout(refreshRestartButtonsV77,0);
+})();
+
+// --- v78 leaderboard team display ---
+// Adds the submitted 5-a-side team to every leaderboard row where team data exists.
+(function leaderboardTeamDisplayV78(){
+  const GROUPS={
+    solo:{defaultSub:"all",subs:{all:["Solo Challenge","Ultimate Solo Mode","Easy Solo Challenge","League Challenge"],standard:["Solo Challenge"],ultimate:["Ultimate Solo Mode"],easy:["Easy Solo Challenge"],league:["League Challenge"]}},
+    online:{defaultSub:"all",subs:{all:["Online Ultimate Draft","Online Blind Bidding","Online Live Auction"],draft:["Online Ultimate Draft"],blind:["Online Blind Bidding"],live:["Online Live Auction"]}},
+    legends:{defaultSub:"all",subs:{all:["League Legends Challenge"]}},
+    monthly:{defaultSub:"all",subs:{all:["World Cup 2026 Challenge"],worldcup2026:["World Cup 2026 Challenge"]}}
+  };
+  let cache=null,cacheAt=0,busy=false,timer=null;
+  function byId(id){return document.getElementById(id);} 
+  function esc(v){return String(v??"").replace(/[&<>'\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));}
+  function mode(e){return String(e?.gameMode||"Unknown").trim()||"Unknown";}
+  function injectStyles(){
+    if(byId("leaderboardTeamStylesV78"))return;
+    const style=document.createElement("style");
+    style.id="leaderboardTeamStylesV78";
+    style.textContent=`#leaderboardList .leaderboard-row.leaderboard-row-v55.leaderboard-row-has-team-v78{align-items:start!important;row-gap:7px!important}.leaderboard-team-v78{grid-column:2 / span 3;display:grid;gap:6px;margin-top:2px;padding-top:7px;border-top:1px solid rgba(203,213,225,.72)}.leaderboard-team-title-v78{display:flex;align-items:center;gap:6px;color:#334155;font-size:.75rem;font-weight:950;text-transform:uppercase;letter-spacing:.06em}.leaderboard-team-chips-v78{display:flex;flex-wrap:wrap;gap:6px}.leaderboard-player-chip-v78{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:6px 9px;border-radius:999px;background:#eef6ff;border:1px solid #bfdbfe;color:#0f172a;font-size:.76rem;font-weight:850;line-height:1.1}.leaderboard-player-pos-v78{color:#1d4ed8;font-weight:1000}.leaderboard-player-rating-v78{color:#166534;font-weight:1000}.leaderboard-team-unavailable-v78{color:#64748b;font-size:.76rem;font-weight:850}@media(max-width:720px){.leaderboard-team-v78{grid-column:2 / span 2}.leaderboard-team-chips-v78{display:grid;grid-template-columns:1fr;gap:5px}.leaderboard-player-chip-v78{justify-content:space-between;border-radius:12px}}`;
+    document.head.appendChild(style);
+  }
+  function activeGroup(){const a=document.querySelector("#leaderboardPanel [data-leaderboard-group].active");const k=a?.dataset?.leaderboardGroup||"solo";return GROUPS[k]?k:"solo";}
+  function activeSub(groupKey){const a=document.querySelector("#leaderboardPanel [data-leaderboard-sub].active");const g=GROUPS[groupKey]||GROUPS.solo;const k=a?.dataset?.leaderboardSub||g.defaultSub||"all";return g.subs[k]?k:g.defaultSub||"all";}
+  function allowedModes(){const g=activeGroup();const s=activeSub(g);return new Set(GROUPS[g]?.subs?.[s]||GROUPS.solo.subs.all);}
+  async function allEntries(){
+    const now=Date.now();
+    if(cache&&now-cacheAt<2500)return cache;
+    await ensureFirebase();
+    const snap=await firebase.database().ref("leaderboard").once("value");
+    cache=Object.values(snap.val()||{}).filter(e=>Number.isFinite(Number(e?.score))).map(e=>({...e,username:String(e?.username||"Player").trim()||"Player",score:Number(e?.score||0),gameMode:mode(e),timestamp:Number(e?.timestamp||0)}));
+    cacheAt=now;
+    return cache;
+  }
+  function visibleEntries(entries){const allowed=allowedModes();return entries.filter(e=>allowed.has(e.gameMode)).sort((a,b)=>b.score!==a.score?b.score-a.score:Number(b.timestamp||0)-Number(a.timestamp||0)).slice(0,20);}
+  function playerName(p){return p?.name||p?.player||p?.Player||"Player";}
+  function playerRole(p){return String(p?.selectedRole||p?.position||p?.mainPosition||p?.Main_Position||p?.Position||"").trim().toUpperCase();}
+  function playerRating(p){const n=Number(p?.rating??p?.adjustedRating??p?.score??p?.baseRating??p?.Rating_OVR??"");return Number.isFinite(n)&&n?Math.round(n):"";}
+  function teamHtml(entry){
+    const team=Array.isArray(entry?.team)?entry.team.filter(Boolean).slice(0,5):[];
+    if(!team.length)return `<span class="leaderboard-team-unavailable-v78">Team used: not available for this older submission.</span>`;
+    const chips=team.map(p=>{const pos=playerRole(p),rating=playerRating(p);return `<span class="leaderboard-player-chip-v78">${pos?`<span class="leaderboard-player-pos-v78">${esc(pos)}</span>`:""}<span>${esc(playerName(p))}</span>${rating!==""?`<span class="leaderboard-player-rating-v78">${esc(rating)}</span>`:""}</span>`;}).join("");
+    return `<span class="leaderboard-team-title-v78">Team used</span><div class="leaderboard-team-chips-v78">${chips}</div>`;
+  }
+  async function enhance(){
+    if(busy)return;
+    const panel=byId("leaderboardPanel"),list=byId("leaderboardList");
+    if(!panel||!list||panel.classList.contains("hidden"))return;
+    const rows=Array.from(list.querySelectorAll(".leaderboard-row-v55"));
+    if(!rows.length)return;
+    busy=true;
+    try{
+      injectStyles();
+      const entries=visibleEntries(await allEntries());
+      rows.forEach((row,i)=>{const entry=entries[i];if(!entry)return;row.classList.add("leaderboard-row-has-team-v78");const html=teamHtml(entry);let holder=row.querySelector(".leaderboard-team-v78");if(!holder){holder=document.createElement("span");holder.className="leaderboard-team-v78";row.appendChild(holder);}if(holder.dataset.htmlV78!==html){holder.innerHTML=html;holder.dataset.htmlV78=html;}});
+    }catch(err){console.warn("Could not add teams to leaderboard rows",err);}finally{busy=false;}
+  }
+  function schedule(delay=80){if(timer)clearTimeout(timer);timer=setTimeout(()=>{timer=null;enhance();},delay);}
+  function observe(){const list=byId("leaderboardList");if(!list||list.dataset.teamObserverV78==="1")return;list.dataset.teamObserverV78="1";new MutationObserver(()=>schedule(80)).observe(list,{childList:true,subtree:false});}
+  document.addEventListener("DOMContentLoaded",()=>{injectStyles();observe();schedule(250);});
+  document.addEventListener("click",event=>{if(event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub]")){schedule(350);setTimeout(()=>schedule(50),900);}},true);
+  injectStyles();observe();schedule(250);
+})();
+
+// --- v79 compact leaderboard team chips ---
+// Makes the team-used section much smaller and keeps it on the same line where space allows.
+(function leaderboardTeamCompactV79(){
+  function byId(id){return document.getElementById(id);}
+  function injectStylesV79(){
+    if(byId("leaderboardTeamCompactStylesV79"))return;
+    const style=document.createElement("style");
+    style.id="leaderboardTeamCompactStylesV79";
+    style.textContent=`
+      #leaderboardList .leaderboard-row.leaderboard-row-v55.leaderboard-row-has-team-v78{
+        row-gap:3px!important;
+        padding-top:10px!important;
+        padding-bottom:10px!important;
+      }
+      #leaderboardList .leaderboard-row-v55 .leaderboard-meta-v55{
+        margin-top:0!important;
+        font-size:.76rem!important;
+        line-height:1.12!important;
+      }
+      #leaderboardList .leaderboard-team-v78{
+        grid-column:2 / span 3!important;
+        display:flex!important;
+        align-items:center!important;
+        flex-wrap:wrap!important;
+        gap:4px 6px!important;
+        margin-top:1px!important;
+        padding-top:0!important;
+        border-top:0!important;
+        min-width:0!important;
+        line-height:1.05!important;
+      }
+      #leaderboardList .leaderboard-team-title-v78{
+        display:inline-flex!important;
+        flex:0 0 auto!important;
+        color:#475569!important;
+        font-size:.66rem!important;
+        font-weight:950!important;
+        letter-spacing:.02em!important;
+        text-transform:none!important;
+        margin-right:1px!important;
+      }
+      #leaderboardList .leaderboard-team-chips-v78{
+        display:flex!important;
+        align-items:center!important;
+        flex-wrap:wrap!important;
+        gap:4px!important;
+        min-width:0!important;
+      }
+      #leaderboardList .leaderboard-player-chip-v78{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
+        gap:4px!important;
+        padding:3px 6px!important;
+        border-radius:999px!important;
+        font-size:.68rem!important;
+        font-weight:850!important;
+        line-height:1!important;
+        white-space:nowrap!important;
+        max-width:100%!important;
+        box-shadow:none!important;
+      }
+      #leaderboardList .leaderboard-player-pos-v78,
+      #leaderboardList .leaderboard-player-rating-v78{
+        font-size:.67rem!important;
+        line-height:1!important;
+      }
+      #leaderboardList .leaderboard-team-unavailable-v78{
+        font-size:.68rem!important;
+        line-height:1.1!important;
+      }
+      @media(max-width:720px){
+        #leaderboardList .leaderboard-row.leaderboard-row-v55.leaderboard-row-has-team-v78{
+          row-gap:3px!important;
+          padding:10px 12px!important;
+        }
+        #leaderboardList .leaderboard-team-v78{
+          grid-column:2 / span 2!important;
+          gap:3px 5px!important;
+        }
+        #leaderboardList .leaderboard-team-title-v78{
+          font-size:.62rem!important;
+        }
+        #leaderboardList .leaderboard-team-chips-v78{
+          display:flex!important;
+          grid-template-columns:none!important;
+          flex-wrap:wrap!important;
+          gap:3px!important;
+        }
+        #leaderboardList .leaderboard-player-chip-v78{
+          width:auto!important;
+          justify-content:flex-start!important;
+          border-radius:999px!important;
+          padding:3px 5px!important;
+          gap:3px!important;
+          font-size:.62rem!important;
+          max-width:calc(50vw - 34px)!important;
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+        }
+        #leaderboardList .leaderboard-player-chip-v78 span:nth-child(2){
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+        }
+        #leaderboardList .leaderboard-player-pos-v78,
+        #leaderboardList .leaderboard-player-rating-v78{
+          font-size:.61rem!important;
+          flex:0 0 auto!important;
+        }
+      }
+      @media(max-width:420px){
+        #leaderboardList .leaderboard-player-chip-v78{max-width:100%!important;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  function relabelTeamTitlesV79(){
+    document.querySelectorAll("#leaderboardList .leaderboard-team-title-v78").forEach(el=>{
+      if(el.textContent.trim().toLowerCase()!=="team:") el.textContent="Team:";
+    });
+  }
+  function scheduleV79(delay=80){setTimeout(()=>{injectStylesV79();relabelTeamTitlesV79();},delay);}
+  document.addEventListener("DOMContentLoaded",()=>scheduleV79(100));
+  document.addEventListener("click",event=>{
+    if(event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub]")){
+      scheduleV79(250);
+      scheduleV79(700);
+    }
+  },true);
+  const list=byId("leaderboardList");
+  if(list){new MutationObserver(()=>scheduleV79(40)).observe(list,{childList:true,subtree:true});}
+  injectStylesV79();
+  relabelTeamTitlesV79();
+})();
+
+// --- v80 mobile leaderboard team polish ---
+// Mobile-only refinement: make leaderboard metadata bolder, and make the player team list subtler,
+// flatter and more professional instead of chunky chips.
+(function leaderboardTeamMobilePolishV80(){
+  function byId(id){ return document.getElementById(id); }
+  function injectStylesV80(){
+    if (byId("leaderboardTeamMobilePolishStylesV80")) return;
+    const style = document.createElement("style");
+    style.id = "leaderboardTeamMobilePolishStylesV80";
+    style.textContent = `
+      /* Strengthen the important leaderboard info on all screens. */
+      #leaderboardList .leaderboard-row-v55 .leaderboard-rank,
+      #leaderboardList .leaderboard-row-v55 .leaderboard-name,
+      #leaderboardList .leaderboard-row-v55 .leaderboard-score{
+        font-weight:1000!important;
+      }
+      #leaderboardList .leaderboard-row-v55 .leaderboard-mode,
+      #leaderboardList .leaderboard-row-v55 .leaderboard-meta-v55{
+        font-weight:950!important;
+        color:#64748b!important;
+      }
+      #leaderboardList .leaderboard-row-v55 .leaderboard-name{
+        color:#0f172a!important;
+      }
+      #leaderboardList .leaderboard-row-v55 .leaderboard-score{
+        color:#166534!important;
+      }
+
+      /* Keep desktop compact, but make player chips a little less visually heavy. */
+      #leaderboardList .leaderboard-player-chip-v78{
+        font-weight:780!important;
+      }
+      #leaderboardList .leaderboard-player-chip-v78 span:nth-child(2){
+        color:#334155!important;
+      }
+
+      /* Mobile: turn the team into a slim text-style line rather than big pill badges. */
+      @media(max-width:720px){
+        #leaderboardList .leaderboard-row.leaderboard-row-v55.leaderboard-row-has-team-v78{
+          grid-template-columns:42px minmax(0,1fr) auto!important;
+          gap:4px 10px!important;
+          padding:13px 14px!important;
+          border-radius:18px!important;
+          align-items:start!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-rank{
+          grid-column:1!important;
+          grid-row:1!important;
+          font-size:1rem!important;
+          line-height:1.05!important;
+          color:#1e3a8a!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-name{
+          grid-column:2!important;
+          grid-row:1!important;
+          font-size:1.04rem!important;
+          line-height:1.06!important;
+          letter-spacing:-.02em!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-score{
+          grid-column:3!important;
+          grid-row:1!important;
+          font-size:1.08rem!important;
+          line-height:1.05!important;
+          text-align:right!important;
+          min-width:42px!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-mode{
+          grid-column:2 / span 2!important;
+          grid-row:2!important;
+          margin-top:4px!important;
+          font-size:.84rem!important;
+          line-height:1.08!important;
+          color:#64748b!important;
+          text-align:left!important;
+        }
+        #leaderboardList .leaderboard-row-v55 .leaderboard-meta-v55{
+          grid-column:2 / span 2!important;
+          grid-row:3!important;
+          margin-top:0!important;
+          font-size:.82rem!important;
+          line-height:1.08!important;
+          color:#64748b!important;
+        }
+        #leaderboardList .leaderboard-team-v78{
+          grid-column:2 / span 2!important;
+          grid-row:4!important;
+          display:block!important;
+          margin-top:2px!important;
+          padding-top:0!important;
+          border-top:0!important;
+          line-height:1.28!important;
+        }
+        #leaderboardList .leaderboard-team-title-v78{
+          display:inline!important;
+          margin-right:4px!important;
+          color:#475569!important;
+          font-size:.74rem!important;
+          font-weight:1000!important;
+          letter-spacing:.01em!important;
+          text-transform:none!important;
+        }
+        #leaderboardList .leaderboard-team-chips-v78{
+          display:inline!important;
+        }
+        #leaderboardList .leaderboard-player-chip-v78{
+          display:inline!important;
+          width:auto!important;
+          max-width:none!important;
+          padding:0!important;
+          margin:0!important;
+          border:0!important;
+          border-radius:0!important;
+          background:transparent!important;
+          box-shadow:none!important;
+          color:#64748b!important;
+          font-size:.72rem!important;
+          font-weight:680!important;
+          line-height:1.28!important;
+          white-space:normal!important;
+        }
+        #leaderboardList .leaderboard-player-chip-v78:not(:last-child)::after{
+          content:", ";
+          color:#94a3b8;
+          font-weight:650;
+        }
+        #leaderboardList .leaderboard-player-pos-v78{
+          color:#2563eb!important;
+          font-size:.71rem!important;
+          font-weight:850!important;
+          margin-right:2px!important;
+        }
+        #leaderboardList .leaderboard-player-rating-v78{
+          color:#64748b!important;
+          font-size:.71rem!important;
+          font-weight:760!important;
+          margin-left:2px!important;
+        }
+        #leaderboardList .leaderboard-team-unavailable-v78{
+          color:#64748b!important;
+          font-size:.72rem!important;
+          font-weight:700!important;
+          line-height:1.2!important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function relabelV80(){
+    document.querySelectorAll("#leaderboardList .leaderboard-team-title-v78").forEach(el => {
+      if (el.textContent.trim().toLowerCase() !== "team:") el.textContent = "Team:";
+    });
+  }
+  function runV80(){ injectStylesV80(); relabelV80(); }
+  function scheduleV80(delay=80){ setTimeout(runV80, delay); }
+
+  document.addEventListener("DOMContentLoaded", () => scheduleV80(80));
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.("#leaderboardBtn, [data-leaderboard-group], [data-leaderboard-sub]")) {
+      scheduleV80(250);
+      scheduleV80(700);
+    }
+  }, true);
+
+  const list = byId("leaderboardList");
+  if (list) new MutationObserver(() => scheduleV80(40)).observe(list, { childList:true, subtree:true });
+  runV80();
+})();
+
