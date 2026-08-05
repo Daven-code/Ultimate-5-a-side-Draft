@@ -10532,7 +10532,7 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
   function teamHtml(entry){
     const team=Array.isArray(entry?.team)?entry.team.filter(Boolean).slice(0,5):[];
     if(!team.length)return `<span class="leaderboard-team-unavailable-v78">Team used: not available for this older submission.</span>`;
-    const chips=team.map(p=>{const pos=playerRole(p),rating=playerRating(p);return `<span class="leaderboard-player-chip-v78">${pos?`<span class="leaderboard-player-pos-v78">${esc(pos)}</span>`:""}<span>${esc(playerName(p))}</span>${rating!==""?`<span class="leaderboard-player-rating-v78">${esc(rating)}</span>`:""}</span>`;}).join("");
+    const chips=team.map(p=>{const pos=playerRole(p);return `<span class="leaderboard-player-chip-v78">${pos?`<span class="leaderboard-player-pos-v78">${esc(pos)}</span>`:""}<span>${esc(playerName(p))}</span></span>`;}).join("");
     return `<span class="leaderboard-team-title-v78">Team used</span><div class="leaderboard-team-chips-v78">${chips}</div>`;
   }
   async function enhance(){
