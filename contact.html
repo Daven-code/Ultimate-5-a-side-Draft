@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact | Ultimate 5-a-side Draft</title>
+  <link rel="stylesheet" href="styles.css?v=contact-form-v1-20260805" />
+</head>
+<body>
+  <div class="background-glow glow-one"></div>
+  <div class="background-glow glow-two"></div>
+  <header class="app-header">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <img src="Ultimate 5-a-side LOGO.png" alt="Ultimate 5-a-side" class="site-logo">
+      <div>
+        <h1>Ultimate 5-a-side Draft Game</h1>
+        <p class="header-subtitle">Build your ultimate five-a-side team.</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a class="btn btn-primary" href="index.html">Home</a>
+    </div>
+  </header>
+  <main class="legal-page-shell">
+    <article class="legal-page-card">
+      <p class="eyebrow">Contact</p>
+      <h2>Contact Ultimate 5-a-side</h2>
+      <p class="legal-page-intro">Use this page for website questions, bug reports, leaderboard queries, privacy requests, sponsorship enquiries or feedback about the Ultimate 5-a-side Draft game.</p>
+      <span class="legal-page-updated">Last updated: 05 August 2026</span>
+
+      <form id="contactForm" class="contact-form-card" novalidate>
+        <div class="contact-form-head">
+          <div>
+            <p class="eyebrow">Send a message</p>
+            <h3>Contact form</h3>
+          </div>
+          <span id="messageWordCount" class="message-word-count">0 / 120 words</span>
+        </div>
+        <p class="contact-form-note">Complete the form below and it will open your email app with the message ready to send to Ultimate 5-a-side Draft.</p>
+
+        <div class="contact-form-grid">
+          <div class="contact-field">
+            <label for="contactName">Name</label>
+            <input id="contactName" name="name" type="text" autocomplete="name" maxlength="60" required placeholder="Your name" />
+          </div>
+          <div class="contact-field">
+            <label for="contactEmail">Email</label>
+            <input id="contactEmail" name="email" type="email" autocomplete="email" maxlength="120" required placeholder="you@example.com" />
+          </div>
+        </div>
+
+        <div class="contact-field">
+          <label for="contactMessage">Message</label>
+          <textarea id="contactMessage" name="message" rows="7" required placeholder="Tell me what happened, or what you would like to ask. Maximum 120 words."></textarea>
+          <p id="contactFormHelp" class="contact-form-help">Please keep your message to 120 words or fewer. For bugs, include the game mode, device/browser and any room code if relevant.</p>
+        </div>
+
+        <div id="contactFormStatus" class="contact-form-status" aria-live="polite"></div>
+        <button id="contactSubmitBtn" class="btn btn-primary" type="submit">Open email draft</button>
+        <p class="contact-form-fallback">If the button does not open your email app, email <a href="mailto:ultimate5asidedraft@gmail.com">ultimate5asidedraft@gmail.com</a>.</p>
+      </form>
+
+      <section class="legal-section">
+        <h3>What to include</h3>
+        <p>To make it easier to help, include any relevant details such as the game mode, device or browser used, the room code if the issue relates to an online game, and a short description of what happened.</p>
+      </section>
+
+      <section class="legal-section">
+        <h3>Leaderboard requests</h3>
+        <p>For leaderboard correction or removal requests, include the displayed username, approximate submission date, game mode and score if known. Avoid sending passwords or sensitive personal information.</p>
+      </section>
+
+      <section class="legal-section">
+        <h3>Independent fan-made game</h3>
+        <p>Ultimate 5-a-side Draft is an independent fan-made football draft game. It is not affiliated with, endorsed by, sponsored by, licensed by, or otherwise associated with any football club, league, competition, governing body, player association, game publisher, ratings provider, or data provider.</p>
+        <p>Player ratings are used purely for this game’s gameplay, comparison and entertainment purposes. No official logos, crests, player images, likenesses or other official branding are used.</p>
+      </section>
+
+      <div class="legal-page-actions">
+        <a class="btn btn-primary" href="index.html">Back to game</a>
+        <a class="btn btn-secondary" href="privacy.html">Privacy Policy</a>
+      </div>
+    </article>
+  </main>
+  <footer class="app-footer legal-footer">
+    <div class="footer-social" aria-label="Follow Ultimate 5-a-side on social media">
+      <p class="footer-social-title">Follow Ultimate 5-a-side</p>
+      <div class="footer-social-links">
+        <a class="footer-social-link" href="https://www.tiktok.com/@u1timate5aside?_r=1&amp;_t=ZN-98If4YdGEuU" target="_blank" rel="noopener noreferrer" aria-label="Follow Ultimate 5-a-side on TikTok">
+          <span class="footer-social-icon" aria-hidden="true">♪</span>
+          <span>TikTok</span>
+        </a>
+        <a class="footer-social-link" href="https://www.instagram.com/u1timate5aside?igsh=MWtsNmhxNHc0OG95Yw==" target="_blank" rel="noopener noreferrer" aria-label="Follow Ultimate 5-a-side on Instagram">
+          <span class="footer-social-icon" aria-hidden="true">◎</span>
+          <span>Instagram</span>
+        </a>
+        <a class="footer-social-link" href="https://x.com/U1timate5aside" target="_blank" rel="noopener noreferrer" aria-label="Follow Ultimate 5-a-side on X">
+          <span class="footer-social-icon" aria-hidden="true">𝕏</span>
+          <span>X</span>
+        </a>
+        <a class="footer-social-link" href="https://www.facebook.com/share/1DD73MbTp9/" target="_blank" rel="noopener noreferrer" aria-label="Follow Ultimate 5-a-side on Facebook">
+          <span class="footer-social-icon" aria-hidden="true">f</span>
+          <span>Facebook</span>
+        </a>
+      </div>
+    </div>
+    <nav class="footer-legal-links" aria-label="Legal and contact links">
+      <a href="privacy.html">Privacy Policy</a>
+      <span aria-hidden="true">•</span>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <p>© 2026 Ultimate 5-a-side Draft. All rights reserved.</p>
+    <p>This is an independent fan-made football draft game. It is not affiliated with, endorsed by, sponsored by, licensed by, or otherwise associated with any football club, league, competition, governing body, player association, game publisher, ratings provider, or data provider.</p>
+    <p>Player names, club names, ratings and related data are used for informational, descriptive and gameplay purposes only. No official logos, crests, player images, likenesses or other official branding are used. All trademarks, trade names, player-related rights, ratings, data and other intellectual property rights remain the property of their respective owners.</p>
+  </footer>
+  <script>
+    (function () {
+      const WORD_LIMIT = 120;
+      const FORM_EMAIL = "ultimate5asidedraft@gmail.com";
+      const form = document.getElementById("contactForm");
+      const nameInput = document.getElementById("contactName");
+      const emailInput = document.getElementById("contactEmail");
+      const messageInput = document.getElementById("contactMessage");
+      const wordCount = document.getElementById("messageWordCount");
+      const status = document.getElementById("contactFormStatus");
+      const submitBtn = document.getElementById("contactSubmitBtn");
+      if (!form || !messageInput) return;
+
+      function words(value) {
+        return String(value || "").trim().split(/\s+/).filter(Boolean);
+      }
+
+      function updateCount() {
+        const count = words(messageInput.value).length;
+        if (wordCount) wordCount.textContent = `${count} / ${WORD_LIMIT} words`;
+        const overLimit = count > WORD_LIMIT;
+        messageInput.classList.toggle("contact-field-error", overLimit);
+        if (wordCount) wordCount.classList.toggle("message-word-count-over", overLimit);
+        if (submitBtn) submitBtn.disabled = overLimit;
+        if (status && overLimit) status.textContent = `Please shorten the message to ${WORD_LIMIT} words or fewer.`;
+        if (status && !overLimit && status.dataset.reason === "word-limit") status.textContent = "";
+        return count;
+      }
+
+      messageInput.addEventListener("input", () => {
+        const count = updateCount();
+        if (count > WORD_LIMIT && status) status.dataset.reason = "word-limit";
+      });
+
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const message = messageInput.value.trim();
+        const count = updateCount();
+
+        if (!name || !email || !message) {
+          status.dataset.reason = "missing";
+          status.textContent = "Please add your name, email and message before sending.";
+          return;
+        }
+        if (!emailInput.checkValidity()) {
+          status.dataset.reason = "email";
+          status.textContent = "Please enter a valid email address.";
+          return;
+        }
+        if (count > WORD_LIMIT) {
+          status.dataset.reason = "word-limit";
+          status.textContent = `Please shorten the message to ${WORD_LIMIT} words or fewer.`;
+          return;
+        }
+
+        const subject = encodeURIComponent("Ultimate 5-a-side Draft contact form");
+        const body = encodeURIComponent(`Name: ${name}
+Email: ${email}
+
+Message:
+${message}`);
+        status.dataset.reason = "ready";
+        status.textContent = "Opening your email app with the completed message...";
+        window.location.href = `mailto:${FORM_EMAIL}?subject=${subject}&body=${body}`;
+      });
+
+      updateCount();
+    })();
+  </script>
+</body>
+</html>
