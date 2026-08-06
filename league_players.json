@@ -1134,8 +1134,29 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Michael Essien",
+    "Player": "Gianfranco Zola",
     "Rank": 55,
+    "Game_Year": 0,
+    "Rating_OVR": 90,
+    "Position": "SS/AM",
+    "Main_Position": "MID",
+    "Club": "Chelsea",
+    "Nation": "",
+    "League": "Premier League",
+    "Club_Spell": "Chelsea: 1996-2003",
+    "Short_Rationale": "Magical Chelsea forward with enormous legacy despite shorter PL stay.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1,
+      "FWD": 0.98,
+      "ST": 0.98
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Michael Essien",
+    "Rank": 56,
     "Game_Year": 0,
     "Rating_OVR": 89,
     "Position": "CM",
@@ -1156,7 +1177,7 @@
   },
   {
     "Player": "David de Gea",
-    "Rank": 56,
+    "Rank": 57,
     "Game_Year": 0,
     "Rating_OVR": 89,
     "Position": "GK",
@@ -1177,7 +1198,7 @@
   },
   {
     "Player": "Claude Makelele",
-    "Rank": 57,
+    "Rank": 58,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "DM",
@@ -1198,7 +1219,7 @@
   },
   {
     "Player": "Mesut Ozil",
-    "Rank": 58,
+    "Rank": 59,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "AM",
@@ -1219,7 +1240,7 @@
   },
   {
     "Player": "Matt Le Tissier",
-    "Rank": 59,
+    "Rank": 60,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "AM/SS",
@@ -1240,7 +1261,7 @@
   },
   {
     "Player": "Jimmy Floyd Hasselbaink",
-    "Rank": 60,
+    "Rank": 61,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "ST",
@@ -1261,7 +1282,7 @@
   },
   {
     "Player": "Bruno Fernandes",
-    "Rank": 61,
+    "Rank": 62,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "AM",
@@ -1282,7 +1303,7 @@
   },
   {
     "Player": "Dimitar Berbatov",
-    "Rank": 62,
+    "Rank": 63,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "ST",
@@ -1303,7 +1324,7 @@
   },
   {
     "Player": "Bernardo Silva",
-    "Rank": 63,
+    "Rank": 64,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CM/RW",
@@ -1324,7 +1345,7 @@
   },
   {
     "Player": "Trent Alexander-Arnold",
-    "Rank": 64,
+    "Rank": 65,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "RB/CM",
@@ -1345,7 +1366,7 @@
   },
   {
     "Player": "Pepe Reina",
-    "Rank": 65,
+    "Rank": 66,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "GK",
@@ -1366,7 +1387,7 @@
   },
   {
     "Player": "Juan Mata",
-    "Rank": 66,
+    "Rank": 67,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "AM/RW",
@@ -1387,7 +1408,7 @@
   },
   {
     "Player": "Kyle Walker",
-    "Rank": 67,
+    "Rank": 68,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "RB",
@@ -1408,7 +1429,7 @@
   },
   {
     "Player": "Marcus Rashford",
-    "Rank": 68,
+    "Rank": 69,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "LW/ST",
@@ -1429,7 +1450,7 @@
   },
   {
     "Player": "Joe Hart",
-    "Rank": 69,
+    "Rank": 70,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "GK",
@@ -1450,7 +1471,7 @@
   },
   {
     "Player": "Raheem Sterling",
-    "Rank": 70,
+    "Rank": 71,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "RW/LW",
@@ -1471,7 +1492,7 @@
   },
   {
     "Player": "Jermain Defoe",
-    "Rank": 71,
+    "Rank": 72,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "ST",
@@ -1492,7 +1513,7 @@
   },
   {
     "Player": "Teddy Sheringham",
-    "Rank": 72,
+    "Rank": 73,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "ST/SS",
@@ -1513,7 +1534,7 @@
   },
   {
     "Player": "Gary Speed",
-    "Rank": 73,
+    "Rank": 74,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CM/LM",
@@ -1534,7 +1555,7 @@
   },
   {
     "Player": "Gareth Barry",
-    "Rank": 74,
+    "Rank": 75,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CM/DM",
@@ -1555,7 +1576,7 @@
   },
   {
     "Player": "James Milner",
-    "Rank": 75,
+    "Rank": 76,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CM/FB/W",
@@ -1575,8 +1596,29 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
+    "Player": "Ledley King",
+    "Rank": 77,
+    "Game_Year": 0,
+    "Rating_OVR": 88,
+    "Position": "CB",
+    "Main_Position": "DEF",
+    "Club": "Tottenham Hotspur",
+    "Nation": "",
+    "League": "Premier League",
+    "Club_Spell": "Tottenham Hotspur: 1999-2012",
+    "Short_Rationale": "Outstanding defender when fit, limited by injuries.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 0.82,
+      "FWD": 0.55,
+      "ST": 0.55
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
     "Player": "Fernando Torres",
-    "Rank": 76,
+    "Rank": 78,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "ST",
@@ -1597,7 +1639,7 @@
   },
   {
     "Player": "Alexis Sanchez",
-    "Rank": 77,
+    "Rank": 79,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "LW/ST",
@@ -1618,7 +1660,7 @@
   },
   {
     "Player": "David Ginola",
-    "Rank": 78,
+    "Rank": 80,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "LW",
@@ -1639,7 +1681,7 @@
   },
   {
     "Player": "Luka Modric",
-    "Rank": 79,
+    "Rank": 81,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM",
@@ -1660,7 +1702,7 @@
   },
   {
     "Player": "Juninho Paulista",
-    "Rank": 80,
+    "Rank": 82,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "AM",
@@ -1681,7 +1723,7 @@
   },
   {
     "Player": "Xabi Alonso",
-    "Rank": 81,
+    "Rank": 83,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM",
@@ -1702,7 +1744,7 @@
   },
   {
     "Player": "Marcel Desailly",
-    "Rank": 82,
+    "Rank": 84,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CB",
@@ -1723,7 +1765,7 @@
   },
   {
     "Player": "Coutinho",
-    "Rank": 83,
+    "Rank": 85,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "AM/LW",
@@ -1744,7 +1786,7 @@
   },
   {
     "Player": "Ricardo Carvalho",
-    "Rank": 84,
+    "Rank": 86,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CB",
@@ -1765,7 +1807,7 @@
   },
   {
     "Player": "Andy Robertson",
-    "Rank": 85,
+    "Rank": 87,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "LB",
@@ -1786,7 +1828,7 @@
   },
   {
     "Player": "Les Ferdinand",
-    "Rank": 86,
+    "Rank": 88,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "ST",
@@ -1807,7 +1849,7 @@
   },
   {
     "Player": "Nicolas Anelka",
-    "Rank": 87,
+    "Rank": 89,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "ST",
@@ -1828,7 +1870,7 @@
   },
   {
     "Player": "Cesar Azpilicueta",
-    "Rank": 88,
+    "Rank": 90,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "RB/CB",
@@ -1849,7 +1891,7 @@
   },
   {
     "Player": "Denis Irwin",
-    "Rank": 89,
+    "Rank": 91,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "LB/RB",
@@ -1864,48 +1906,6 @@
       "MID": 0.82,
       "FWD": 0.65,
       "ST": 0.65
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Gianfranco Zola",
-    "Rank": 90,
-    "Game_Year": 0,
-    "Rating_OVR": 90,
-    "Position": "SS/AM",
-    "Main_Position": "MID",
-    "Club": "Chelsea",
-    "Nation": "",
-    "League": "Premier League",
-    "Club_Spell": "Chelsea: 1996-2003",
-    "Short_Rationale": "Magical Chelsea forward with enormous legacy despite shorter PL stay.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 1,
-      "FWD": 0.98,
-      "ST": 0.98
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Ledley King",
-    "Rank": 91,
-    "Game_Year": 0,
-    "Rating_OVR": 88,
-    "Position": "CB",
-    "Main_Position": "DEF",
-    "Club": "Tottenham Hotspur",
-    "Nation": "",
-    "League": "Premier League",
-    "Club_Spell": "Tottenham Hotspur: 1999-2012",
-    "Short_Rationale": "Outstanding defender when fit, limited by injuries.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 0.82,
-      "FWD": 0.55,
-      "ST": 0.55
     },
     "Source": "top_200_players_five_leagues.xlsx",
     "Notes": "League Legends Challenge player pool"
@@ -2499,29 +2499,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Romario",
-    "Rank": 20,
-    "Game_Year": 0,
-    "Rating_OVR": 93,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Barcelona, Valencia",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Barcelona: 1993-1995; Valencia: 1996-1997",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Samuel Eto'o",
-    "Rank": 21,
+    "Rank": 20,
     "Game_Year": 0,
     "Rating_OVR": 94,
     "Position": "ST",
@@ -2542,7 +2521,7 @@
   },
   {
     "Player": "Ladislav Kubala",
-    "Rank": 22,
+    "Rank": 21,
     "Game_Year": 0,
     "Rating_OVR": 94,
     "Position": "FW/AM",
@@ -2563,7 +2542,7 @@
   },
   {
     "Player": "Luis Figo",
-    "Rank": 23,
+    "Rank": 22,
     "Game_Year": 0,
     "Rating_OVR": 94,
     "Position": "RW/AM",
@@ -2584,7 +2563,7 @@
   },
   {
     "Player": "Hugo Sanchez",
-    "Rank": 24,
+    "Rank": 23,
     "Game_Year": 0,
     "Rating_OVR": 94,
     "Position": "ST",
@@ -2605,7 +2584,7 @@
   },
   {
     "Player": "Telmo Zarra",
-    "Rank": 25,
+    "Rank": 24,
     "Game_Year": 0,
     "Rating_OVR": 94,
     "Position": "ST",
@@ -2614,6 +2593,27 @@
     "Nation": "",
     "League": "La Liga",
     "Club_Spell": "Athletic Club: 1940-1955",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Romario",
+    "Rank": 25,
+    "Game_Year": 0,
+    "Rating_OVR": 93,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Barcelona, Valencia",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Barcelona: 1993-1995; Valencia: 1996-1997",
     "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
     "Position_Multipliers": {
       "DEF": 0.55,
@@ -2793,8 +2793,29 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Marcelo",
+    "Player": "Gareth Bale",
     "Rank": 34,
+    "Game_Year": 0,
+    "Rating_OVR": 93,
+    "Position": "RW/LW",
+    "Main_Position": "FWD",
+    "Club": "Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: 2013-2020, 2021-2022",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Marcelo",
+    "Rank": 35,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "LB",
@@ -2815,7 +2836,7 @@
   },
   {
     "Player": "Gerard Pique",
-    "Rank": 35,
+    "Rank": 36,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "CB",
@@ -2836,7 +2857,7 @@
   },
   {
     "Player": "David Villa",
-    "Rank": 36,
+    "Rank": 37,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "ST/LW",
@@ -2857,7 +2878,7 @@
   },
   {
     "Player": "Antoine Griezmann",
-    "Rank": 37,
+    "Rank": 38,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "SS/FW",
@@ -2878,7 +2899,7 @@
   },
   {
     "Player": "Diego Godin",
-    "Rank": 38,
+    "Rank": 39,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "CB",
@@ -2899,7 +2920,7 @@
   },
   {
     "Player": "Jan Oblak",
-    "Rank": 39,
+    "Rank": 40,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "GK",
@@ -2920,7 +2941,7 @@
   },
   {
     "Player": "Thibaut Courtois",
-    "Rank": 40,
+    "Rank": 41,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "GK",
@@ -2941,7 +2962,7 @@
   },
   {
     "Player": "Diego Simeone",
-    "Rank": 41,
+    "Rank": 42,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "CM/DM",
@@ -2961,8 +2982,29 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
+    "Player": "Toni Kroos",
+    "Rank": 43,
+    "Game_Year": 0,
+    "Rating_OVR": 92,
+    "Position": "CM",
+    "Main_Position": "MID",
+    "Club": "Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: 2014-2024",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1,
+      "FWD": 0.8,
+      "ST": 0.8
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
     "Player": "Koke",
-    "Rank": 42,
+    "Rank": 44,
     "Game_Year": 0,
     "Rating_OVR": 91,
     "Position": "CM",
@@ -2983,7 +3025,7 @@
   },
   {
     "Player": "Luis Aragones",
-    "Rank": 43,
+    "Rank": 45,
     "Game_Year": 0,
     "Rating_OVR": 91,
     "Position": "AM/ST",
@@ -3004,7 +3046,7 @@
   },
   {
     "Player": "Quini",
-    "Rank": 44,
+    "Rank": 46,
     "Game_Year": 0,
     "Rating_OVR": 91,
     "Position": "ST",
@@ -3025,7 +3067,7 @@
   },
   {
     "Player": "Cesar Rodriguez",
-    "Rank": 45,
+    "Rank": 47,
     "Game_Year": 0,
     "Rating_OVR": 91,
     "Position": "ST",
@@ -3046,7 +3088,7 @@
   },
   {
     "Player": "Rivaldo",
-    "Rank": 46,
+    "Rank": 48,
     "Game_Year": 0,
     "Rating_OVR": 91,
     "Position": "AM/LW",
@@ -3067,7 +3109,7 @@
   },
   {
     "Player": "Hristo Stoichkov",
-    "Rank": 47,
+    "Rank": 49,
     "Game_Year": 0,
     "Rating_OVR": 91,
     "Position": "FW/LW",
@@ -3088,7 +3130,7 @@
   },
   {
     "Player": "Michael Laudrup",
-    "Rank": 48,
+    "Rank": 50,
     "Game_Year": 0,
     "Rating_OVR": 91,
     "Position": "AM",
@@ -3109,7 +3151,7 @@
   },
   {
     "Player": "Bernd Schuster",
-    "Rank": 49,
+    "Rank": 51,
     "Game_Year": 0,
     "Rating_OVR": 91,
     "Position": "CM/AM",
@@ -3129,8 +3171,29 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
+    "Player": "Kylian Mbappe",
+    "Rank": 52,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "ST/LW",
+    "Main_Position": "FWD",
+    "Club": "Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
     "Player": "Gheorghe Hagi",
-    "Rank": 50,
+    "Rank": 53,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "AM",
@@ -3150,8 +3213,50 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
+    "Player": "Casemiro",
+    "Rank": 54,
+    "Game_Year": 0,
+    "Rating_OVR": 90,
+    "Position": "DM",
+    "Main_Position": "MID",
+    "Club": "Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: 2013-2014, 2015-2022",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.95,
+      "MID": 1,
+      "FWD": 0.7,
+      "ST": 0.7
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Jude Bellingham",
+    "Rank": 55,
+    "Game_Year": 0,
+    "Rating_OVR": 89,
+    "Position": "CM/AM",
+    "Main_Position": "MID",
+    "Club": "Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: 2023-present",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1,
+      "FWD": 0.9,
+      "ST": 0.9
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
     "Player": "Fernando Redondo",
-    "Rank": 51,
+    "Rank": 56,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "DM",
@@ -3172,7 +3277,7 @@
   },
   {
     "Player": "Claude Makelele",
-    "Rank": 52,
+    "Rank": 57,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "DM",
@@ -3193,7 +3298,7 @@
   },
   {
     "Player": "Deco",
-    "Rank": 53,
+    "Rank": 58,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CM/AM",
@@ -3214,7 +3319,7 @@
   },
   {
     "Player": "Juan Roman Riquelme",
-    "Rank": 54,
+    "Rank": 59,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "AM",
@@ -3235,7 +3340,7 @@
   },
   {
     "Player": "Diego Forlan",
-    "Rank": 55,
+    "Rank": 60,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "ST",
@@ -3256,7 +3361,7 @@
   },
   {
     "Player": "Sergio Aguero",
-    "Rank": 56,
+    "Rank": 61,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "ST",
@@ -3277,7 +3382,7 @@
   },
   {
     "Player": "Fernando Torres",
-    "Rank": 57,
+    "Rank": 62,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "ST",
@@ -3298,7 +3403,7 @@
   },
   {
     "Player": "Joaquin",
-    "Rank": 58,
+    "Rank": 63,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "RW",
@@ -3319,7 +3424,7 @@
   },
   {
     "Player": "David Silva",
-    "Rank": 59,
+    "Rank": 64,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "AM/LM",
@@ -3339,29 +3444,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Toni Kroos",
-    "Rank": 60,
-    "Game_Year": 0,
-    "Rating_OVR": 92,
-    "Position": "CM",
-    "Main_Position": "MID",
-    "Club": "Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: 2014-2024",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.85,
-      "MID": 1,
-      "FWD": 0.8,
-      "ST": 0.8
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Santi Cazorla",
-    "Rank": 61,
+    "Rank": 65,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "AM/CM",
@@ -3382,7 +3466,7 @@
   },
   {
     "Player": "Juan Carlos Valeron",
-    "Rank": 62,
+    "Rank": 66,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "AM",
@@ -3403,7 +3487,7 @@
   },
   {
     "Player": "Gaizka Mendieta",
-    "Rank": 63,
+    "Rank": 67,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CM/RM",
@@ -3423,302 +3507,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Pablo Aimar",
-    "Rank": 64,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "AM",
-    "Main_Position": "MID",
-    "Club": "Valencia, Real Zaragoza",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Valencia: dates to confirm; Real Zaragoza: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 1,
-      "FWD": 0.9,
-      "ST": 0.9
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Ivan Rakitic",
-    "Rank": 65,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "CM",
-    "Main_Position": "MID",
-    "Club": "Sevilla, Barcelona",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Sevilla: dates to confirm; Barcelona: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.85,
-      "MID": 1,
-      "FWD": 0.8,
-      "ST": 0.8
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Dani Carvajal",
-    "Rank": 66,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "RB",
-    "Main_Position": "DEF",
-    "Club": "Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 0.82,
-      "FWD": 0.65,
-      "ST": 0.65
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Juanito",
-    "Rank": 67,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "FW/RW",
-    "Main_Position": "FWD",
-    "Club": "Burgos, Real Madrid, Malaga",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Burgos: dates to confirm; Real Madrid: dates to confirm; Malaga: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 0.82,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Luis Enrique",
-    "Rank": 68,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "CM/RW",
-    "Main_Position": "MID",
-    "Club": "Sporting Gijon, Real Madrid, Barcelona",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Sporting Gijon: dates to confirm; Real Madrid: dates to confirm; Barcelona: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.85,
-      "MID": 1,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Pep Guardiola",
-    "Rank": 69,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "DM",
-    "Main_Position": "MID",
-    "Club": "Barcelona",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Barcelona: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.95,
-      "MID": 1,
-      "FWD": 0.7,
-      "ST": 0.7
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Jordi Alba",
-    "Rank": 70,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "LB",
-    "Main_Position": "DEF",
-    "Club": "Valencia, Barcelona",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Valencia: dates to confirm; Barcelona: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 0.82,
-      "FWD": 0.65,
-      "ST": 0.65
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Seydou Keita",
-    "Rank": 71,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "CM",
-    "Main_Position": "MID",
-    "Club": "Sevilla, Barcelona, Valencia",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Sevilla: dates to confirm; Barcelona: dates to confirm; Valencia: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.85,
-      "MID": 1,
-      "FWD": 0.8,
-      "ST": 0.8
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Rafael Marquez",
-    "Rank": 72,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "CB/DM",
-    "Main_Position": "DEF",
-    "Club": "Barcelona",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Barcelona: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 1,
-      "FWD": 0.7,
-      "ST": 0.7
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Javier Mascherano",
-    "Rank": 73,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "CB/DM",
-    "Main_Position": "DEF",
-    "Club": "Barcelona",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Barcelona: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 1,
-      "FWD": 0.7,
-      "ST": 0.7
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Javier Saviola",
-    "Rank": 74,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Barcelona, Sevilla, Real Madrid, Malaga",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Barcelona: dates to confirm; Sevilla: dates to confirm; Real Madrid: dates to confirm; Malaga: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Patrick Kluivert",
-    "Rank": 75,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Barcelona, Valencia",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Barcelona: dates to confirm; Valencia: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Rafael van der Vaart",
-    "Rank": 76,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "AM",
-    "Main_Position": "MID",
-    "Club": "Real Madrid, Real Betis",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: dates to confirm; Real Betis: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 1,
-      "FWD": 0.9,
-      "ST": 0.9
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Ruud van Nistelrooy",
-    "Rank": 77,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Real Madrid, Malaga",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: dates to confirm; Malaga: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Arjen Robben",
-    "Rank": 78,
+    "Rank": 68,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "RW/LW",
@@ -3738,197 +3528,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Gareth Bale",
-    "Rank": 79,
-    "Game_Year": 0,
-    "Rating_OVR": 93,
-    "Position": "RW/LW",
-    "Main_Position": "FWD",
-    "Club": "Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: 2013-2020, 2021-2022",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 0.82,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Eden Hazard",
-    "Rank": 80,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "LW",
-    "Main_Position": "FWD",
-    "Club": "Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 0.82,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Isco",
-    "Rank": 81,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "AM",
-    "Main_Position": "MID",
-    "Club": "Valencia, Malaga, Real Madrid, Sevilla, Real Betis",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Valencia: dates to confirm; Malaga: dates to confirm; Real Madrid: dates to confirm; Sevilla: dates to confirm; Real Betis: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 1,
-      "FWD": 0.9,
-      "ST": 0.9
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Marco Asensio",
-    "Rank": 82,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "RW/AM",
-    "Main_Position": "MID",
-    "Club": "Mallorca, Espanyol, Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Mallorca: dates to confirm; Espanyol: dates to confirm; Real Madrid: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 1,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Casemiro",
-    "Rank": 83,
-    "Game_Year": 0,
-    "Rating_OVR": 90,
-    "Position": "DM",
-    "Main_Position": "MID",
-    "Club": "Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: 2013-2014, 2015-2022",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.95,
-      "MID": 1,
-      "FWD": 0.7,
-      "ST": 0.7
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Vinicius Junior",
-    "Rank": 84,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "LW",
-    "Main_Position": "FWD",
-    "Club": "Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: 2018-present",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 0.82,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Rodrygo",
-    "Rank": 85,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "RW/LW",
-    "Main_Position": "FWD",
-    "Club": "Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: 2019-present",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 0.82,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Jude Bellingham",
-    "Rank": 86,
-    "Game_Year": 0,
-    "Rating_OVR": 89,
-    "Position": "CM/AM",
-    "Main_Position": "MID",
-    "Club": "Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: 2023-present",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.85,
-      "MID": 1,
-      "FWD": 0.9,
-      "ST": 0.9
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Kylian Mbappe",
-    "Rank": 87,
-    "Game_Year": 0,
-    "Rating_OVR": 91,
-    "Position": "ST/LW",
-    "Main_Position": "FWD",
-    "Club": "Real Madrid",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Real Madrid: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 0.82,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Robert Lewandowski",
-    "Rank": 88,
+    "Rank": 69,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "ST",
@@ -3949,7 +3550,7 @@
   },
   {
     "Player": "Pedri",
-    "Rank": 89,
+    "Rank": 70,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CM/AM",
@@ -3969,29 +3570,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Gavi",
-    "Rank": 90,
-    "Game_Year": 0,
-    "Rating_OVR": 87,
-    "Position": "CM",
-    "Main_Position": "MID",
-    "Club": "Barcelona",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Barcelona: 2021-present",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.85,
-      "MID": 1,
-      "FWD": 0.8,
-      "ST": 0.8
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Lamine Yamal",
-    "Rank": 91,
+    "Rank": 71,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "RW",
@@ -4011,8 +3591,449 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Aritz Aduriz",
+    "Player": "Victor Valdes",
+    "Rank": 72,
+    "Game_Year": 0,
+    "Rating_OVR": 88,
+    "Position": "GK",
+    "Main_Position": "GK",
+    "Club": "Barcelona",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Barcelona: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0,
+      "MID": 0,
+      "FWD": 0,
+      "ST": 0
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Pablo Aimar",
+    "Rank": 73,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "Valencia, Real Zaragoza",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Valencia: dates to confirm; Real Zaragoza: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1,
+      "FWD": 0.9,
+      "ST": 0.9
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Ivan Rakitic",
+    "Rank": 74,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "CM",
+    "Main_Position": "MID",
+    "Club": "Sevilla, Barcelona",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Sevilla: dates to confirm; Barcelona: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1,
+      "FWD": 0.8,
+      "ST": 0.8
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Dani Carvajal",
+    "Rank": 75,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "RB",
+    "Main_Position": "DEF",
+    "Club": "Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 0.82,
+      "FWD": 0.65,
+      "ST": 0.65
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Juanito",
+    "Rank": 76,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "FW/RW",
+    "Main_Position": "FWD",
+    "Club": "Burgos, Real Madrid, Malaga",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Burgos: dates to confirm; Real Madrid: dates to confirm; Malaga: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Luis Enrique",
+    "Rank": 77,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "CM/RW",
+    "Main_Position": "MID",
+    "Club": "Sporting Gijon, Real Madrid, Barcelona",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Sporting Gijon: dates to confirm; Real Madrid: dates to confirm; Barcelona: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Pep Guardiola",
+    "Rank": 78,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "DM",
+    "Main_Position": "MID",
+    "Club": "Barcelona",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Barcelona: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.95,
+      "MID": 1,
+      "FWD": 0.7,
+      "ST": 0.7
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Jordi Alba",
+    "Rank": 79,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "LB",
+    "Main_Position": "DEF",
+    "Club": "Valencia, Barcelona",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Valencia: dates to confirm; Barcelona: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 0.82,
+      "FWD": 0.65,
+      "ST": 0.65
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Seydou Keita",
+    "Rank": 80,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "CM",
+    "Main_Position": "MID",
+    "Club": "Sevilla, Barcelona, Valencia",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Sevilla: dates to confirm; Barcelona: dates to confirm; Valencia: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1,
+      "FWD": 0.8,
+      "ST": 0.8
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Rafael Marquez",
+    "Rank": 81,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "CB/DM",
+    "Main_Position": "DEF",
+    "Club": "Barcelona",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Barcelona: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 1,
+      "FWD": 0.7,
+      "ST": 0.7
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Javier Mascherano",
+    "Rank": 82,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "CB/DM",
+    "Main_Position": "DEF",
+    "Club": "Barcelona",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Barcelona: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 1,
+      "FWD": 0.7,
+      "ST": 0.7
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Javier Saviola",
+    "Rank": 83,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Barcelona, Sevilla, Real Madrid, Malaga",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Barcelona: dates to confirm; Sevilla: dates to confirm; Real Madrid: dates to confirm; Malaga: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Patrick Kluivert",
+    "Rank": 84,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Barcelona, Valencia",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Barcelona: dates to confirm; Valencia: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Rafael van der Vaart",
+    "Rank": 85,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "Real Madrid, Real Betis",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: dates to confirm; Real Betis: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1,
+      "FWD": 0.9,
+      "ST": 0.9
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Eden Hazard",
+    "Rank": 86,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "LW",
+    "Main_Position": "FWD",
+    "Club": "Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Isco",
+    "Rank": 87,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "Valencia, Malaga, Real Madrid, Sevilla, Real Betis",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Valencia: dates to confirm; Malaga: dates to confirm; Real Madrid: dates to confirm; Sevilla: dates to confirm; Real Betis: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1,
+      "FWD": 0.9,
+      "ST": 0.9
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Marco Asensio",
+    "Rank": 88,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "RW/AM",
+    "Main_Position": "MID",
+    "Club": "Mallorca, Espanyol, Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Mallorca: dates to confirm; Espanyol: dates to confirm; Real Madrid: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Vinicius Junior",
+    "Rank": 89,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "LW",
+    "Main_Position": "FWD",
+    "Club": "Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: 2018-present",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Rodrygo",
+    "Rank": 90,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "RW/LW",
+    "Main_Position": "FWD",
+    "Club": "Real Madrid",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: 2019-present",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Gavi",
+    "Rank": 91,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "CM",
+    "Main_Position": "MID",
+    "Club": "Barcelona",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Barcelona: 2021-present",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1,
+      "FWD": 0.8,
+      "ST": 0.8
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Ruud van Nistelrooy",
     "Rank": 92,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Real Madrid, Malaga",
+    "Nation": "",
+    "League": "La Liga",
+    "Club_Spell": "Real Madrid: dates to confirm; Malaga: dates to confirm",
+    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Aritz Aduriz",
+    "Rank": 93,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "ST",
@@ -4033,7 +4054,7 @@
   },
   {
     "Player": "Iago Aspas",
-    "Rank": 93,
+    "Rank": 94,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "ST/FW",
@@ -4054,7 +4075,7 @@
   },
   {
     "Player": "Diego Tristan",
-    "Rank": 94,
+    "Rank": 95,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "ST",
@@ -4075,7 +4096,7 @@
   },
   {
     "Player": "Roy Makaay",
-    "Rank": 95,
+    "Rank": 96,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "ST",
@@ -4096,7 +4117,7 @@
   },
   {
     "Player": "Djalminha",
-    "Rank": 96,
+    "Rank": 97,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "AM",
@@ -4117,7 +4138,7 @@
   },
   {
     "Player": "Fran",
-    "Rank": 97,
+    "Rank": 98,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "LM/CM",
@@ -4138,7 +4159,7 @@
   },
   {
     "Player": "Mauro Silva",
-    "Rank": 98,
+    "Rank": 99,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "DM",
@@ -4159,7 +4180,7 @@
   },
   {
     "Player": "Donato",
-    "Rank": 99,
+    "Rank": 100,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "CM/CB",
@@ -4174,27 +4195,6 @@
       "MID": 1,
       "FWD": 0.8,
       "ST": 0.8
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Jose Antonio Reyes",
-    "Rank": 100,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "LW/RW",
-    "Main_Position": "FWD",
-    "Club": "Sevilla, Real Madrid, Atletico Madrid, Espanyol",
-    "Nation": "",
-    "League": "La Liga",
-    "Club_Spell": "Sevilla: dates to confirm; Real Madrid: dates to confirm; Atletico Madrid: dates to confirm; Espanyol: dates to confirm",
-    "Short_Rationale": "Ranked for La Liga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 0.82,
-      "FWD": 1,
-      "ST": 1
     },
     "Source": "top_200_players_five_leagues.xlsx",
     "Notes": "League Legends Challenge player pool"
@@ -5796,92 +5796,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Diego Milito",
-    "Rank": 77,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Genoa, Inter",
-    "Nation": "",
-    "League": "Serie A",
-    "Club_Spell": "Genoa: dates to confirm; Inter: dates to confirm",
-    "Short_Rationale": "Ranked for Serie A impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Esteban Cambiasso",
-    "Rank": 78,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "DM/CM",
-    "Main_Position": "MID",
-    "Club": "Inter",
-    "Nation": "",
-    "League": "Serie A",
-    "Club_Spell": "Inter: dates to confirm",
-    "Short_Rationale": "Ranked for Serie A impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.95,
-      "MID": 1,
-      "FWD": 0.8,
-      "ST": 0.8
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Julio Cesar",
-    "Rank": 79,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "GK",
-    "Main_Position": "GK",
-    "Club": "Inter",
-    "Nation": "",
-    "League": "Serie A",
-    "Club_Spell": "Inter: dates to confirm",
-    "Short_Rationale": "Ranked for Serie A impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0,
-      "MID": 0,
-      "FWD": 0,
-      "ST": 0
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Samir Handanovic",
-    "Rank": 80,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "GK",
-    "Main_Position": "GK",
-    "Club": "Udinese, Inter",
-    "Nation": "",
-    "League": "Serie A",
-    "Club_Spell": "Udinese: dates to confirm; Inter: dates to confirm",
-    "Short_Rationale": "Ranked for Serie A impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0,
-      "MID": 0,
-      "FWD": 0,
-      "ST": 0
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Giorgio Chiellini",
-    "Rank": 81,
+    "Rank": 77,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CB/LB",
@@ -5902,7 +5818,7 @@
   },
   {
     "Player": "Leonardo Bonucci",
-    "Rank": 82,
+    "Rank": 78,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CB",
@@ -5923,7 +5839,7 @@
   },
   {
     "Player": "Andrea Barzagli",
-    "Rank": 83,
+    "Rank": 79,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CB",
@@ -5944,7 +5860,7 @@
   },
   {
     "Player": "Paul Pogba",
-    "Rank": 84,
+    "Rank": 80,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM",
@@ -5965,7 +5881,7 @@
   },
   {
     "Player": "Arturo Vidal",
-    "Rank": 85,
+    "Rank": 81,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM",
@@ -5986,7 +5902,7 @@
   },
   {
     "Player": "Claudio Marchisio",
-    "Rank": 86,
+    "Rank": 82,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM",
@@ -6007,7 +5923,7 @@
   },
   {
     "Player": "Carlos Tevez",
-    "Rank": 87,
+    "Rank": 83,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "ST/SS",
@@ -6028,7 +5944,7 @@
   },
   {
     "Player": "Cristiano Ronaldo",
-    "Rank": 88,
+    "Rank": 84,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "LW/ST",
@@ -6049,7 +5965,7 @@
   },
   {
     "Player": "Federico Chiesa",
-    "Rank": 89,
+    "Rank": 85,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "RW/LW",
@@ -6064,6 +5980,90 @@
       "MID": 0.82,
       "FWD": 1,
       "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Diego Milito",
+    "Rank": 86,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Genoa, Inter",
+    "Nation": "",
+    "League": "Serie A",
+    "Club_Spell": "Genoa: dates to confirm; Inter: dates to confirm",
+    "Short_Rationale": "Ranked for Serie A impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Esteban Cambiasso",
+    "Rank": 87,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "DM/CM",
+    "Main_Position": "MID",
+    "Club": "Inter",
+    "Nation": "",
+    "League": "Serie A",
+    "Club_Spell": "Inter: dates to confirm",
+    "Short_Rationale": "Ranked for Serie A impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.95,
+      "MID": 1,
+      "FWD": 0.8,
+      "ST": 0.8
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Julio Cesar",
+    "Rank": 88,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "GK",
+    "Main_Position": "GK",
+    "Club": "Inter",
+    "Nation": "",
+    "League": "Serie A",
+    "Club_Spell": "Inter: dates to confirm",
+    "Short_Rationale": "Ranked for Serie A impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0,
+      "MID": 0,
+      "FWD": 0,
+      "ST": 0
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Samir Handanovic",
+    "Rank": 89,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "GK",
+    "Main_Position": "GK",
+    "Club": "Udinese, Inter",
+    "Nation": "",
+    "League": "Serie A",
+    "Club_Spell": "Udinese: dates to confirm; Inter: dates to confirm",
+    "Short_Rationale": "Ranked for Serie A impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0,
+      "MID": 0,
+      "FWD": 0,
+      "ST": 0
     },
     "Source": "top_200_players_five_leagues.xlsx",
     "Notes": "League Legends Challenge player pool"
@@ -7896,92 +7896,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Mickael Landreau",
-    "Rank": 77,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "GK",
-    "Main_Position": "GK",
-    "Club": "Nantes, Paris Saint-Germain, Lille, Bastia",
-    "Nation": "",
-    "League": "Ligue 1",
-    "Club_Spell": "Nantes: dates to confirm; Paris Saint-Germain: dates to confirm; Lille: dates to confirm; Bastia: dates to confirm",
-    "Short_Rationale": "Ranked for Ligue 1 impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0,
-      "MID": 0,
-      "FWD": 0,
-      "ST": 0
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Gregory Coupet",
-    "Rank": 78,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "GK",
-    "Main_Position": "GK",
-    "Club": "Saint-Etienne, Lyon, Paris Saint-Germain",
-    "Nation": "",
-    "League": "Ligue 1",
-    "Club_Spell": "Saint-Etienne: dates to confirm; Lyon: dates to confirm; Paris Saint-Germain: dates to confirm",
-    "Short_Rationale": "Ranked for Ligue 1 impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0,
-      "MID": 0,
-      "FWD": 0,
-      "ST": 0
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Joel Bats",
-    "Rank": 79,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "GK",
-    "Main_Position": "GK",
-    "Club": "Sochaux, Auxerre, Paris Saint-Germain",
-    "Nation": "",
-    "League": "Ligue 1",
-    "Club_Spell": "Sochaux: dates to confirm; Auxerre: dates to confirm; Paris Saint-Germain: dates to confirm",
-    "Short_Rationale": "Ranked for Ligue 1 impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0,
-      "MID": 0,
-      "FWD": 0,
-      "ST": 0
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Bernard Lama",
-    "Rank": 80,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "GK",
-    "Main_Position": "GK",
-    "Club": "Lille, Metz, Brest, Lens, Paris Saint-Germain, Rennes",
-    "Nation": "",
-    "League": "Ligue 1",
-    "Club_Spell": "Lille: dates to confirm; Metz: dates to confirm; Brest: dates to confirm; Lens: dates to confirm; Paris Saint-Germain: dates to confirm; Rennes: dates to confirm",
-    "Short_Rationale": "Ranked for Ligue 1 impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0,
-      "MID": 0,
-      "FWD": 0,
-      "ST": 0
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Jean Tigana",
-    "Rank": 81,
+    "Rank": 77,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM",
@@ -8002,7 +7918,7 @@
   },
   {
     "Player": "Marius Tresor",
-    "Rank": 82,
+    "Rank": 78,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CB",
@@ -8023,7 +7939,7 @@
   },
   {
     "Player": "Maxime Bossis",
-    "Rank": 83,
+    "Rank": 79,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CB/LB",
@@ -8044,7 +7960,7 @@
   },
   {
     "Player": "Dominique Bathenay",
-    "Rank": 84,
+    "Rank": 80,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM",
@@ -8065,7 +7981,7 @@
   },
   {
     "Player": "Luis Fernandez",
-    "Rank": 85,
+    "Rank": 81,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "DM",
@@ -8086,7 +8002,7 @@
   },
   {
     "Player": "Jean-Marc Guillou",
-    "Rank": 86,
+    "Rank": 82,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM",
@@ -8107,7 +8023,7 @@
   },
   {
     "Player": "Jean-Michel Larque",
-    "Rank": 87,
+    "Rank": 83,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM",
@@ -8128,7 +8044,7 @@
   },
   {
     "Player": "Robert Herbin",
-    "Rank": 88,
+    "Rank": 84,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "CM/CB",
@@ -8149,7 +8065,7 @@
   },
   {
     "Player": "Salif Keita",
-    "Rank": 89,
+    "Rank": 85,
     "Game_Year": 0,
     "Rating_OVR": 87,
     "Position": "ST",
@@ -8164,6 +8080,90 @@
       "MID": 0.75,
       "FWD": 1,
       "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Mickael Landreau",
+    "Rank": 86,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "GK",
+    "Main_Position": "GK",
+    "Club": "Nantes, Paris Saint-Germain, Lille, Bastia",
+    "Nation": "",
+    "League": "Ligue 1",
+    "Club_Spell": "Nantes: dates to confirm; Paris Saint-Germain: dates to confirm; Lille: dates to confirm; Bastia: dates to confirm",
+    "Short_Rationale": "Ranked for Ligue 1 impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0,
+      "MID": 0,
+      "FWD": 0,
+      "ST": 0
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Gregory Coupet",
+    "Rank": 87,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "GK",
+    "Main_Position": "GK",
+    "Club": "Saint-Etienne, Lyon, Paris Saint-Germain",
+    "Nation": "",
+    "League": "Ligue 1",
+    "Club_Spell": "Saint-Etienne: dates to confirm; Lyon: dates to confirm; Paris Saint-Germain: dates to confirm",
+    "Short_Rationale": "Ranked for Ligue 1 impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0,
+      "MID": 0,
+      "FWD": 0,
+      "ST": 0
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Joel Bats",
+    "Rank": 88,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "GK",
+    "Main_Position": "GK",
+    "Club": "Sochaux, Auxerre, Paris Saint-Germain",
+    "Nation": "",
+    "League": "Ligue 1",
+    "Club_Spell": "Sochaux: dates to confirm; Auxerre: dates to confirm; Paris Saint-Germain: dates to confirm",
+    "Short_Rationale": "Ranked for Ligue 1 impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0,
+      "MID": 0,
+      "FWD": 0,
+      "ST": 0
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Bernard Lama",
+    "Rank": 89,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "GK",
+    "Main_Position": "GK",
+    "Club": "Lille, Metz, Brest, Lens, Paris Saint-Germain, Rennes",
+    "Nation": "",
+    "League": "Ligue 1",
+    "Club_Spell": "Lille: dates to confirm; Metz: dates to confirm; Brest: dates to confirm; Lens: dates to confirm; Paris Saint-Germain: dates to confirm; Rennes: dates to confirm",
+    "Short_Rationale": "Ranked for Ligue 1 impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0,
+      "MID": 0,
+      "FWD": 0,
+      "ST": 0
     },
     "Source": "top_200_players_five_leagues.xlsx",
     "Notes": "League Legends Challenge player pool"
@@ -8589,29 +8589,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Matthias Sammer",
-    "Rank": 10,
-    "Game_Year": 0,
-    "Rating_OVR": 95,
-    "Position": "DM/CB",
-    "Main_Position": "DEF",
-    "Club": "VfB Stuttgart, Borussia Dortmund",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "VfB Stuttgart: 1990-1992; Borussia Dortmund: 1993-1998",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 1,
-      "FWD": 0.7,
-      "ST": 0.7
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Thomas Muller",
-    "Rank": 11,
+    "Rank": 10,
     "Game_Year": 0,
     "Rating_OVR": 96,
     "Position": "SS/AM",
@@ -8631,8 +8610,50 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Bastian Schweinsteiger",
+    "Player": "Sepp Maier",
+    "Rank": 11,
+    "Game_Year": 0,
+    "Rating_OVR": 96,
+    "Position": "GK",
+    "Main_Position": "GK",
+    "Club": "Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: 1962-1979",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0,
+      "MID": 0,
+      "FWD": 0,
+      "ST": 0
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Matthias Sammer",
     "Rank": 12,
+    "Game_Year": 0,
+    "Rating_OVR": 95,
+    "Position": "DM/CB",
+    "Main_Position": "DEF",
+    "Club": "VfB Stuttgart, Borussia Dortmund",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "VfB Stuttgart: 1990-1992; Borussia Dortmund: 1993-1998",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 1,
+      "FWD": 0.7,
+      "ST": 0.7
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Bastian Schweinsteiger",
+    "Rank": 13,
     "Game_Year": 0,
     "Rating_OVR": 95,
     "Position": "CM",
@@ -8653,7 +8674,7 @@
   },
   {
     "Player": "Jupp Heynckes",
-    "Rank": 13,
+    "Rank": 14,
     "Game_Year": 0,
     "Rating_OVR": 95,
     "Position": "ST",
@@ -8674,7 +8695,7 @@
   },
   {
     "Player": "Klaus Fischer",
-    "Rank": 14,
+    "Rank": 15,
     "Game_Year": 0,
     "Rating_OVR": 95,
     "Position": "ST",
@@ -8694,50 +8715,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Sepp Maier",
-    "Rank": 15,
-    "Game_Year": 0,
-    "Rating_OVR": 96,
-    "Position": "GK",
-    "Main_Position": "GK",
-    "Club": "Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: 1962-1979",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0,
-      "MID": 0,
-      "FWD": 0,
-      "ST": 0
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Jurgen Klinsmann",
-    "Rank": 16,
-    "Game_Year": 0,
-    "Rating_OVR": 93,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "VfB Stuttgart, Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "VfB Stuttgart: 1984-1989; Bayern Munich: 1995-1997",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Arjen Robben",
-    "Rank": 17,
+    "Rank": 16,
     "Game_Year": 0,
     "Rating_OVR": 94,
     "Position": "RW/LW",
@@ -8758,7 +8737,7 @@
   },
   {
     "Player": "Franck Ribery",
-    "Rank": 18,
+    "Rank": 17,
     "Game_Year": 0,
     "Rating_OVR": 94,
     "Position": "LW",
@@ -8778,37 +8757,16 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Kevin Keegan",
-    "Rank": 19,
+    "Player": "Jurgen Klinsmann",
+    "Rank": 18,
     "Game_Year": 0,
-    "Rating_OVR": 91,
-    "Position": "SS/FW",
-    "Main_Position": "FWD",
-    "Club": "Hamburg",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Hamburg: 1977-1980",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.58,
-      "MID": 0.84,
-      "FWD": 0.98,
-      "ST": 0.98
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Miroslav Klose",
-    "Rank": 20,
-    "Game_Year": 0,
-    "Rating_OVR": 92,
+    "Rating_OVR": 93,
     "Position": "ST",
     "Main_Position": "FWD",
-    "Club": "Kaiserslautern, Werder Bremen, Bayern Munich",
+    "Club": "VfB Stuttgart, Bayern Munich",
     "Nation": "",
     "League": "Bundesliga",
-    "Club_Spell": "Kaiserslautern: 1999-2004; Werder Bremen: 2004-2007; Bayern Munich: 2007-2011",
+    "Club_Spell": "VfB Stuttgart: 1984-1989; Bayern Munich: 1995-1997",
     "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
     "Position_Multipliers": {
       "DEF": 0.55,
@@ -8820,29 +8778,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Toni Kroos",
-    "Rank": 21,
-    "Game_Year": 0,
-    "Rating_OVR": 92,
-    "Position": "CM",
-    "Main_Position": "MID",
-    "Club": "Bayern Munich, Bayer Leverkusen",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: 2007-2009, 2010-2014; Bayer Leverkusen: 2009-2010",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.85,
-      "MID": 1,
-      "FWD": 0.8,
-      "ST": 0.8
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Paul Breitner",
-    "Rank": 22,
+    "Rank": 19,
     "Game_Year": 0,
     "Rating_OVR": 93,
     "Position": "LB/CM",
@@ -8863,7 +8800,7 @@
   },
   {
     "Player": "Michael Ballack",
-    "Rank": 23,
+    "Rank": 20,
     "Game_Year": 0,
     "Rating_OVR": 93,
     "Position": "CM",
@@ -8883,8 +8820,113 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Andreas Moller",
+    "Player": "Wolfgang Overath",
+    "Rank": 21,
+    "Game_Year": 0,
+    "Rating_OVR": 93,
+    "Position": "CM/AM",
+    "Main_Position": "MID",
+    "Club": "Koln",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Koln: 1962-1977",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1,
+      "FWD": 0.9,
+      "ST": 0.9
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Roy Makaay",
+    "Rank": 22,
+    "Game_Year": 0,
+    "Rating_OVR": 93,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Franck Ribéry",
+    "Rank": 23,
+    "Game_Year": 0,
+    "Rating_OVR": 93,
+    "Position": "LM",
+    "Main_Position": "MID",
+    "Club": "Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.75,
+      "MID": 1,
+      "FWD": 0.86,
+      "ST": 0.86
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Miroslav Klose",
     "Rank": 24,
+    "Game_Year": 0,
+    "Rating_OVR": 92,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Kaiserslautern, Werder Bremen, Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Kaiserslautern: 1999-2004; Werder Bremen: 2004-2007; Bayern Munich: 2007-2011",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Toni Kroos",
+    "Rank": 25,
+    "Game_Year": 0,
+    "Rating_OVR": 92,
+    "Position": "CM",
+    "Main_Position": "MID",
+    "Club": "Bayern Munich, Bayer Leverkusen",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: 2007-2009, 2010-2014; Bayer Leverkusen: 2009-2010",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1,
+      "FWD": 0.8,
+      "ST": 0.8
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Andreas Moller",
+    "Rank": 26,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "AM",
@@ -8899,48 +8941,6 @@
       "MID": 1,
       "FWD": 0.9,
       "ST": 0.9
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Rudi Voller",
-    "Rank": 25,
-    "Game_Year": 0,
-    "Rating_OVR": 90,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Werder Bremen",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Werder Bremen: 1982-1987",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Pierre-Emerick Aubameyang",
-    "Rank": 26,
-    "Game_Year": 0,
-    "Rating_OVR": 90,
-    "Position": "ST/RW",
-    "Main_Position": "FWD",
-    "Club": "Borussia Dortmund",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Borussia Dortmund: 2013-2018",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 0.82,
-      "FWD": 1,
-      "ST": 1
     },
     "Source": "top_200_players_five_leagues.xlsx",
     "Notes": "League Legends Challenge player pool"
@@ -8988,50 +8988,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Wolfgang Overath",
-    "Rank": 29,
-    "Game_Year": 0,
-    "Rating_OVR": 93,
-    "Position": "CM/AM",
-    "Main_Position": "MID",
-    "Club": "Koln",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Koln: 1962-1977",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.85,
-      "MID": 1,
-      "FWD": 0.9,
-      "ST": 0.9
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Dieter Muller",
-    "Rank": 30,
-    "Game_Year": 0,
-    "Rating_OVR": 90,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Koln, VfB Stuttgart, Saarbrucken",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Koln: 1973-1981; VfB Stuttgart: 1981-1982; Saarbrucken: 1985-1986",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Claudio Pizarro",
-    "Rank": 31,
+    "Rank": 29,
     "Game_Year": 0,
     "Rating_OVR": 92,
     "Position": "ST",
@@ -9051,8 +9009,218 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Giovane Elber",
+    "Player": "Harry Kane",
+    "Rank": 30,
+    "Game_Year": 0,
+    "Rating_OVR": 92,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: 2023-present",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Lúcio",
+    "Rank": 31,
+    "Game_Year": 0,
+    "Rating_OVR": 92,
+    "Position": "CB",
+    "Main_Position": "DEF",
+    "Club": "Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 0.82,
+      "FWD": 0.55,
+      "ST": 0.55
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Kevin Keegan",
     "Rank": 32,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "SS/FW",
+    "Main_Position": "FWD",
+    "Club": "Hamburg",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Hamburg: 1977-1980",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.58,
+      "MID": 0.84,
+      "FWD": 0.98,
+      "ST": 0.98
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Ulf Kirsten",
+    "Rank": 33,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Bayer Leverkusen",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayer Leverkusen: 1990-2003",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Mehmet Scholl",
+    "Rank": 34,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: 1992-2007",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1,
+      "FWD": 0.9,
+      "ST": 0.9
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Mats Hummels",
+    "Rank": 35,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "CB",
+    "Main_Position": "DEF",
+    "Club": "Bayern Munich, Borussia Dortmund",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: 2006-2008, 2016-2019; Borussia Dortmund: 2008-2016, 2019-2024",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 0.82,
+      "FWD": 0.55,
+      "ST": 0.55
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Zé Roberto",
+    "Rank": 36,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "LB/LM",
+    "Main_Position": "DEF",
+    "Club": "Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 1,
+      "FWD": 0.86,
+      "ST": 0.86
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Rudi Voller",
+    "Rank": 37,
+    "Game_Year": 0,
+    "Rating_OVR": 90,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Werder Bremen",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Werder Bremen: 1982-1987",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Pierre-Emerick Aubameyang",
+    "Rank": 38,
+    "Game_Year": 0,
+    "Rating_OVR": 90,
+    "Position": "ST/RW",
+    "Main_Position": "FWD",
+    "Club": "Borussia Dortmund",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Borussia Dortmund: 2013-2018",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Dieter Muller",
+    "Rank": 39,
+    "Game_Year": 0,
+    "Rating_OVR": 90,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Koln, VfB Stuttgart, Saarbrucken",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Koln: 1973-1981; VfB Stuttgart: 1981-1982; Saarbrucken: 1985-1986",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Giovane Elber",
+    "Rank": 40,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "ST",
@@ -9073,7 +9241,7 @@
   },
   {
     "Player": "Mario Gomez",
-    "Rank": 33,
+    "Rank": 41,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "ST",
@@ -9093,29 +9261,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Ulf Kirsten",
-    "Rank": 34,
-    "Game_Year": 0,
-    "Rating_OVR": 91,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Bayer Leverkusen",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayer Leverkusen: 1990-2003",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Stefan Kuntz",
-    "Rank": 35,
+    "Rank": 42,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "ST",
@@ -9135,29 +9282,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Klaus Allofs",
-    "Rank": 36,
-    "Game_Year": 0,
-    "Rating_OVR": 89,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Fortuna Dusseldorf, Koln, Werder Bremen",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Fortuna Dusseldorf: 1975-1981; Koln: 1981-1987; Werder Bremen: 1990-1993",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Manfred Burgsmuller",
-    "Rank": 37,
+    "Rank": 43,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "AM/ST",
@@ -9177,29 +9303,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Horst Hrubesch",
-    "Rank": 38,
-    "Game_Year": 0,
-    "Rating_OVR": 89,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Hamburg, Borussia Dortmund",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Hamburg: 1978-1983; Borussia Dortmund: 1983-1985",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Hannes Lohr",
-    "Rank": 39,
+    "Rank": 44,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "LW",
@@ -9220,7 +9325,7 @@
   },
   {
     "Player": "Bernd Holzenbein",
-    "Rank": 40,
+    "Rank": 45,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "AM/FW",
@@ -9240,29 +9345,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Mehmet Scholl",
-    "Rank": 41,
-    "Game_Year": 0,
-    "Rating_OVR": 91,
-    "Position": "AM",
-    "Main_Position": "MID",
-    "Club": "Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: 1992-2007",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 1,
-      "FWD": 0.9,
-      "ST": 0.9
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Stefan Effenberg",
-    "Rank": 42,
+    "Rank": 46,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "CM",
@@ -9282,50 +9366,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Lucio",
-    "Rank": 43,
-    "Game_Year": 0,
-    "Rating_OVR": 89,
-    "Position": "CB",
-    "Main_Position": "DEF",
-    "Club": "Bayer Leverkusen, Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayer Leverkusen: 2001-2004; Bayern Munich: 2004-2009",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 0.82,
-      "FWD": 0.55,
-      "ST": 0.55
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Mats Hummels",
-    "Rank": 44,
-    "Game_Year": 0,
-    "Rating_OVR": 91,
-    "Position": "CB",
-    "Main_Position": "DEF",
-    "Club": "Bayern Munich, Borussia Dortmund",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: 2006-2008, 2016-2019; Borussia Dortmund: 2008-2016, 2019-2024",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 0.82,
-      "FWD": 0.55,
-      "ST": 0.55
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Jerome Boateng",
-    "Rank": 45,
+    "Rank": 47,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "CB",
@@ -9346,7 +9388,7 @@
   },
   {
     "Player": "David Alaba",
-    "Rank": 46,
+    "Rank": 48,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "LB/CB",
@@ -9367,7 +9409,7 @@
   },
   {
     "Player": "Joshua Kimmich",
-    "Rank": 47,
+    "Rank": 49,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "DM/RB",
@@ -9382,48 +9424,6 @@
       "MID": 1,
       "FWD": 0.7,
       "ST": 0.7
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Florian Wirtz",
-    "Rank": 48,
-    "Game_Year": 0,
-    "Rating_OVR": 88,
-    "Position": "AM",
-    "Main_Position": "MID",
-    "Club": "Bayer Leverkusen",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayer Leverkusen: 2020-2025",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 1,
-      "FWD": 0.9,
-      "ST": 0.9
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Harry Kane",
-    "Rank": 49,
-    "Game_Year": 0,
-    "Rating_OVR": 92,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: 2023-present",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
     },
     "Source": "top_200_players_five_leagues.xlsx",
     "Notes": "League Legends Challenge player pool"
@@ -9450,71 +9450,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Roy Makaay",
-    "Rank": 51,
-    "Game_Year": 0,
-    "Rating_OVR": 93,
-    "Position": "ST",
-    "Main_Position": "FWD",
-    "Club": "Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.55,
-      "MID": 0.75,
-      "FWD": 1,
-      "ST": 1
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Lúcio",
-    "Rank": 52,
-    "Game_Year": 0,
-    "Rating_OVR": 92,
-    "Position": "CB",
-    "Main_Position": "DEF",
-    "Club": "Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 0.82,
-      "FWD": 0.55,
-      "ST": 0.55
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Zé Roberto",
-    "Rank": 53,
-    "Game_Year": 0,
-    "Rating_OVR": 91,
-    "Position": "LB/LM",
-    "Main_Position": "DEF",
-    "Club": "Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 1,
-      "FWD": 0.86,
-      "ST": 0.86
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Tomáš Rosický",
-    "Rank": 54,
+    "Rank": 51,
     "Game_Year": 0,
     "Rating_OVR": 90,
     "Position": "CAM",
@@ -9534,8 +9471,92 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Sebastian Deisler",
+    "Player": "Daniel van Buyten",
+    "Rank": 52,
+    "Game_Year": 0,
+    "Rating_OVR": 90,
+    "Position": "CB",
+    "Main_Position": "DEF",
+    "Club": "Hamburg",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Hamburg: dates vary by game-year pool",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 0.82,
+      "FWD": 0.55,
+      "ST": 0.55
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Klaus Allofs",
+    "Rank": 53,
+    "Game_Year": 0,
+    "Rating_OVR": 89,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Fortuna Dusseldorf, Koln, Werder Bremen",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Fortuna Dusseldorf: 1975-1981; Koln: 1981-1987; Werder Bremen: 1990-1993",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Horst Hrubesch",
+    "Rank": 54,
+    "Game_Year": 0,
+    "Rating_OVR": 89,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "Hamburg, Borussia Dortmund",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Hamburg: 1978-1983; Borussia Dortmund: 1983-1985",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1,
+      "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Lucio",
     "Rank": 55,
+    "Game_Year": 0,
+    "Rating_OVR": 89,
+    "Position": "CB",
+    "Main_Position": "DEF",
+    "Club": "Bayer Leverkusen, Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayer Leverkusen: 2001-2004; Bayern Munich: 2004-2009",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 1,
+      "MID": 0.82,
+      "FWD": 0.55,
+      "ST": 0.55
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Sebastian Deisler",
+    "Rank": 56,
     "Game_Year": 0,
     "Rating_OVR": 89,
     "Position": "RB/RM",
@@ -9555,8 +9576,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Franck Ribéry",
-    "Rank": 56,
+    "Player": "Luis Díaz",
+    "Rank": 57,
     "Game_Year": 0,
     "Rating_OVR": 89,
     "Position": "LM",
@@ -9576,8 +9597,29 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
+    "Player": "Florian Wirtz",
+    "Rank": 58,
+    "Game_Year": 0,
+    "Rating_OVR": 88,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "Bayer Leverkusen",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayer Leverkusen: 2020-2025",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1,
+      "FWD": 0.9,
+      "ST": 0.9
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
     "Player": "Christoph Metzelder",
-    "Rank": 57,
+    "Rank": 59,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CB",
@@ -9597,29 +9639,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Daniel van Buyten",
-    "Rank": 58,
-    "Game_Year": 0,
-    "Rating_OVR": 88,
-    "Position": "CB",
-    "Main_Position": "DEF",
-    "Club": "Hamburg",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Hamburg: dates vary by game-year pool",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 0.82,
-      "FWD": 0.55,
-      "ST": 0.55
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Marcelinho",
-    "Rank": 59,
+    "Rank": 60,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CAM",
@@ -9640,7 +9661,7 @@
   },
   {
     "Player": "Christian Wörns",
-    "Rank": 60,
+    "Rank": 61,
     "Game_Year": 0,
     "Rating_OVR": 88,
     "Position": "CB",
@@ -9649,27 +9670,6 @@
     "Nation": "",
     "League": "Bundesliga",
     "Club_Spell": "Borussia Dortmund: dates vary by game-year pool",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 1,
-      "MID": 0.82,
-      "FWD": 0.55,
-      "ST": 0.55
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Jérôme Boateng",
-    "Rank": 61,
-    "Game_Year": 0,
-    "Rating_OVR": 88,
-    "Position": "CB",
-    "Main_Position": "DEF",
-    "Club": "Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
     "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
     "Position_Multipliers": {
       "DEF": 1,
@@ -9954,8 +9954,50 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Willy Sagnol",
+    "Player": "Kevin De Bruyne",
     "Rank": 75,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "RM",
+    "Main_Position": "MID",
+    "Club": "VfL Wolfsburg",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "VfL Wolfsburg: dates vary by game-year pool",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.75,
+      "MID": 1,
+      "FWD": 0.86,
+      "ST": 0.86
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Kingsley Coman",
+    "Rank": 76,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "LM",
+    "Main_Position": "MID",
+    "Club": "Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.75,
+      "MID": 1,
+      "FWD": 0.86,
+      "ST": 0.86
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Willy Sagnol",
+    "Rank": 77,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "RWB",
@@ -9976,7 +10018,7 @@
   },
   {
     "Player": "Valérien Ismaël",
-    "Rank": 76,
+    "Rank": 78,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "CB",
@@ -9997,7 +10039,7 @@
   },
   {
     "Player": "Bernd Schneider",
-    "Rank": 77,
+    "Rank": 79,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "RM",
@@ -10018,7 +10060,7 @@
   },
   {
     "Player": "Per Mertesacker",
-    "Rank": 78,
+    "Rank": 80,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "CB",
@@ -10039,7 +10081,7 @@
   },
   {
     "Player": "Luca Toni",
-    "Rank": 79,
+    "Rank": 81,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "ST",
@@ -10059,29 +10101,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Thomas Müller",
-    "Rank": 80,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "CAM",
-    "Main_Position": "MID",
-    "Club": "Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.65,
-      "MID": 1,
-      "FWD": 0.9,
-      "ST": 0.9
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Arturo Vidal",
-    "Rank": 81,
+    "Rank": 82,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "CM",
@@ -10102,7 +10123,7 @@
   },
   {
     "Player": "James Rodríguez",
-    "Rank": 82,
+    "Rank": 83,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "CAM",
@@ -10123,7 +10144,7 @@
   },
   {
     "Player": "Jadon Sancho",
-    "Rank": 83,
+    "Rank": 84,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "RM",
@@ -10144,7 +10165,7 @@
   },
   {
     "Player": "Sadio Mané",
-    "Rank": 84,
+    "Rank": 85,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "CF",
@@ -10165,7 +10186,7 @@
   },
   {
     "Player": "Gregor Kobel",
-    "Rank": 85,
+    "Rank": 86,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "GK",
@@ -10186,7 +10207,7 @@
   },
   {
     "Player": "Jonathan Tah",
-    "Rank": 86,
+    "Rank": 87,
     "Game_Year": 0,
     "Rating_OVR": 86,
     "Position": "CB",
@@ -10201,27 +10222,6 @@
       "MID": 0.82,
       "FWD": 0.55,
       "ST": 0.55
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
-    "Player": "Luis Díaz",
-    "Rank": 87,
-    "Game_Year": 0,
-    "Rating_OVR": 86,
-    "Position": "LM",
-    "Main_Position": "MID",
-    "Club": "Bayern Munich",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.75,
-      "MID": 1,
-      "FWD": 0.86,
-      "ST": 0.86
     },
     "Source": "top_200_players_five_leagues.xlsx",
     "Notes": "League Legends Challenge player pool"
@@ -10395,29 +10395,8 @@
     "Notes": "League Legends Challenge player pool"
   },
   {
-    "Player": "Kevin De Bruyne",
-    "Rank": 96,
-    "Game_Year": 0,
-    "Rating_OVR": 85,
-    "Position": "RM",
-    "Main_Position": "MID",
-    "Club": "VfL Wolfsburg",
-    "Nation": "",
-    "League": "Bundesliga",
-    "Club_Spell": "VfL Wolfsburg: dates vary by game-year pool",
-    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
-    "Position_Multipliers": {
-      "DEF": 0.75,
-      "MID": 1,
-      "FWD": 0.86,
-      "ST": 0.86
-    },
-    "Source": "top_200_players_five_leagues.xlsx",
-    "Notes": "League Legends Challenge player pool"
-  },
-  {
     "Player": "Bernd Leno",
-    "Rank": 97,
+    "Rank": 96,
     "Game_Year": 0,
     "Rating_OVR": 85,
     "Position": "GK",
@@ -10438,7 +10417,7 @@
   },
   {
     "Player": "Yann Sommer",
-    "Rank": 98,
+    "Rank": 97,
     "Game_Year": 0,
     "Rating_OVR": 85,
     "Position": "GK",
@@ -10459,7 +10438,7 @@
   },
   {
     "Player": "Serge Gnabry",
-    "Rank": 99,
+    "Rank": 98,
     "Game_Year": 0,
     "Rating_OVR": 85,
     "Position": "RM",
@@ -10480,7 +10459,7 @@
   },
   {
     "Player": "Timo Werner",
-    "Rank": 100,
+    "Rank": 99,
     "Game_Year": 0,
     "Rating_OVR": 85,
     "Position": "ST",
@@ -10495,6 +10474,27 @@
       "MID": 0.75,
       "FWD": 1,
       "ST": 1
+    },
+    "Source": "top_200_players_five_leagues.xlsx",
+    "Notes": "League Legends Challenge player pool"
+  },
+  {
+    "Player": "Leroy Sané",
+    "Rank": 100,
+    "Game_Year": 0,
+    "Rating_OVR": 85,
+    "Position": "LM",
+    "Main_Position": "MID",
+    "Club": "Bayern Munich",
+    "Nation": "",
+    "League": "Bundesliga",
+    "Club_Spell": "Bayern Munich: dates vary by game-year pool",
+    "Short_Rationale": "Ranked for Bundesliga impact: prime level first, then league legacy/legend status, with longevity as a supporting factor.",
+    "Position_Multipliers": {
+      "DEF": 0.75,
+      "MID": 1,
+      "FWD": 0.86,
+      "ST": 0.86
     },
     "Source": "top_200_players_five_leagues.xlsx",
     "Notes": "League Legends Challenge player pool"
