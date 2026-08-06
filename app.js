@@ -8989,6 +8989,7 @@ document.addEventListener('click', function(e){
     if (['DM','CDM','CM','AM','CAM','LM','RM'].some(x => p.includes(x))) return 'MID';
     return 'FWD';
   }
+  function legendPlayerKey(value){ return String(value || '').trim().toLowerCase().replace(/\s+/g, ' '); }
   function normaliseLegendRows(rows){
     return (Array.isArray(rows) ? rows : []).map((p, index) => {
       const multipliers = p.Position_Multipliers || p.positionMultipliers || {};
@@ -9050,12 +9051,16 @@ document.addEventListener('click', function(e){
     return { ...player, selectedRole: role, mainPosition: role, rating: adjusted, adjustedRating: adjusted, baseRating: base, positionMultiplier: multiplier };
   }
   function availableCandidates(){
-    const selectedNames = new Set(currentTeam().map(p => p.player));
+    const user = state?.users?.[0];
+    const selectedNames = new Set(currentTeam().map(p => legendPlayerKey(p.player)));
+    const declinedNames = new Set([...v29Set(user?.declinedNames)].map(name => legendPlayerKey(name)));
     const needed = neededRoles();
     const onlyGkLeft = needed.length === 1 && needed[0] === 'GK';
     const gkAlreadyPicked = !needed.includes('GK');
     return currentPool().filter(p => {
-      if (selectedNames.has(p.player)) return false;
+      const playerKey = legendPlayerKey(p.player);
+      if (selectedNames.has(playerKey)) return false;
+      if (declinedNames.has(playerKey)) return false;
       if (onlyGkLeft) return p.naturalMainPosition === 'GK';
       if (gkAlreadyPicked) return p.naturalMainPosition !== 'GK';
       return true;
@@ -9221,6 +9226,7 @@ document.addEventListener('click', function(e){
     if ((user.declines || 0) >= DECLINES_ALLOWED) { setMessage('No declines left - choose a position and accept this player.'); setLegendButtons(); return; }
     user.declines += 1;
     user.declinedNames.add(currentCandidate.player);
+    user.declinedNames.add(legendPlayerKey(currentCandidate.player));
     state.history.push({ user:user.name, decision:'DECLINE', player:currentCandidate });
     currentCandidate = null;
     render();
