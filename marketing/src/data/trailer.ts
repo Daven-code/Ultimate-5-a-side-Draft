@@ -7,7 +7,7 @@
 
 export const Trailer = {
 
-  hook: "Think you know football?",
+  hook: "BUILD YOUR BEST 5-A-SIDE TEAM!",
 
   title: [
     "BUILD YOUR",

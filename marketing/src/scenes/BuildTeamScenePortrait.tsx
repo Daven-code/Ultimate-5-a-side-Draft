@@ -34,36 +34,36 @@ interface Props {
 
 const defaultTeam: Player[] = [
   {
-    player: "Buffon (2005)",
+    player: "Oliver Kahn (Bundesliga)",
     position: "GK",
     rating: 97,
   },
   {
-    player: "Sergio Ramos (2018)",
+    player: "John Terry (Premier League)",
     position: "DEF",
-    rating: 90,
+    rating: 96,
   },
   {
-    player: "Ronaldinho (2006)",
-    position: "MID",
-    rating: 95,
-  },
-  {
-    player: "Kevin De Bruyne (2022)",
+    player: "David Beckham (Premier League)",
     position: "MID",
     rating: 91,
   },
   {
-    player: "Lionel Messi (2012)",
+    player: "Johan Cruyff (La Liga)",
+    position: "MID",
+    rating: 98,
+  },
+  {
+    player: "Andriy Shevchenko (Serie A)",
     position: "ST",
-    rating: 94,
+    rating: 93,
   },
 ];
 
 export const BuildTeamScenePortrait: React.FC<Props> = ({
-  title = "BUILD YOUR DREAM TEAM",
+  title = "BUILD YOUR TEAM OF LEGENDS",
   team = defaultTeam,
-  score = 467,
+  score = 475,
 }) => {
 
   const {width} = useVideoConfig();

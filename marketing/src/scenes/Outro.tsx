@@ -89,7 +89,7 @@ export const Outro: React.FC = () => {
           textShadow: "0 0 24px rgba(37,99,235,.45)",
         }}
       >
-        CAN YOU BEAT THE LEADERBOARD?
+        WHO WOULD YOU PICK?
       </div>
 
       {/* ------------------------------------------------------------------

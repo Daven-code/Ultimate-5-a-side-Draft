@@ -14,8 +14,8 @@ import {AcceptDeclineRonaldinhoPortrait} from "./videos/AcceptDeclineRonaldinhoP
 import {guessThePlayerTiming} from "./data/guessThePlayer";
 export const RemotionRoot: React.FC = () => (
   <>
-    <Composition id="LaunchTrailer" component={LaunchTrailer} durationInFrames={600} fps={30} width={1920} height={1080} />
-    <Composition id="LaunchTrailerPortrait" component={LaunchTrailerPortrait} durationInFrames={600} fps={30} width={1080} height={1920} />
+    <Composition id="LaunchTrailer" component={LaunchTrailer} durationInFrames={720} fps={30} width={1920} height={1080} />
+    <Composition id="LaunchTrailerPortrait" component={LaunchTrailerPortrait} durationInFrames={720} fps={30} width={1080} height={1920} />
     <Composition id="EasySoloChallenge" component={EasySoloChallenge} durationInFrames={450} fps={30} width={1920} height={1080} />
     <Composition id="EasySoloChallengePortrait" component={EasySoloChallengePortrait} durationInFrames={450} fps={30} width={1080} height={1920} />
     <Composition id="WorldCup2026Challenge" component={WorldCup2026Challenge} durationInFrames={480} fps={30} width={1920} height={1080} />

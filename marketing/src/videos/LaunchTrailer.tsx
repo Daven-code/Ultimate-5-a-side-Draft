@@ -27,8 +27,8 @@ export const LaunchTrailer: React.FC = () => {
     <>
 
       <AudioTrack
-      music="Sport.mp3"
-      musicStart={120}
+      music="Sport6.mp3"
+      musicStart={0}
     />
 
       <Sequence
@@ -47,13 +47,13 @@ export const LaunchTrailer: React.FC = () => {
 
       <Sequence
         from={270}
-        durationInFrames={180}
+        durationInFrames={300}
       >
         <BuildTeamScene/>
       </Sequence>
 
       <Sequence
-        from={450}
+        from={570}
         durationInFrames={150}
       >
         <Outro/>
