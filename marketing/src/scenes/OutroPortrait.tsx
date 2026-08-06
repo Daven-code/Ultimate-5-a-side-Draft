@@ -72,9 +72,7 @@ export const OutroPortrait: React.FC = () => {
           letterSpacing:3,
         }}
       >
-        CAN YOU BEAT
-        <br/>
-        THE LEADERBOARD?
+        WHO WOULD YOU PICK?
       </div>
 
       <div
