@@ -10860,3 +10860,329 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
   runV80();
 })();
 
+
+// --- v81 read-only average score preview ---
+// Purpose: display a read-only average 5-a-side score on setup screens.
+// This block does NOT attach capture-phase listeners, prevent default actions, modify slider inputs,
+// override setup functions, replace filters, or change any game state. It only reads current filter values.
+(function readOnlyAverageScorePreviewV81(){
+  const BOX_ID = "readOnlyAverageScorePreviewV81";
+  const STYLE_ID = "readOnlyAverageScorePreviewStylesV81";
+  const NORMAL_JSON = "players.json";
+  const WORLDCUP_JSON = "players_worldcup2026.json";
+
+  let normalPoolCache = null;
+  let normalPoolPromise = null;
+  let worldCupPoolCache = null;
+  let worldCupPoolPromise = null;
+  let lastRenderKey = "";
+
+  const byId = id => document.getElementById(id);
+  const toNumber = value => Number(value || 0) || 0;
+  const activePreset = () => String(window.challengePreset || "standard");
+  const setupIsVisible = () => !!(els?.setupPanel && !els.setupPanel.classList.contains("hidden") && !online?.enabled);
+  const supportedPreset = () => ["standard", "easy", "league", "worldcup2026", ""].includes(activePreset());
+
+  function injectReadOnlyStyles(){
+    if (byId(STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = `
+      .read-only-average-score-v81{
+        margin:12px 0 14px;
+        padding:12px 14px;
+        border:1px solid #bfdbfe;
+        border-radius:16px;
+        background:linear-gradient(135deg,#eff6ff,#f8fafc);
+        box-shadow:0 10px 22px rgba(37,99,235,.08);
+        pointer-events:none;
+      }
+      .read-only-average-score-v81.hidden{display:none!important;}
+      .read-only-average-score-row-v81{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        flex-wrap:nowrap;
+      }
+      .read-only-average-score-title-v81{
+        margin:0;
+        color:#0f172a;
+        font-size:.95rem;
+        line-height:1.2;
+        font-weight:1000;
+      }
+      .read-only-average-score-value-v81{
+        flex:0 0 auto;
+        min-width:54px;
+        text-align:center;
+        padding:7px 12px;
+        border-radius:999px;
+        background:linear-gradient(135deg,#2563eb,#1d4ed8);
+        color:#fff;
+        font-size:1rem;
+        font-weight:1000;
+        box-shadow:0 8px 18px rgba(37,99,235,.20);
+      }
+      @media(max-width:620px){
+        .read-only-average-score-title-v81{font-size:.9rem;}
+        .read-only-average-score-value-v81{font-size:.95rem;padding:7px 10px;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureAverageBox(){
+    injectReadOnlyStyles();
+    let box = byId(BOX_ID);
+    if (!box){
+      box = document.createElement("div");
+      box.id = BOX_ID;
+      box.className = "read-only-average-score-v81 hidden";
+    }
+
+    const setupCard = document.querySelector(".setup-panel-card");
+    if (!setupCard) return box;
+
+    const leagueSelector = byId("leagueSelectorV52");
+    const yearSlicer = byId("localYearSlicerHolderStep4");
+    const soloIntro = byId("soloSetupIntroStep7");
+
+    if (leagueSelector && activePreset() === "league") {
+      leagueSelector.insertAdjacentElement("afterend", box);
+    } else if (yearSlicer && yearSlicer.parentNode === setupCard && activePreset() !== "worldcup2026") {
+      yearSlicer.insertAdjacentElement("afterend", box);
+    } else if (soloIntro && soloIntro.parentNode === setupCard) {
+      soloIntro.insertAdjacentElement("afterend", box);
+    } else if (els?.excludeDeclinesLabel && els.excludeDeclinesLabel.parentNode === setupCard) {
+      setupCard.insertBefore(box, els.excludeDeclinesLabel);
+    } else if (els?.startBtn && els.startBtn.parentNode === setupCard) {
+      setupCard.insertBefore(box, els.startBtn);
+    } else {
+      setupCard.appendChild(box);
+    }
+
+    return box;
+  }
+
+  function normalisePositionForAverage(player){
+    const main = player?.mainPosition ?? player?.Main_Position ?? player?.MainPosition ?? player?.main_position ?? "";
+    const raw = player?.position ?? player?.Position ?? "";
+    if (typeof normalisePosition === "function") return normalisePosition(main, raw);
+
+    const text = String(main || raw || "").toUpperCase();
+    if (text.includes("GK")) return "GK";
+    if (["CB", "LB", "RB", "LWB", "RWB", "DEF"].some(token => text.includes(token))) return "DEF";
+    if (["CM", "CDM", "CAM", "LM", "RM", "MID"].some(token => text.includes(token))) return "MID";
+    return "FWD";
+  }
+
+  function normaliseRowsForAverage(rows, sourceName){
+    return (Array.isArray(rows) ? rows : []).map((row, index) => {
+      const position = row.Position ?? row.position ?? "";
+      const main = row.Main_Position ?? row.mainPosition ?? row.MainPosition ?? row.main_position ?? "";
+      const rating = toNumber(row.Rating_OVR ?? row.rating ?? row.Rating);
+      return {
+        id: `average-${sourceName}-${index + 1}`,
+        player: String(row.Player ?? row.player ?? row.Name ?? row.name ?? "").trim(),
+        year: toNumber(row.Game_Year ?? row.year ?? row.Year),
+        rating,
+        position: String(position || main || "").trim(),
+        mainPosition: normalisePositionForAverage({ mainPosition: main, position }),
+        league: String(row.League ?? row.league ?? row.LEAGUE ?? "Unknown League").trim() || "Unknown League"
+      };
+    }).filter(player => player.player && player.rating > 0 && ["GK", "DEF", "MID", "FWD"].includes(player.mainPosition));
+  }
+
+  async function fetchJsonPool(url, sourceName){
+    const response = await fetch(url, { cache:"no-store" });
+    if (!response.ok) return [];
+    return normaliseRowsForAverage(await response.json(), sourceName);
+  }
+
+  async function getNormalPool(){
+    if (normalPoolCache) return normalPoolCache;
+
+    const currentPlayers = Array.isArray(players) && players.length ? players : null;
+    if (currentPlayers && currentPlayers.some(player => player.league || player.League)) {
+      normalPoolCache = currentPlayers.map((player, index) => ({
+        id: player.id || `runtime-${index + 1}`,
+        player: String(player.player ?? player.Player ?? "").trim(),
+        year: toNumber(player.year ?? player.Game_Year),
+        rating: toNumber(player.rating ?? player.Rating_OVR ?? player.Rating),
+        position: String(player.position ?? player.Position ?? ""),
+        mainPosition: normalisePositionForAverage(player),
+        league: String(player.league ?? player.League ?? "Unknown League").trim() || "Unknown League"
+      })).filter(player => player.player && player.rating > 0 && ["GK", "DEF", "MID", "FWD"].includes(player.mainPosition));
+      return normalPoolCache;
+    }
+
+    if (normalPoolPromise) return normalPoolPromise;
+    normalPoolPromise = fetchJsonPool(NORMAL_JSON, "normal").then(pool => {
+      normalPoolCache = pool;
+      return normalPoolCache;
+    }).catch(err => {
+      console.warn("Could not load player pool for average score", err);
+      return [];
+    });
+    return normalPoolPromise;
+  }
+
+  async function getWorldCupPool(){
+    if (typeof window.getWorldCup2026Players === "function") {
+      const existingPool = window.getWorldCup2026Players();
+      if (Array.isArray(existingPool) && existingPool.length) {
+        return existingPool.map((player, index) => ({
+          id: player.id || `wc-runtime-${index + 1}`,
+          player: String(player.player ?? player.Player ?? "").trim(),
+          year: toNumber(player.year ?? player.Game_Year ?? 2026),
+          rating: toNumber(player.rating ?? player.Rating_OVR ?? player.Rating),
+          position: String(player.position ?? player.Position ?? ""),
+          mainPosition: normalisePositionForAverage(player),
+          league: "World Cup 2026"
+        })).filter(player => player.player && player.rating > 0 && ["GK", "DEF", "MID", "FWD"].includes(player.mainPosition));
+      }
+    }
+
+    if (worldCupPoolCache) return worldCupPoolCache;
+    if (worldCupPoolPromise) return worldCupPoolPromise;
+    worldCupPoolPromise = fetchJsonPool(WORLDCUP_JSON, "worldcup").then(pool => {
+      worldCupPoolCache = pool;
+      return worldCupPoolCache;
+    }).catch(err => {
+      console.warn("Could not load World Cup pool for average score", err);
+      return [];
+    });
+    return worldCupPoolPromise;
+  }
+
+  function selectedYearRange(pool){
+    const years = pool.map(player => player.year).filter(Boolean);
+    const min = years.length ? Math.min(...years) : 2005;
+    const max = years.length ? Math.max(...years) : 2026;
+    let start = toNumber(byId("localYearStartStep4")?.value || min);
+    let end = toNumber(byId("localYearEndStep4")?.value || max);
+    if (start > end) [start, end] = [end, start];
+    return { start, end };
+  }
+
+  function standardPool(pool){
+    const range = selectedYearRange(pool);
+    return pool.filter(player => player.year >= range.start && player.year <= range.end);
+  }
+
+  function easyPool(pool){
+    const byYearAndPosition = {};
+    standardPool(pool).forEach(player => {
+      const key = `${player.year}_${player.mainPosition}`;
+      (byYearAndPosition[key] ||= []).push(player);
+    });
+
+    return Object.entries(byYearAndPosition).flatMap(([key, group]) => {
+      const limit = key.endsWith("_MID") ? 10 : 5;
+      return group.slice().sort((a, b) => b.rating - a.rating).slice(0, limit);
+    });
+  }
+
+  function qualifiedLeagueSet(pool){
+    const countsByLeague = new Map();
+    pool.forEach(player => {
+      const counts = countsByLeague.get(player.league) || { GK:0, DEF:0, MID:0, FWD:0 };
+      if (counts[player.mainPosition] !== undefined) counts[player.mainPosition] += 1;
+      countsByLeague.set(player.league, counts);
+    });
+
+    return new Set([...countsByLeague.entries()]
+      .filter(([, counts]) => counts.GK >= 5 && counts.DEF >= 5 && counts.MID >= 10 && counts.FWD >= 5)
+      .map(([league]) => league));
+  }
+
+  function leaguePool(pool){
+    const selectedButtons = [...document.querySelectorAll(".league-button-v52.selected")];
+    if (!selectedButtons.length) return [];
+
+    const selectedLabels = selectedButtons.map(button => button.textContent.trim());
+    const selectedKeys = selectedButtons.map(button => button.dataset.leagueKey || "");
+    const includeOther = selectedLabels.includes("All Other Leagues") || selectedKeys.includes("__other__");
+    const qualifiedLeagues = qualifiedLeagueSet(pool);
+
+    return pool.filter(player => selectedLabels.includes(player.league) || (includeOther && !qualifiedLeagues.has(player.league)));
+  }
+
+  async function activePoolForCurrentSetup(){
+    if (activePreset() === "worldcup2026") return await getWorldCupPool();
+
+    const pool = await getNormalPool();
+    if (activePreset() === "easy") return easyPool(pool);
+    if (activePreset() === "league") return leaguePool(pool);
+    return standardPool(pool);
+  }
+
+  function averageFiveAsideScore(pool){
+    const groupedRatings = { GK:[], DEF:[], MID:[], FWD:[] };
+    pool.forEach(player => {
+      if (groupedRatings[player.mainPosition]) groupedRatings[player.mainPosition].push(player.rating);
+    });
+
+    const average = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    const gk = average(groupedRatings.GK);
+    const def = average(groupedRatings.DEF);
+    const mid = average(groupedRatings.MID);
+    const fwd = average(groupedRatings.FWD);
+
+    if ([gk, def, mid, fwd].some(value => value === null)) return null;
+    return Math.ceil(gk + def + mid + mid + fwd);
+  }
+
+  async function renderAverageScore(){
+    const box = ensureAverageBox();
+
+    if (!setupIsVisible() || !supportedPreset()) {
+      box.classList.add("hidden");
+      lastRenderKey = "";
+      return;
+    }
+
+    const pool = await activePoolForCurrentSetup();
+    const score = averageFiveAsideScore(pool);
+    const renderKey = `${activePreset()}|${byId("localYearStartStep4")?.value || ""}|${byId("localYearEndStep4")?.value || ""}|${[...document.querySelectorAll(".league-button-v52.selected")].map(button => button.textContent.trim()).join(",")}|${score}`;
+
+    if (renderKey === lastRenderKey && !box.classList.contains("hidden")) return;
+    lastRenderKey = renderKey;
+
+    box.classList.remove("hidden");
+    box.innerHTML = `
+      <div class="read-only-average-score-row-v81">
+        <p class="read-only-average-score-title-v81">Average 5-a-side score for this setup</p>
+        <span class="read-only-average-score-value-v81">${score === null ? "N/A" : score}</span>
+      </div>
+    `;
+  }
+
+  function scheduleAverageRender(delay = 0){
+    window.setTimeout(renderAverageScore, delay);
+  }
+
+  // Passive listeners only. No capture phase, no preventDefault, no slider/input modification.
+  document.addEventListener("input", event => {
+    if (event.target?.matches?.("#localYearStartStep4,#localYearEndStep4")) scheduleAverageRender(0);
+  });
+
+  document.addEventListener("change", event => {
+    if (event.target?.matches?.("#localYearStartStep4,#localYearEndStep4")) scheduleAverageRender(0);
+  });
+
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.("#startLocalGameBtn,.active-challenge,.active-monthly-challenge,#playWorldCup2026ChallengeBtn,.league-button-v52")) {
+      scheduleAverageRender(0);
+      scheduleAverageRender(250);
+      scheduleAverageRender(700);
+    }
+  });
+
+  window.setInterval(() => {
+    if (setupIsVisible()) renderAverageScore();
+  }, 600);
+
+  scheduleAverageRender(400);
+})();
