@@ -10882,6 +10882,17 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
   const activePreset = () => String(window.challengePreset || "standard");
   const setupIsVisible = () => !!(els?.setupPanel && !els.setupPanel.classList.contains("hidden") && !online?.enabled);
   const supportedPreset = () => ["standard", "easy", "league", "worldcup2026", ""].includes(activePreset());
+  const playerIdentityKey = player => String(
+    player?.playerKey ??
+    player?.Original_Player ??
+    player?.originalPlayer ??
+    player?.original_player ??
+    player?.Player ??
+    player?.player ??
+    player?.Name ??
+    player?.name ??
+    ""
+  ).trim().toLowerCase().replace(/\s+/g, " ");
 
   function injectReadOnlyStyles(){
     if (byId(STYLE_ID)) return;
@@ -10904,6 +10915,11 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
         justify-content:space-between;
         gap:12px;
         flex-wrap:nowrap;
+      }
+      .read-only-average-score-row-v81 + .read-only-average-score-row-v81{
+        margin-top:8px;
+        padding-top:8px;
+        border-top:1px solid rgba(191,219,254,.85);
       }
       .read-only-average-score-title-v81{
         margin:0;
@@ -10985,6 +11001,7 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
       return {
         id: `average-${sourceName}-${index + 1}`,
         player: String(row.Player ?? row.player ?? row.Name ?? row.name ?? "").trim(),
+        playerKey: playerIdentityKey(row),
         year: toNumber(row.Game_Year ?? row.year ?? row.Year),
         rating,
         position: String(position || main || "").trim(),
@@ -11008,6 +11025,7 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
       normalPoolCache = currentPlayers.map((player, index) => ({
         id: player.id || `runtime-${index + 1}`,
         player: String(player.player ?? player.Player ?? "").trim(),
+        playerKey: playerIdentityKey(player),
         year: toNumber(player.year ?? player.Game_Year),
         rating: toNumber(player.rating ?? player.Rating_OVR ?? player.Rating),
         position: String(player.position ?? player.Position ?? ""),
@@ -11035,6 +11053,7 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
         return existingPool.map((player, index) => ({
           id: player.id || `wc-runtime-${index + 1}`,
           player: String(player.player ?? player.Player ?? "").trim(),
+          playerKey: playerIdentityKey(player),
           year: toNumber(player.year ?? player.Game_Year ?? 2026),
           rating: toNumber(player.rating ?? player.Rating_OVR ?? player.Rating),
           position: String(player.position ?? player.Position ?? ""),
@@ -11118,9 +11137,28 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
     return standardPool(pool);
   }
 
-  function averageFiveAsideScore(pool){
-    const groupedRatings = { GK:[], DEF:[], MID:[], FWD:[] };
+  function dedupeBestYearPerPlayerAndPosition(pool){
+    const bestByPlayerAndPosition = new Map();
+
     pool.forEach(player => {
+      const identity = player.playerKey || playerIdentityKey(player);
+      if (!identity || !player.mainPosition) return;
+      const key = `${identity}|${player.mainPosition}`;
+      const existing = bestByPlayerAndPosition.get(key);
+
+      if (!existing || player.rating > existing.rating || (player.rating === existing.rating && player.year > existing.year)) {
+        bestByPlayerAndPosition.set(key, player);
+      }
+    });
+
+    return [...bestByPlayerAndPosition.values()];
+  }
+
+  function averageFiveAsideScore(pool){
+    const uniquePool = dedupeBestYearPerPlayerAndPosition(pool);
+    const groupedRatings = { GK:[], DEF:[], MID:[], FWD:[] };
+
+    uniquePool.forEach(player => {
       if (groupedRatings[player.mainPosition]) groupedRatings[player.mainPosition].push(player.rating);
     });
 
@@ -11134,6 +11172,51 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
     return Math.ceil(gk + def + mid + mid + fwd);
   }
 
+  function maximumFiveAsideScore(pool){
+    const uniquePool = dedupeBestYearPerPlayerAndPosition(pool);
+    const candidatesBySlot = {
+      GK: uniquePool.filter(player => player.mainPosition === "GK").sort((a, b) => b.rating - a.rating || b.year - a.year),
+      DEF: uniquePool.filter(player => player.mainPosition === "DEF").sort((a, b) => b.rating - a.rating || b.year - a.year),
+      MID: uniquePool.filter(player => player.mainPosition === "MID").sort((a, b) => b.rating - a.rating || b.year - a.year),
+      FWD: uniquePool.filter(player => player.mainPosition === "FWD").sort((a, b) => b.rating - a.rating || b.year - a.year)
+    };
+
+    if (!candidatesBySlot.GK.length || !candidatesBySlot.DEF.length || candidatesBySlot.MID.length < 2 || !candidatesBySlot.FWD.length) return null;
+
+    const slotOrder = ["GK", "DEF", "MID", "MID", "FWD"];
+    const candidatesByOrderedSlot = slotOrder.map(slot => candidatesBySlot[slot]);
+    const maximumRemainingFromSlot = candidatesByOrderedSlot.map((candidates, index) => {
+      return candidatesByOrderedSlot.slice(index).reduce((sum, remainingCandidates) => sum + (remainingCandidates[0]?.rating || 0), 0);
+    });
+
+    let bestScore = null;
+
+    function search(slotIndex, usedPlayerKeys, runningScore){
+      if (slotIndex === slotOrder.length) {
+        if (bestScore === null || runningScore > bestScore) bestScore = runningScore;
+        return;
+      }
+
+      if (bestScore !== null && runningScore + maximumRemainingFromSlot[slotIndex] <= bestScore) return;
+
+      const candidates = candidatesByOrderedSlot[slotIndex];
+      for (const candidate of candidates) {
+        const identity = candidate.playerKey || playerIdentityKey(candidate);
+        if (!identity || usedPlayerKeys.has(identity)) continue;
+
+        const possibleBest = runningScore + candidate.rating + (maximumRemainingFromSlot[slotIndex + 1] || 0);
+        if (bestScore !== null && possibleBest <= bestScore) break;
+
+        usedPlayerKeys.add(identity);
+        search(slotIndex + 1, usedPlayerKeys, runningScore + candidate.rating);
+        usedPlayerKeys.delete(identity);
+      }
+    }
+
+    search(0, new Set(), 0);
+    return bestScore === null ? null : Math.ceil(bestScore);
+  }
+
   async function renderAverageScore(){
     const box = ensureAverageBox();
 
@@ -11144,8 +11227,9 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
     }
 
     const pool = await activePoolForCurrentSetup();
-    const score = averageFiveAsideScore(pool);
-    const renderKey = `${activePreset()}|${byId("localYearStartStep4")?.value || ""}|${byId("localYearEndStep4")?.value || ""}|${[...document.querySelectorAll(".league-button-v52.selected")].map(button => button.textContent.trim()).join(",")}|${score}`;
+    const averageScore = averageFiveAsideScore(pool);
+    const maximumScore = maximumFiveAsideScore(pool);
+    const renderKey = `${activePreset()}|${byId("localYearStartStep4")?.value || ""}|${byId("localYearEndStep4")?.value || ""}|${[...document.querySelectorAll(".league-button-v52.selected")].map(button => button.textContent.trim()).join(",")}|${averageScore}|${maximumScore}`;
 
     if (renderKey === lastRenderKey && !box.classList.contains("hidden")) return;
     lastRenderKey = renderKey;
@@ -11154,7 +11238,11 @@ window.getLeagueLegendsLeaderboardLeagueV73 = function(entry) {
     box.innerHTML = `
       <div class="read-only-average-score-row-v81">
         <p class="read-only-average-score-title-v81">Average 5-a-side score for this setup</p>
-        <span class="read-only-average-score-value-v81">${score === null ? "N/A" : score}</span>
+        <span class="read-only-average-score-value-v81">${averageScore === null ? "N/A" : averageScore}</span>
+      </div>
+      <div class="read-only-average-score-row-v81">
+        <p class="read-only-average-score-title-v81">Maximum 5-a-side score for this setup</p>
+        <span class="read-only-average-score-value-v81">${maximumScore === null ? "N/A" : maximumScore}</span>
       </div>
     `;
   }
