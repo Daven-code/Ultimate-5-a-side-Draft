@@ -1,0 +1,25 @@
+# Local Excel/source spreadsheets
+*.xlsx
+*.xlsm
+*.xls
+
+# Local working/archive folders
+20260716 - working copy/
+Screenshots/
+Social Media/
+SS/
+
+# Marketing/editing source files not needed on live website
+marketing/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Large media/render outputs
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.zip
