@@ -1070,15 +1070,45 @@ function renderResults(){
 }
 
 function leaderboardMode(){ if(state?.challengePreset==='leaguelegends') return MODE_LABELS.leaguelegends; if(state?.challengePreset==='worldcup') return MODE_LABELS.worldcup; if(state?.challengePreset==='easy') return MODE_LABELS.easy; if(state?.challengePreset==='ultimate') return MODE_LABELS.ultimate; if(state?.challengePreset==='league') return MODE_LABELS.league; if(state?.isOnlineGame&&state.gameMode==='draft') return MODE_LABELS.onlineDraft; if(state?.isOnlineGame&&state.gameMode==='bid') return state.onlineBidMode==='live'?MODE_LABELS.onlineLive:MODE_LABELS.onlineBlind; return MODE_LABELS.solo; }
+const LEADERBOARD_NAME_RULES = {
+  min: 3,
+  max: 18,
+  allowed: /^[a-zA-Z0-9 _-]+$/,
+  // Deliberately compact client-side blocklist. This is not a full moderation system,
+  // but it catches obvious abusive/offensive entries before they reach Firebase.
+  blocked: [
+    'fuck','fuk','fck','shit','sh1t','cunt','cnut','twat','wank','bastard','b1tch','bitch',
+    'nazi','hitler','kkk','nigger','nigga','retard','nonce','pedo','paedo','rape',
+    'kill','suicide','terrorist','isis','heil','whore','slut'
+  ]
+};
+function normaliseLeaderboardName(value){ return String(value || '').replace(/\s+/g,' ').trim().slice(0, LEADERBOARD_NAME_RULES.max); }
+function leaderboardNameIssue(value){
+  const name = normaliseLeaderboardName(value);
+  if(name.length < LEADERBOARD_NAME_RULES.min) return 'Please enter a name between 3 and 18 characters.';
+  if(!LEADERBOARD_NAME_RULES.allowed.test(name)) return 'Please use letters, numbers, spaces, hyphens or underscores only.';
+  const compact = name.toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(LEADERBOARD_NAME_RULES.blocked.some(word => compact.includes(word))) return 'Please choose a different leaderboard name.';
+  return '';
+}
+function getLeaderboardNameFromUser(defaultName=''){
+  const suggested = normaliseLeaderboardName(defaultName && defaultName !== 'You' ? defaultName : '');
+  const entered = window.prompt('Enter your name for the leaderboard:', suggested);
+  if(entered === null) return null;
+  const name = normaliseLeaderboardName(entered);
+  const issue = leaderboardNameIssue(name);
+  if(issue){ alert(issue); return null; }
+  return name;
+}
+function safeGeneratedLeaderboardName(value, fallback='Player'){
+  const name = normaliseLeaderboardName(value || fallback);
+  return leaderboardNameIssue(name) ? fallback : name;
+}
 async function submitCurrentScore(){
   if(!state||state.leaderboardSubmitted) return;
   const score=finalScores()[0]; if(!score) return;
-  const defaultName = String(score.user?.name || '').trim();
-  const suggested = defaultName && defaultName !== 'You' ? defaultName : '';
-  const entered = window.prompt('Enter your name for the leaderboard:', suggested);
-  if(entered === null) return;
-  const username = String(entered || '').trim().slice(0,18);
-  if(!username){ alert('Please enter a name before submitting to the leaderboard.'); return; }
+  const username = getLeaderboardNameFromUser(score.user?.name || '');
+  if(username === null) return;
   const btn=$('submitLeaderboardFinal'); if(btn){ btn.disabled=true; btn.textContent='Submitting...'; }
   try{
     await ensureFirebase();
@@ -1623,7 +1653,7 @@ function psResults(){
   document.querySelectorAll('#playerSimulationPanel .ps-stat,#playerSimulationPanel .ps-year').forEach((el,i)=>setTimeout(()=>el.classList.add('show'),650+i*80));
 }
 
-async function psSubmitScore(sc,pl){ if(playerSimSubmitted)return; try{ await ensureFirebase(); await firebase.database().ref('leaderboard').push({username:String(playerSim.name||'Player').slice(0,18),score:sc,gameMode:MODE_LABELS.playerSim,careerStats:pl,timestamp:Date.now()}); playerSimSubmitted=true; $('psSubmitStatus').textContent='Player Simulation score submitted to leaderboard.'; $('psSubmit').disabled=true; }catch(e){ $('psSubmitStatus').textContent='Could not submit score. '+(e.message||e); } }
+async function psSubmitScore(sc,pl){ if(playerSimSubmitted)return; try{ await ensureFirebase(); await firebase.database().ref('leaderboard').push({username:safeGeneratedLeaderboardName(playerSim.name,'Player'),score:sc,gameMode:MODE_LABELS.playerSim,careerStats:pl,timestamp:Date.now()}); playerSimSubmitted=true; $('psSubmitStatus').textContent='Player Simulation score submitted to leaderboard.'; $('psSubmit').disabled=true; }catch(e){ $('psSubmitStatus').textContent='Could not submit score. '+(e.message||e); } }
 
 // ---------- Reset and events ----------
 async function resetOnlineRoomToLobby(){
