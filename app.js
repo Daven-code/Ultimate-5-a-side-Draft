@@ -1536,7 +1536,20 @@ function splitLeaderboardNameAndYears(entry){
   if (match) { name = match[1].trim() || 'Player'; years = 'Years: ' + match[2].trim(); }
   return { name, years };
 }
-function playerSimLeaderboardRow(e,i){ const c=e.careerStats||{}; const chips=[`Position: ${c.position??''}`,`Nationality: ${c.nationality??'England'}`,`Caps: ${c.internationalCaps??0}`,`Goals: ${c.goals??0}`,`Assists: ${c.assists??0}`,`Clean sheets: ${c.cleanSheets??'N/A'}`,`League titles: ${c.titles??0}`,`UCL: ${c.championsLeagues??0}`,`League cups: ${c.leagueCups??0}`,`World Cups: ${c.worldCups??0}`,`Ballon d'Ors: ${c.ballonDors??0}`,`Fees: ${money(c.transferFees||0)}`,`Loyalty: ${c.loyalty??0}/100`].map(x=>`<span class="ps-lb-chip">${esc(x)}</span>`).join(''); return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${i+1}</span><span class="leaderboard-name">${esc(e.username||'Player')}</span><span class="leaderboard-mode">Player Simulation</span><span class="leaderboard-score">${e.score}</span><span class="ps-lb-meta">${chips}</span></div>`; }
+const PLAYER_SIM_NATIONALITY_LEADERBOARD_CUTOFF = Date.UTC(2026, 7, 13, 14, 34, 0);
+function playerSimLeaderboardRow(e,i){
+  const c=e.careerStats||{};
+  const entryTime = Number(e.timestamp||0);
+  const showNewInternationalStats = entryTime >= PLAYER_SIM_NATIONALITY_LEADERBOARD_CUTOFF && !!String(c.nationality||'').trim() && Object.prototype.hasOwnProperty.call(c,'internationalCaps');
+  const items=[`Position: ${c.position??''}`,`Apps: ${c.apps??0}`];
+  if(showNewInternationalStats){
+    items.push(`Nationality: ${c.nationality}`);
+    items.push(`Caps: ${c.internationalCaps??0}`);
+  }
+  items.push(`Goals: ${c.goals??0}`,`Assists: ${c.assists??0}`,`Clean sheets: ${c.cleanSheets??'N/A'}`,`League titles: ${c.titles??0}`,`UCL: ${c.championsLeagues??0}`,`League cups: ${c.leagueCups??0}`,`World Cups: ${c.worldCups??0}`,`Ballon d'Ors: ${c.ballonDors??0}`,`Fees: ${money(c.transferFees||0)}`,`Loyalty: ${c.loyalty??0}/100`);
+  const chips=items.map(x=>`<span class="ps-lb-chip">${esc(x)}</span>`).join('');
+  return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${i+1}</span><span class="leaderboard-name">${esc(e.username||'Player')}</span><span class="leaderboard-mode">Player Simulation</span><span class="leaderboard-score">${e.score}</span><span class="ps-lb-meta">${chips}</span></div>`;
+}
 
 const PLAYER_SIM_NATIONS = [
   {name:'Brazil',tier:5},{name:'Argentina',tier:5},{name:'France',tier:5},{name:'Spain',tier:5},{name:'Germany',tier:5},
@@ -1681,7 +1694,11 @@ function psScore(){
   }
   if(sc>=90 && !(ucl>=1 && (bdor>=1 || wc>=1 || titles>=6))) sc=Math.min(sc,89);
   if(sc>=95 && !(bdor>=1 && (ucl>=2 || wc>=1))) sc=Math.min(sc,94);
-  if(sc>=99 && !(bdor>=3 && (ucl>=3 || wc>=1) && titles>=6)) sc=Math.min(sc,98);
+  // 97+ should be extremely rare. A great career can still sit in the mid-90s,
+  // but near-perfect ratings need multiple elite individual and team honours.
+  if(sc>=97 && !(bdor>=2 && (ucl>=2 || wc>=1) && titles>=4 && apps>=500)) sc=Math.min(sc,96);
+  if(sc>=98 && !(bdor>=3 && (ucl>=3 || wc>=1) && titles>=6 && apps>=550)) sc=Math.min(sc,97);
+  if(sc>=99 && !(bdor>=4 && ucl>=3 && wc>=1 && titles>=7 && apps>=600)) sc=Math.min(sc,98);
 
   // Career floors: big statistical careers should not be punished into unrealistic low scores.
   // These floors never push a player into elite/all-time territory by themselves; they only keep
