@@ -1693,12 +1693,12 @@ function psScore(){
     sc=Math.min(sc, 89);
   }
   if(sc>=90 && !(ucl>=1 && (bdor>=1 || wc>=1 || titles>=6))) sc=Math.min(sc,89);
-  if(sc>=95 && !(bdor>=1 && (ucl>=2 || wc>=1))) sc=Math.min(sc,94);
+  if(sc>=95 && !(bdor>=1 && (ucl>=3 || wc>=1))) sc=Math.min(sc,94);
   // 97+ should be extremely rare. A great career can still sit in the mid-90s,
   // but near-perfect ratings need multiple elite individual and team honours.
-  if(sc>=97 && !(bdor>=2 && (ucl>=2 || wc>=1) && titles>=4 && apps>=500)) sc=Math.min(sc,96);
-  if(sc>=98 && !(bdor>=3 && (ucl>=3 || wc>=1) && titles>=6 && apps>=550)) sc=Math.min(sc,97);
-  if(sc>=99 && !(bdor>=4 && ucl>=3 && wc>=1 && titles>=7 && apps>=600)) sc=Math.min(sc,98);
+  if(sc>=97 && !(bdor>=2 && (ucl>=3 || wc>=1) && titles>=4 && apps>=500)) sc=Math.min(sc,96);
+  if(sc>=98 && !(bdor>=3 && (ucl>=3 || wc>=2) && titles>=6 && apps>=550)) sc=Math.min(sc,97);
+  if(sc>=99 && !(bdor>=4 && ucl>=4 && wc>=2 && titles>=7 && apps>=600)) sc=Math.min(sc,98);
 
   // Career floors: big statistical careers should not be punished into unrealistic low scores.
   // These floors never push a player into elite/all-time territory by themselves; they only keep
