@@ -64,7 +64,7 @@ const SAMPLE_PLAYERS = [
 
 const PLAYER_SIM_CLUBS = [
   ['Real Madrid','La Liga',99,99,'elite'],['Barcelona','La Liga',97,94,'elite'],['Manchester City','Premier League',98,99,'elite'],['Arsenal','Premier League',97,92,'elite'],['Liverpool','Premier League',96,91,'elite'],['Bayern Munich','Bundesliga',97,92,'elite'],['Paris Saint-Germain','Ligue 1',96,98,'elite'],['Inter','Serie A',94,82,'elite'],
-  ['Chelsea','Premier League',90,94,'top'],['Manchester United','Premier League',89,97,'top'],['Newcastle United','Premier League',88,92,'top'],['Tottenham Hotspur','Premier League',86,86,'top'],['Aston Villa','Premier League',85,82,'top'],['Brighton','Premier League',82,70,'upper'],['Bournemouth','Premier League',81,66,'upper'],['Brentford','Premier League',80,66,'upper'],['West Ham United','Premier League',79,75,'upper'],['Crystal Palace','Premier League',79,68,'upper'],['Fulham','Premier League',78,66,'upper'],['Everton','Premier League',78,67,'upper'],['Nottingham Forest','Premier League',78,68,'upper'],['Wolves','Premier League',76,62,'upper'],['Leeds United','Premier League',74,58,'mid'],['Burnley','Premier League',72,52,'mid'],['Sunderland','Premier League',72,50,'mid'],['Leicester City','Championship',72,52,'mid'],['Southampton','Championship',70,50,'mid'],['Middlesbrough','Championship',67,38,'lower'],['Sheffield United','Championship',67,42,'lower'],['Norwich City','Championship',66,39,'lower'],['West Bromwich Albion','Championship',66,39,'lower'],['Coventry City','Championship',65,35,'lower'],['Blackburn Rovers','Championship',64,34,'lower'],['Stoke City','Championship',64,36,'lower'],['Derby County','Championship',62,33,'lower'],
+  ['Chelsea','Premier League',94,94,'elite'],['Manchester United','Premier League',89,97,'top'],['Newcastle United','Premier League',88,92,'top'],['Tottenham Hotspur','Premier League',86,86,'top'],['Aston Villa','Premier League',85,82,'top'],['Brighton','Premier League',82,70,'upper'],['Bournemouth','Premier League',81,66,'upper'],['Brentford','Premier League',80,66,'upper'],['West Ham United','Championship',76,75,'upper'],['Crystal Palace','Premier League',79,68,'upper'],['Fulham','Premier League',78,66,'upper'],['Everton','Premier League',78,67,'upper'],['Nottingham Forest','Premier League',78,68,'upper'],['Wolves','Championship',74,62,'mid'],['Leeds United','Premier League',76,58,'upper'],['Burnley','Championship',72,52,'mid'],['Sunderland','Premier League',72,50,'mid'],['Ipswich Town','Premier League',72,50,'mid'],['Hull City','Premier League',72,50,'mid'],['Leicester City','League One',65,45,'lower'],['Southampton','Championship',70,50,'mid'],['Middlesbrough','Championship',67,38,'lower'],['Sheffield United','Championship',67,42,'lower'],['Norwich City','Championship',66,39,'lower'],['West Bromwich Albion','Championship',66,39,'lower'],['Coventry City','Premier League',72,45,'mid'],['Blackburn Rovers','Championship',64,34,'lower'],['Stoke City','Championship',64,36,'lower'],['Derby County','Championship',62,33,'lower'],
   ['Atletico Madrid','La Liga',91,80,'top'],['Athletic Club','La Liga',84,62,'top'],['Villarreal','La Liga',83,60,'upper'],['Real Betis','La Liga',82,60,'upper'],['Real Sociedad','La Liga',82,61,'upper'],['Sevilla','La Liga',80,62,'upper'],['Valencia','La Liga',78,56,'upper'],['Girona','La Liga',78,55,'upper'],['Celta Vigo','La Liga',74,47,'mid'],['Osasuna','La Liga',73,44,'mid'],['Getafe','La Liga',72,42,'mid'],['Rayo Vallecano','La Liga',71,40,'mid'],['Espanyol','La Liga',70,43,'mid'],['Mallorca','La Liga',70,42,'mid'],['Real Zaragoza','Segunda Division',64,34,'lower'],['Deportivo La Coruna','Segunda Division',63,33,'lower'],['Malaga','Segunda Division',62,32,'lower'],
   ['Juventus','Serie A',90,82,'top'],['AC Milan','Serie A',89,80,'top'],['Napoli','Serie A',87,73,'top'],['Atalanta','Serie A',85,66,'top'],['Roma','Serie A',84,68,'top'],['Lazio','Serie A',82,62,'upper'],['Bologna','Serie A',80,52,'upper'],['Fiorentina','Serie A',79,55,'upper'],['Torino','Serie A',75,46,'mid'],['Genoa','Serie A',72,42,'mid'],['Udinese','Serie A',71,40,'mid'],['Sassuolo','Serie A',70,39,'mid'],['Parma','Serie A',69,39,'mid'],['Cagliari','Serie A',68,36,'mid'],['Palermo','Serie B',64,32,'lower'],['Sampdoria','Serie B',63,31,'lower'],
   ['Borussia Dortmund','Bundesliga',89,76,'top'],['Bayer Leverkusen','Bundesliga',88,74,'top'],['RB Leipzig','Bundesliga',86,76,'top'],['Eintracht Frankfurt','Bundesliga',83,62,'upper'],['Stuttgart','Bundesliga',82,56,'upper'],['Wolfsburg','Bundesliga',77,58,'upper'],['Freiburg','Bundesliga',76,50,'mid'],['Borussia Monchengladbach','Bundesliga',75,52,'mid'],['Werder Bremen','Bundesliga',74,48,'mid'],['Mainz','Bundesliga',73,44,'mid'],['Hoffenheim','Bundesliga',72,48,'mid'],['Union Berlin','Bundesliga',72,43,'mid'],['Augsburg','Bundesliga',71,42,'mid'],['FC Koln','Bundesliga',70,43,'mid'],['Hamburg','Bundesliga',70,42,'mid'],['Schalke','2. Bundesliga',65,38,'lower'],['Hertha Berlin','2. Bundesliga',65,37,'lower'],['Fortuna Dusseldorf','2. Bundesliga',64,34,'lower'],
@@ -1053,7 +1053,7 @@ async function startOnlineFromLobby(){
 
 // ---------- Results, summary image and leaderboard saving ----------
 function finalScores(){ return (state?.users||[]).map(u=>({user:u,total:(u.team||[]).reduce((s,p)=>s+Number(p.rating||0),0)})).sort((a,b)=>b.total-a.total); }
-async function revealScores(){ ratingsRevealed=true; currentCandidate=null; showFinishedResults(); await saveOnlineState('Scores revealed.'); }
+async function revealScores(){ ratingsRevealed=true; currentCandidate=null; showFinishedResults(); await recordCompletedModeStats(leaderboardMode(), { source:'standard_result' }); await saveOnlineState('Scores revealed.'); }
 function showFinishedResults(){
   if(!state) return; hideAllPanels(); show(els.resultsPanel,true); if(els.resultsPanel) els.resultsPanel.classList.add('finished-results-page'); if(els.resetBtn) els.resetBtn.style.display=''; renderResults();
 }
@@ -1070,6 +1070,41 @@ function renderResults(){
 }
 
 function leaderboardMode(){ if(state?.challengePreset==='leaguelegends') return MODE_LABELS.leaguelegends; if(state?.challengePreset==='worldcup') return MODE_LABELS.worldcup; if(state?.challengePreset==='easy') return MODE_LABELS.easy; if(state?.challengePreset==='ultimate') return MODE_LABELS.ultimate; if(state?.challengePreset==='league') return MODE_LABELS.league; if(state?.isOnlineGame&&state.gameMode==='draft') return MODE_LABELS.onlineDraft; if(state?.isOnlineGame&&state.gameMode==='bid') return state.onlineBidMode==='live'?MODE_LABELS.onlineLive:MODE_LABELS.onlineBlind; return MODE_LABELS.solo; }
+function statsModeKey(label){ return String(label || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
+function statsAlreadyRecordedKey(modeKey){ return 'statsRecorded_' + modeKey; }
+async function recordCompletedModeStats(modeLabel, extra={}){
+  const modeKey = statsModeKey(modeLabel);
+  if(!modeKey) return false;
+  const store = playerSim || state || {};
+  const recordedKey = statsAlreadyRecordedKey(modeKey);
+  if(store[recordedKey]) return false;
+  store[recordedKey] = true;
+  try{
+    await ensureFirebase();
+    const now = Date.now();
+    const today = new Date().toISOString().slice(0,10);
+    const inc = firebase.database.ServerValue.increment(1);
+    const recentRef = firebase.database().ref('stats/recent').push();
+    const recentPayload = { modeKey, modeLabel, timestamp:now, ...extra };
+    const updates = {};
+    updates['stats/modeLabels/'+modeKey] = modeLabel;
+    updates['stats/lastCompletedAt'] = now;
+    updates['stats/lastCompletedMode'] = modeLabel;
+    updates['stats/daily/'+today+'/lastCompletedAt'] = now;
+    updates['stats/daily/'+today+'/byMode/'+modeKey] = inc;
+    updates['stats/daily/'+today+'/total'] = inc;
+    updates['stats/totals/byMode/'+modeKey] = inc;
+    updates['stats/totals/total'] = inc;
+    updates['stats/recent/'+recentRef.key] = recentPayload;
+    await firebase.database().ref().update(updates);
+    return true;
+  }catch(error){
+    store[recordedKey] = false;
+    console.warn('Game completion stats could not be recorded.', error);
+    return false;
+  }
+}
+
 const LEADERBOARD_NAME_RULES = {
   min: 3,
   max: 18,
@@ -1341,7 +1376,7 @@ async function createPlayerSimulationSummarySvg(score, payload){
   const ratingText = String(score ?? 0);
   const displayValue = value => (value === null || value === undefined || value === '') ? '0' : String(value);
   const stats = [
-    ['Position', displayValue(playerSim?.position || '-')], ['Retired', 'Age ' + displayValue(payload?.retiredAt ?? playerSim?.age)], ['Apps', displayValue(payload?.apps)], ['Goals', displayValue(payload?.goals)], ['Assists', displayValue(payload?.assists)],
+    ['Position', displayValue(playerSim?.position || '-')], ['Nationality', displayValue(payload?.nationality || 'England')], ['Caps', displayValue(payload?.internationalCaps)], ['Retired', 'Age ' + displayValue(payload?.retiredAt ?? playerSim?.age)], ['Apps', displayValue(payload?.apps)], ['Goals', displayValue(payload?.goals)], ['Assists', displayValue(payload?.assists)],
     ['Clean Sheets', displayValue(payload?.cleanSheets)], ['League Titles', displayValue(payload?.titles)], ['UCL', displayValue(payload?.championsLeagues)], ['League Cups', displayValue(payload?.leagueCups)], ['World Cups', displayValue(payload?.worldCups)],
     ["Ballon d'Ors", displayValue(payload?.ballonDors)], ['Transfer Fees', money(payload?.transferFees || 0)], ['Loyalty', displayValue(payload?.loyalty) + '/100'], ['Yellow Cards', displayValue(payload?.yellowCards)], ['Red Cards', displayValue(payload?.redCards)]
   ];
@@ -1501,7 +1536,18 @@ function splitLeaderboardNameAndYears(entry){
   if (match) { name = match[1].trim() || 'Player'; years = 'Years: ' + match[2].trim(); }
   return { name, years };
 }
-function playerSimLeaderboardRow(e,i){ const c=e.careerStats||{}; const chips=[`Position: ${c.position??''}`,`Goals: ${c.goals??0}`,`Assists: ${c.assists??0}`,`Clean sheets: ${c.cleanSheets??'N/A'}`,`League titles: ${c.titles??0}`,`UCL: ${c.championsLeagues??0}`,`League cups: ${c.leagueCups??0}`,`World Cups: ${c.worldCups??0}`,`Ballon d'Ors: ${c.ballonDors??0}`,`Fees: ${money(c.transferFees||0)}`,`Loyalty: ${c.loyalty??0}/100`].map(x=>`<span class="ps-lb-chip">${esc(x)}</span>`).join(''); return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${i+1}</span><span class="leaderboard-name">${esc(e.username||'Player')}</span><span class="leaderboard-mode">Player Simulation</span><span class="leaderboard-score">${e.score}</span><span class="ps-lb-meta">${chips}</span></div>`; }
+function playerSimLeaderboardRow(e,i){ const c=e.careerStats||{}; const chips=[`Position: ${c.position??''}`,`Nationality: ${c.nationality??'England'}`,`Caps: ${c.internationalCaps??0}`,`Goals: ${c.goals??0}`,`Assists: ${c.assists??0}`,`Clean sheets: ${c.cleanSheets??'N/A'}`,`League titles: ${c.titles??0}`,`UCL: ${c.championsLeagues??0}`,`League cups: ${c.leagueCups??0}`,`World Cups: ${c.worldCups??0}`,`Ballon d'Ors: ${c.ballonDors??0}`,`Fees: ${money(c.transferFees||0)}`,`Loyalty: ${c.loyalty??0}/100`].map(x=>`<span class="ps-lb-chip">${esc(x)}</span>`).join(''); return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${i+1}</span><span class="leaderboard-name">${esc(e.username||'Player')}</span><span class="leaderboard-mode">Player Simulation</span><span class="leaderboard-score">${e.score}</span><span class="ps-lb-meta">${chips}</span></div>`; }
+
+const PLAYER_SIM_NATIONS = [
+  {name:'Brazil',tier:5},{name:'Argentina',tier:5},{name:'France',tier:5},{name:'Spain',tier:5},{name:'Germany',tier:5},
+  {name:'England',tier:4},{name:'Portugal',tier:4},{name:'Netherlands',tier:4},{name:'Italy',tier:4},{name:'Belgium',tier:4},
+  {name:'Uruguay',tier:3},{name:'Croatia',tier:3},{name:'Denmark',tier:3},{name:'Colombia',tier:3},{name:'Mexico',tier:3},{name:'USA',tier:3},{name:'Morocco',tier:3},{name:'Switzerland',tier:3},{name:'Japan',tier:3},{name:'Senegal',tier:3},
+  {name:'Poland',tier:2},{name:'Serbia',tier:2},{name:'Sweden',tier:2},{name:'Norway',tier:2},{name:'Austria',tier:2},{name:'Turkey',tier:2},{name:'Chile',tier:2},{name:'Nigeria',tier:2},{name:'Ghana',tier:2},{name:'South Korea',tier:2},
+  {name:'Scotland',tier:1},{name:'Wales',tier:1},{name:'Republic of Ireland',tier:1},{name:'Czech Republic',tier:1},{name:'Greece',tier:1},{name:'Cameroon',tier:1},{name:'Ecuador',tier:1},{name:'Paraguay',tier:1},{name:'Australia',tier:1},{name:'Egypt',tier:1}
+];
+function psNationOptions(){ return shuffle(PLAYER_SIM_NATIONS).slice(0,3); }
+function psNationTier(){ return Number((playerSim?.nationality && playerSim.nationality.tier) || 3); }
+function psNationName(){ return String((playerSim?.nationality && playerSim.nationality.name) || 'England'); }
 
 // ---------- Player Simulation ----------
 function openPlayerSimulation(){ injectStyles(); document.body.classList.add('ps-active'); hideAllPanels(); if(els.resetBtn) els.resetBtn.style.display=''; renderPSStart(); }
@@ -1527,7 +1573,15 @@ function renderPSStart(){
   p.querySelectorAll('[data-ps-pos]').forEach(b=>b.onclick=()=>{p.querySelectorAll('[data-ps-pos]').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')});
 }
 
-function psBegin(){ const name=($('psName')?.value||'').trim()||randomName(), position=document.querySelector('[data-ps-pos].sel')?.dataset.psPos||'ST', startAge=rnd(16,19), retireAge=position==='GK'?rnd(37,40):position==='DEF'?rnd(35,38):rnd(34,37); const opts=shuffle(PLAYER_SIM_CLUBS.filter(c=>c.level<82)).slice(0,2); playerSim={name,position,age:startAge,startAge,retireAge,club:null,career:[],moves:0,stays:0,highestRejected:0,fees:0,manualRetired:false,clubs:{},totals:{apps:0,goals:0,assists:0,cleanSheets:0,yellowCards:0,redCards:0,titles:0,championsLeagues:0,leagueCups:0,worldCups:0,ballonDors:0},startOptions:opts}; psStartClub(); }
+function psBegin(){ const name=($('psName')?.value||'').trim()||randomName(), position=document.querySelector('[data-ps-pos].sel')?.dataset.psPos||'ST', startAge=rnd(16,19), retireAge=position==='GK'?rnd(37,40):position==='DEF'?rnd(35,38):rnd(34,37); const opts=shuffle(PLAYER_SIM_CLUBS.filter(c=>c.level<82)).slice(0,2); playerSim={name,position,nationality:null,nationOptions:psNationOptions(),age:startAge,startAge,retireAge,club:null,career:[],moves:0,stays:0,highestRejected:0,fees:0,manualRetired:false,clubs:{},totals:{apps:0,goals:0,assists:0,cleanSheets:0,internationalCaps:0,yellowCards:0,redCards:0,titles:0,championsLeagues:0,leagueCups:0,worldCups:0,ballonDors:0},startOptions:opts}; psChooseNationality(); }
+function psChooseNationality(){
+  const p=psPanel();
+  const opts=playerSim.nationOptions||psNationOptions();
+  p.innerHTML=`<div class="ps-card"><div class="ps-box ps-dark"><p class="eyebrow">International career</p><h2>${esc(playerSim.name)}, ${esc(playerSim.position)}</h2><p>Choose the national team your player represents.</p></div><div class="ps-choices">${opts.map((n,i)=>`<button class="ps-choice" type="button" data-ps-nation="${i}"><p class="eyebrow">National team</p><h3>${esc(n.name)}</h3><span class="ps-pill">Choose nationality</span></button>`).join('')}</div><div class="ps-actions ps-career-actions"></div></div>`;
+  p.querySelectorAll('[data-ps-nation]').forEach(b=>b.onclick=()=>{ playerSim.nationality=opts[Number(b.dataset.psNation)]||opts[0]; psStartClub(); });
+  addPlayerSimRestartButton();
+}
+
 function psStartClub(){
   const p=psPanel();
   p.innerHTML=`<div class="ps-card"><div class="ps-box ps-dark"><p class="eyebrow">Professional career start</p><h2>${esc(playerSim.name)}, ${esc(playerSim.position)}</h2><p>${esc(playerSim.name)} signs professionally at age ${playerSim.startAge}. Choose the club where the career officially begins.</p></div><div class="ps-choices">${playerSim.startOptions.map((c,i)=>psClubCard(c,'Start professional career',0,'data-ps-start',i)).join('')}</div><div class="ps-actions ps-career-actions"></div></div>`;
@@ -1538,7 +1592,27 @@ function psStartClub(){
 function psClubCard(c,label,fee,attr,i,extra=''){ return `<button class="ps-choice ${extra}" type="button" ${attr}="${i}"><p class="eyebrow">${esc(label)}</p><h3>${esc(c.name)}</h3><p>${esc(c.league)}</p><span class="ps-pill">${fee?money(fee):'No transfer fee'}</span></button>`; }
 function psCurve(a){ return a<=18?.72+(a-16)*.06:a<=23?.84+(a-19)*.035:a<=29?1:a<=33?.96-(a-30)*.025:.80-(a-34)*.06; }
 function psRate(a,c){ return clamp(Math.round((70+c.level*.22+(playerSim.position==='ST'?1:0)+rnd(-4,5))*psCurve(a)+(c.level-70)*.08+rnd(-3,4)),52,96); }
-function psSimSeason(){ const a=playerSim.age,c=playerSim.club,r=psRate(a,c),tf=c.level/100,apps=clamp(Math.round(rnd(22,44)+(r-75)*.22+(a>34?-rnd(4,12):0)),5,60); let g=0,as=0,cs=0; if(playerSim.position==='GK'){cs=Math.round(apps*(.20+tf*.20)+rnd(-3,4));as=rnd(0,1)} if(playerSim.position==='DEF'){g=Math.max(0,Math.round(apps*.035+(r-75)*.04+rnd(-1,2)));as=Math.max(0,Math.round(apps*.07+rnd(-1,3)));cs=Math.round(apps*(.14+tf*.18)+rnd(-3,3))} if(playerSim.position==='MID'){g=Math.max(0,Math.round(apps*(.09+(r-75)*.004)+rnd(-2,4)));as=Math.max(0,Math.round(apps*(.16+(r-75)*.006)+rnd(-2,5)))} if(playerSim.position==='ST'){g=Math.max(0,Math.round(apps*(.28+(r-75)*.010)+tf*3+rnd(-4,6)));as=Math.max(0,Math.round(apps*.10+(r-75)*.08+rnd(-2,4)))} const titleChance=c.band==='elite'?clamp((c.level-82)/42,.08,.55):c.band==='top'?clamp((c.level-80)/60,.03,.22):c.band==='upper'?clamp((c.level-72)/100,.01,.09):.01; const titles=Math.random()<titleChance?1:0,ucl=Math.random()<(['elite','top'].includes(c.band)?clamp((c.level-88)/58,.003,.22):.001)?1:0,cups=Math.random()<clamp((c.level-62)/120,.02,.22)?1:0,wc=([22,26,30,34].includes(a)&&Math.random()<clamp((r-85)/80,0,.15))?1:0,bdor=Math.random()<clamp((r+g*(playerSim.position==='ST'?1:.35)+as*.45+titles*4+ucl*8+wc*12+(c.band==='elite'?3:0)-126)/120,0,.28)?1:0; const s={age:a,club:c.name,rating:r,apps,goals:g,assists:as,cleanSheets:Math.max(0,cs),yellowCards:playerSim.position==='GK'?rnd(0,2):playerSim.position==='DEF'?rnd(3,10):rnd(1,7),redCards:Math.random()<(playerSim.position==='GK'?.03:.10)?1:0,titles,championsLeagues:ucl,leagueCups:cups,worldCups:wc,ballonDors:bdor}; Object.keys(playerSim.totals).forEach(k=>playerSim.totals[k]+=Number(s[k]||0)); playerSim.career.push(s); playerSim.clubs[c.name]=(playerSim.clubs[c.name]||0)+1; return s; }
+function psSimSeason(){
+  const a=playerSim.age,c=playerSim.club,r=psRate(a,c),tf=c.level/100,apps=clamp(Math.round(rnd(22,44)+(r-75)*.22+(a>34?-rnd(4,12):0)),5,60);
+  let g=0,ast=0,cs=0;
+  if(playerSim.position==='GK'){cs=Math.round(apps*(.20+tf*.20)+rnd(-3,4));ast=rnd(0,1)}
+  if(playerSim.position==='DEF'){g=Math.max(0,Math.round(apps*.035+(r-75)*.04+rnd(-1,2)));ast=Math.max(0,Math.round(apps*.07+rnd(-1,3)));cs=Math.round(apps*(.14+tf*.18)+rnd(-3,3))}
+  if(playerSim.position==='MID'){g=Math.max(0,Math.round(apps*(.09+(r-75)*.004)+rnd(-2,4)));ast=Math.max(0,Math.round(apps*(.16+(r-75)*.006)+rnd(-2,5)))}
+  if(playerSim.position==='ST'){g=Math.max(0,Math.round(apps*(.28+(r-75)*.010)+tf*3+rnd(-4,6)));ast=Math.max(0,Math.round(apps*.10+(r-75)*.08+rnd(-2,4)))}
+  const titleChance=c.band==='elite'?clamp((c.level-82)/42,.08,.55):c.band==='top'?clamp((c.level-80)/60,.03,.22):c.band==='upper'?clamp((c.level-72)/100,.01,.09):.01;
+  const titles=Math.random()<titleChance?1:0,ucl=Math.random()<(['elite','top'].includes(c.band)?clamp((c.level-88)/58,.003,.22):.001)?1:0,cups=Math.random()<clamp((c.level-62)/120,.02,.22)?1:0;
+  const tier=psNationTier();
+  const capChance=clamp((r-74)/34+(tier-2)*.055+(a>=21&&a<=32?.08:0)-(a>34?.18:0),0,.82);
+  const internationalCaps=Math.random()<capChance?clamp(Math.round(rnd(1,8)+(r-78)*.18+(tier>=4?1:0)),0,14):0;
+  const isWorldCupYear=[22,26,30,34,38].includes(a);
+  const wcBase={1:.002,2:.004,3:.008,4:.015,5:.026}[tier]||.006;
+  const wcBoost=clamp((r-86)/260,0,.025)+(internationalCaps>=6?.006:0)+(playerSim.position==='ST'&&g>=20?.004:0);
+  const wc=(isWorldCupYear&&internationalCaps>0&&Math.random()<clamp(wcBase+wcBoost,0,.055))?1:0;
+  const bdor=Math.random()<clamp((r+g*(playerSim.position==='ST'?1:.35)+ast*.45+titles*4+ucl*8+wc*12+(c.band==='elite'?3:0)-126)/120,0,.28)?1:0;
+  const s={age:a,club:c.name,rating:r,apps,goals:g,assists:ast,cleanSheets:Math.max(0,cs),internationalCaps,yellowCards:playerSim.position==='GK'?rnd(0,2):playerSim.position==='DEF'?rnd(3,10):rnd(1,7),redCards:Math.random()<(playerSim.position==='GK'?.03:.10)?1:0,titles,championsLeagues:ucl,leagueCups:cups,worldCups:wc,ballonDors:bdor};
+  Object.keys(playerSim.totals).forEach(k=>playerSim.totals[k]+=Number(s[k]||0)); playerSim.career.push(s); playerSim.clubs[c.name]=(playerSim.clubs[c.name]||0)+1; return s;
+}
+
 function psForm(s){ return clamp((s.rating-70)/25+(s.goals+s.assists+s.cleanSheets*.45)/70,0,2.4); }
 function psEligible(c,s){ const rep=s.rating+psForm(s)*8+(playerSim.age<24?3:0)-(playerSim.age>32?5:0); return c.level>=94?rep>=88:c.level>=86?rep>=82:c.level>=78?rep>=74:c.level>=68?rep>=64:true; }
 function psFee(target,current,last){ const age=playerSim.age,r=last.rating,f=clamp(.42+psForm(last)*.36,.45,1.42),pb=playerSim.position==='ST'?1.08:playerSim.position==='MID'?.94:playerSim.position==='DEF'?.78:.60,av=age<22?1.18:age<28?1.08:age<31?.86:age<34?.52:.25,w=.55+target.wealth/110,l=.70+target.level/175,base=Math.pow(Math.max(1,r-58),1.22)*pb*av*f*w*l,rich=(target.wealth>85&&r>=88&&age<=29)?rnd(15,65):0,record=(target.wealth>92&&r>=92&&age<=27&&Math.random()<.14)?rnd(55,115):0,up=Math.max(0,target.level-current.level)*rnd(0,1.2); return clamp(Math.round((base+rich+record+up+rnd(-10,10))/5)*5,1,240); }
@@ -1563,7 +1637,7 @@ function psScore(){
   const topSeasons=clubRows.filter(c=>c.band==='top').length;
   const avgLevel=clubRows.length ? clubRows.reduce((sum,c)=>sum+Number(c.level||0),0)/clubRows.length : 70;
   const apps=Number(t.apps||0), goals=Number(t.goals||0), assists=Number(t.assists||0), cleanSheets=Number(t.cleanSheets||0);
-  const titles=Number(t.titles||0), ucl=Number(t.championsLeagues||0), cups=Number(t.leagueCups||0), wc=Number(t.worldCups||0), bdor=Number(t.ballonDors||0);
+  const titles=Number(t.titles||0), ucl=Number(t.championsLeagues||0), cups=Number(t.leagueCups||0), wc=Number(t.worldCups||0), bdor=Number(t.ballonDors||0), caps=Number(t.internationalCaps||0);
 
   const appsScore=Math.min(18, apps/36);
   let output=0;
@@ -1576,6 +1650,7 @@ function psScore(){
   const individual=Math.min(18, bdor*8.5);
   const reputation=Math.min(8.5, eliteSeasons*.38 + topSeasons*.22 + Math.max(0,avgLevel-78)/4.5 + Number(playerSim.fees||0)/210);
   const loyaltyScore=Math.min(5, l*.05);
+  const capScore=Math.min(2.5, caps/55);
 
   let bonus=0;
   if(apps>=550) bonus+=2;
@@ -1594,7 +1669,7 @@ function psScore(){
   if(bdor>=1) bonus+=5;
   if(bdor>=3) bonus+=3;
 
-  let sc=Math.round(appsScore+output+trophies+individual+reputation+loyaltyScore+bonus);
+  let sc=Math.round(appsScore+output+trophies+individual+reputation+loyaltyScore+capScore+bonus);
 
   // Guardrails: 90+ should require elite-level honours, not just longevity, loyalty or clean sheets.
   if(ucl===0 && bdor===0){
@@ -1632,7 +1707,7 @@ function psScore(){
   return clamp(sc,1,100);
 }
 
-function psPayload(sc,l){ return {apps:playerSim.totals.apps||0,goals:playerSim.totals.goals||0,assists:playerSim.totals.assists||0,cleanSheets:(playerSim.position==='GK'||playerSim.position==='DEF')?(playerSim.totals.cleanSheets||0):'N/A',yellowCards:playerSim.totals.yellowCards||0,redCards:playerSim.totals.redCards||0,titles:playerSim.totals.titles||0,championsLeagues:playerSim.totals.championsLeagues||0,leagueCups:playerSim.totals.leagueCups||0,worldCups:playerSim.totals.worldCups||0,ballonDors:playerSim.totals.ballonDors||0,transferFees:playerSim.fees||0,loyalty:l||0,position:playerSim.position,retiredAt:playerSim.age}; }
+function psPayload(sc,l){ return {apps:playerSim.totals.apps||0,goals:playerSim.totals.goals||0,assists:playerSim.totals.assists||0,cleanSheets:(playerSim.position==='GK'||playerSim.position==='DEF')?(playerSim.totals.cleanSheets||0):'N/A',internationalCaps:playerSim.totals.internationalCaps||0,nationality:psNationName(),yellowCards:playerSim.totals.yellowCards||0,redCards:playerSim.totals.redCards||0,titles:playerSim.totals.titles||0,championsLeagues:playerSim.totals.championsLeagues||0,leagueCups:playerSim.totals.leagueCups||0,worldCups:playerSim.totals.worldCups||0,ballonDors:playerSim.totals.ballonDors||0,transferFees:playerSim.fees||0,loyalty:l||0,position:playerSim.position,retiredAt:playerSim.age}; }
 function psRevealPrompt(){
   const p=psPanel();
   p.innerHTML=`<div class="ps-card"><div class="ps-box ps-dark"><p class="eyebrow">Career complete</p><h2>${esc(playerSim.name)} has retired at ${playerSim.age}</h2><p>The full career has been simulated. Reveal the final stats and career rating one by one.</p><div class="ps-actions"><button class="btn btn-primary" id="psReveal">Reveal career stats</button></div></div></div>`;
@@ -1644,16 +1719,32 @@ const psStat=(a,b)=>`<div class="ps-stat"><span>${esc(a)}</span><strong>${esc(b)
 function psResults(){
   const sc=psScore(),l=psLoyalty(),pl=psPayload(sc,l),clubs=Object.entries(playerSim.clubs).sort((a,b)=>b[1]-a[1]);
   const p=psPanel();
-  p.innerHTML=`<div class="ps-card"><div class="ps-grid"><div class="ps-score"><div><span>Career rating</span><strong id="psFinalScore">?</strong><span>/100</span></div></div><div class="ps-box"><p class="eyebrow">Retired at ${playerSim.age}</p><h2>${esc(playerSim.name)}'s ${esc(playerSim.position)} career</h2><p><strong>Position: ${esc(playerSim.position)}</strong><br>${sc>=95?'All-time great career.':sc>=85?'Outstanding career.':sc>=70?'Very good career.':sc>=55?'Solid professional career.':'Journeyman career.'} Loyalty score: ${l}/100.</p><div class="ps-actions ps-results-actions"><button class="btn btn-deep" id="psSharePicture">Share picture</button><button class="btn btn-deep" id="psSavePicture">Save picture</button><button class="btn btn-primary" id="psSubmit">Submit to leaderboard</button><button class="btn btn-deep" id="psAgain">Play again</button></div><p id="psSubmitStatus" class="muted"></p></div></div><div class="ps-stats" style="margin-top:16px">${psStat('Position',playerSim.position)}${psStat('Appearances',pl.apps)}${psStat('Goals',pl.goals)}${psStat('Assists',pl.assists)}${psStat('Clean sheets',pl.cleanSheets)}${psStat('Yellow cards',pl.yellowCards)}${psStat('Red cards',pl.redCards)}${psStat('League titles',pl.titles)}${psStat('Champions Leagues',pl.championsLeagues)}${psStat('League cups',pl.leagueCups)}${psStat('World Cups',pl.worldCups)}${psStat("Ballon d'Ors",pl.ballonDors)}${psStat('Transfer fees',money(pl.transferFees))}${psStat('Loyalty',pl.loyalty+'/100')}</div><div style="margin-top:16px"><p class="eyebrow">Clubs</p><div class="ps-clubs">${clubs.map(r=>`<span>${esc(r[0])} - ${r[1]} yr${r[1]===1?'':'s'}</span>`).join('')}</div></div><div class="ps-timeline">${playerSim.career.map(s=>`<div class="ps-year"><strong>${s.age}</strong><span>${esc(s.club)} - ${s.apps} apps, ${s.goals} goals, ${s.assists} assists${(playerSim.position==='GK'||playerSim.position==='DEF')?', '+s.cleanSheets+' clean sheets':''}</span><strong>${s.rating}</strong></div>`).join('')}</div></div>`;
+  p.innerHTML=`<div class="ps-card"><div class="ps-grid"><div class="ps-score"><div><span>Career rating</span><strong id="psFinalScore">?</strong><span>/100</span></div></div><div class="ps-box"><p class="eyebrow">Retired at ${playerSim.age}</p><h2>${esc(playerSim.name)}'s ${esc(playerSim.position)} career</h2><p><strong>Position: ${esc(playerSim.position)}</strong><br><strong>Nationality: ${esc(psNationName())}</strong><br>${sc>=95?'All-time great career.':sc>=85?'Outstanding career.':sc>=70?'Very good career.':sc>=55?'Solid professional career.':'Journeyman career.'} Loyalty score: ${l}/100.</p><div class="ps-actions ps-results-actions"><button class="btn btn-deep" id="psSharePicture">Share picture</button><button class="btn btn-deep" id="psSavePicture">Save picture</button><button class="btn btn-primary" id="psSubmit">Submit to leaderboard</button><button class="btn btn-deep" id="psAgain">Play again</button></div><p id="psSubmitStatus" class="muted"></p></div></div><div class="ps-stats" style="margin-top:16px">${psStat('Position',playerSim.position)}${psStat('Nationality',pl.nationality)}${psStat('Caps',pl.internationalCaps)}${psStat('Appearances',pl.apps)}${psStat('Goals',pl.goals)}${psStat('Assists',pl.assists)}${psStat('Clean sheets',pl.cleanSheets)}${psStat('Yellow cards',pl.yellowCards)}${psStat('Red cards',pl.redCards)}${psStat('League titles',pl.titles)}${psStat('Champions Leagues',pl.championsLeagues)}${psStat('League cups',pl.leagueCups)}${psStat('World Cups',pl.worldCups)}${psStat("Ballon d'Ors",pl.ballonDors)}${psStat('Transfer fees',money(pl.transferFees))}${psStat('Loyalty',pl.loyalty+'/100')}</div><div style="margin-top:16px"><p class="eyebrow">Clubs</p><div class="ps-clubs">${clubs.map(r=>`<span>${esc(r[0])} - ${r[1]} yr${r[1]===1?'':'s'}</span>`).join('')}</div></div><div class="ps-timeline">${playerSim.career.map(s=>`<div class="ps-year"><strong>${s.age}</strong><span>${esc(s.club)} - ${s.apps} apps, ${s.goals} goals, ${s.assists} assists${(playerSim.position==='GK'||playerSim.position==='DEF')?', '+s.cleanSheets+' clean sheets':''}${s.internationalCaps?', '+s.internationalCaps+' caps':''}</span><strong>${s.rating}</strong></div>`).join('')}</div></div>`;
   $('psAgain').onclick=renderPSStart;
   $('psSubmit').onclick=()=>psSubmitScore(sc,pl);
   $('psSavePicture').onclick=()=>psSavePicture(sc,pl);
   $('psSharePicture').onclick=()=>psSharePicture(sc,pl);
+  recordPlayerSimulationStats(sc,pl);
   setTimeout(()=>{$('psFinalScore').textContent=sc},350);
   document.querySelectorAll('#playerSimulationPanel .ps-stat,#playerSimulationPanel .ps-year').forEach((el,i)=>setTimeout(()=>el.classList.add('show'),650+i*80));
 }
 
-async function psSubmitScore(sc,pl){ if(playerSimSubmitted)return; try{ await ensureFirebase(); await firebase.database().ref('leaderboard').push({username:safeGeneratedLeaderboardName(playerSim.name,'Player'),score:sc,gameMode:MODE_LABELS.playerSim,careerStats:pl,timestamp:Date.now()}); playerSimSubmitted=true; $('psSubmitStatus').textContent='Player Simulation score submitted to leaderboard.'; $('psSubmit').disabled=true; }catch(e){ $('psSubmitStatus').textContent='Could not submit score. '+(e.message||e); } }
+async function recordPlayerSimulationStats(score, payload){
+  if(!playerSim) return false;
+  return recordCompletedModeStats(MODE_LABELS.playerSim, {
+    source:'player_simulation_result',
+    score:Number(score||0),
+    playerName:String(playerSim.name||'Player').slice(0,32),
+    position:payload?.position||playerSim.position||'',
+    nationality:payload?.nationality||psNationName(),
+    caps:Number(payload?.internationalCaps||0),
+    goals:Number(payload?.goals||0),
+    assists:Number(payload?.assists||0),
+    worldCups:Number(payload?.worldCups||0)
+  });
+}
+
+async function psSubmitScore(sc,pl){ if(playerSimSubmitted)return; try{ await recordPlayerSimulationStats(sc,pl); await ensureFirebase(); await firebase.database().ref('leaderboard').push({username:safeGeneratedLeaderboardName(playerSim.name,'Player'),score:sc,gameMode:MODE_LABELS.playerSim,careerStats:pl,timestamp:Date.now()}); playerSimSubmitted=true; $('psSubmitStatus').textContent='Player Simulation score submitted to leaderboard.'; $('psSubmit').disabled=true; }catch(e){ $('psSubmitStatus').textContent='Could not submit score. '+(e.message||e); } }
 
 // ---------- Reset and events ----------
 async function resetOnlineRoomToLobby(){
