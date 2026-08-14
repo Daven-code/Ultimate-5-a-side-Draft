@@ -95,6 +95,7 @@ let playerSim = null;
 let playerSimSubmitted = false;
 
 const online = { enabled:false, isHost:false, roomId:null, ref:null, myName:'', loaded:false, subscribed:false, bidMode:'blind' };
+let firebaseReadyPromise = null;
 
 // ---------- DOM helpers ----------
 const $ = id => document.getElementById(id);
@@ -220,10 +221,15 @@ function loadScriptOnce(src){
 }
 async function ensureFirebase(){
   if (online.loaded) return;
-  await loadScriptOnce('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js');
-  await loadScriptOnce('https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js');
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  online.loaded = true;
+  if (firebaseReadyPromise) return firebaseReadyPromise;
+  firebaseReadyPromise = (async () => {
+    await loadScriptOnce('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js');
+    await loadScriptOnce('https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js');
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    online.loaded = true;
+  })();
+  try { await firebaseReadyPromise; }
+  catch(error) { firebaseReadyPromise = null; throw error; }
 }
 function randomRoomId(){ return Math.random().toString(36).slice(2,8).toUpperCase(); }
 function validateUsername(name){ return /^[a-zA-Z0-9 _-]{3,18}$/.test(String(name || '').trim()); }
@@ -375,6 +381,7 @@ function renderHome(){
   panel.querySelector('[data-player-sim-open]')?.addEventListener('click', openPlayerSimulation);
   const params = new URLSearchParams(location.search); const room = params.get('room');
   if (room) { $('joinRoomCode').value = room.toUpperCase(); $('onlineRoomStatus').textContent = 'Room code detected: ' + room.toUpperCase() + '. Type your player name, then click Join room.'; }
+  recordStatsEvent('home_view', '', { source:'render_home' });
 }
 
 function miniPitch(){ return `<div class="mini-pitch-clean"><span class="mini-pos fwd">FWD</span><span class="mini-pos mid1">MID</span><span class="mini-pos mid2">MID</span><span class="mini-pos def">DEF</span><span class="mini-pos gk">GK</span></div>`; }
@@ -581,6 +588,7 @@ async function startSoloGame(){
   const pool = setupEligiblePool(); if(!pool.length) throw new Error('No players available for this setup.');
   const name = selectedPreset === 'worldcup' ? 'World Cup 2026' : 'You';
   state = baseState('draft', [name], false); state.challengePreset = selectedPreset; state.challengeName = MODE_LABELS[selectedPreset]; state.poolSnapshot = pool.map(p=>p.id); state.yearRange = selectedYearRange ? {start:selectedYearRange.start,end:selectedYearRange.end} : null; state.excludeDeclines = !!$('setupExcludeDeclines')?.checked; state.leagueSelection = leagueSnapshot(pool);
+  recordStatsEvent('game_start', state.challengeName, { source:'solo_start', playerCount:1 });
   selectedGameMode = 'draft'; ratingsRevealed = false; currentCandidate = null; hideAllPanels(); show(els.gamePanel,true); if(els.resetBtn) els.resetBtn.style.display='';
   prepareGamePanel(); clearCandidate('Click Pick player to begin.'); renderGame();
 }
@@ -591,6 +599,7 @@ function leagueSnapshot(pool){ return { labels:[...selectedLeagueKeys].map(k=>LE
 async function startLeagueLegends(){
   await loadLegends(); const pool=legends.filter(p=>p.league===selectedLegendLeague); if(!pool.length) throw new Error('No legends available for this league.');
   state = baseState('draft', [selectedLegendLeague], false); state.challengePreset='leaguelegends'; state.challengeName=MODE_LABELS.leaguelegends; state.selectedLegendLeague=selectedLegendLeague; state.legendLeague=selectedLegendLeague; state.leagueName=selectedLegendLeague; state.leagueLabel=selectedLegendLeague; state.excludeDeclines=false; state.leagueSelection={labels:[selectedLegendLeague],playerCount:pool.length};
+  recordStatsEvent('game_start', MODE_LABELS.leaguelegends, { source:'league_legends_start', league:selectedLegendLeague, playerCount:1 });
   ratingsRevealed=false; currentCandidate=null; hideAllPanels(); show(els.gamePanel,true); if(els.resetBtn) els.resetBtn.style.display=''; prepareGamePanel(); clearCandidate('Click Randomise player to begin.'); renderGame();
 }
 function prepareGamePanel(){
@@ -1048,6 +1057,7 @@ function showLobby(mode, participants=[], invite=''){
 async function startOnlineFromLobby(){
   await ensurePlayersReady(); const snap=await online.ref.child('participants').once('value'); const names=Object.values(snap.val()||{}); if(selectedGameMode==='bid' && names.length<2) throw new Error('Bid mode needs at least 2 players.');
   const lobbyPanel=$('onlineLobbyPanel'); const ys=lobbyPanel?.querySelector('#yearStart'), ye=lobbyPanel?.querySelector('#yearEnd'); if(ys&&ye) selectedYearRange=clampRange(ys.value, ye.value); state=baseState(selectedGameMode,names.slice(0,4),true); state.yearRange=selectedYearRange?{start:selectedYearRange.start,end:selectedYearRange.end}:null; state.excludeDeclines=!!$('lobbyExcludeDeclines')?.checked; state.challengePreset='online'; state.challengeName=selectedGameMode==='bid' ? (online.bidMode==='live'?MODE_LABELS.onlineLive:MODE_LABELS.onlineBlind) : MODE_LABELS.onlineDraft; state.onlineBidMode=online.bidMode;
+  recordStatsEvent('game_start', state.challengeName, { source:'online_start', roomId:online.roomId, playerCount:names.slice(0,4).length, onlineBidMode:online.bidMode || '' });
   ratingsRevealed=false; currentCandidate=null; hideAllPanels(); show(els.gamePanel,true); prepareGamePanel(); renderGame(); await saveOnlineState('Online game started.'); if(selectedGameMode==='bid') await bidRandomPlayer();
 }
 
@@ -1072,6 +1082,64 @@ function renderResults(){
 function leaderboardMode(){ if(state?.challengePreset==='leaguelegends') return MODE_LABELS.leaguelegends; if(state?.challengePreset==='worldcup') return MODE_LABELS.worldcup; if(state?.challengePreset==='easy') return MODE_LABELS.easy; if(state?.challengePreset==='ultimate') return MODE_LABELS.ultimate; if(state?.challengePreset==='league') return MODE_LABELS.league; if(state?.isOnlineGame&&state.gameMode==='draft') return MODE_LABELS.onlineDraft; if(state?.isOnlineGame&&state.gameMode==='bid') return state.onlineBidMode==='live'?MODE_LABELS.onlineLive:MODE_LABELS.onlineBlind; return MODE_LABELS.solo; }
 function statsModeKey(label){ return String(label || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
 function statsAlreadyRecordedKey(modeKey){ return 'statsRecorded_' + modeKey; }
+async function recordStatsEvent(eventType, modeLabel='', extra={}){
+  try{
+    await ensureFirebase();
+    const now = Date.now();
+    const today = new Date().toISOString().slice(0,10);
+    const inc = firebase.database.ServerValue.increment(1);
+    const updates = {};
+    const modeKey = modeLabel ? statsModeKey(modeLabel) : '';
+    if(eventType === 'home_view'){
+      updates['stats/totals/pageViews/home'] = inc;
+      updates['stats/daily/'+today+'/pageViews/home'] = inc;
+      updates['stats/lastHomeViewAt'] = now;
+    } else if(eventType === 'game_start'){
+      if(!modeKey) return false;
+      const recentRef = firebase.database().ref('stats/recent').push();
+      updates['stats/modeLabels/'+modeKey] = modeLabel;
+      updates['stats/lastStartedAt'] = now;
+      updates['stats/lastStartedMode'] = modeLabel;
+      updates['stats/totals/starts/total'] = inc;
+      updates['stats/totals/starts/byMode/'+modeKey] = inc;
+      updates['stats/daily/'+today+'/starts/total'] = inc;
+      updates['stats/daily/'+today+'/starts/byMode/'+modeKey] = inc;
+      updates['stats/recent/'+recentRef.key] = { eventType, modeKey, modeLabel, timestamp:now, ...extra };
+    } else {
+      return false;
+    }
+    await firebase.database().ref().update(updates);
+    return true;
+  }catch(error){
+    console.warn('Stats event could not be recorded.', eventType, error);
+    return false;
+  }
+}
+async function normaliseLegacyStatsTotals(){
+  try{
+    await ensureFirebase();
+    const rootRef = firebase.database().ref('stats');
+    const snap = await rootRef.once('value');
+    const data = snap.val() || {};
+    if(data?.migrations?.mergedAllIntoTotal) return false;
+    const all = Number(data?.totals?.all || 0);
+    if(!all){
+      await rootRef.child('migrations/mergedAllIntoTotal').set(true);
+      return false;
+    }
+    const total = Number(data?.totals?.total || 0);
+    await rootRef.update({
+      'totals/total': all + total,
+      'totals/all': null,
+      'migrations/mergedAllIntoTotal': true,
+      'migrations/mergedAllIntoTotalAt': Date.now()
+    });
+    return true;
+  }catch(error){
+    console.warn('Legacy stats totals could not be normalised.', error);
+    return false;
+  }
+}
 async function recordCompletedModeStats(modeLabel, extra={}){
   const modeKey = statsModeKey(modeLabel);
   if(!modeKey) return false;
@@ -1586,7 +1654,7 @@ function renderPSStart(){
   p.querySelectorAll('[data-ps-pos]').forEach(b=>b.onclick=()=>{p.querySelectorAll('[data-ps-pos]').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')});
 }
 
-function psBegin(){ const name=($('psName')?.value||'').trim()||randomName(), position=document.querySelector('[data-ps-pos].sel')?.dataset.psPos||'ST', startAge=rnd(16,19), retireAge=position==='GK'?rnd(37,40):position==='DEF'?rnd(35,38):rnd(34,37); const opts=shuffle(PLAYER_SIM_CLUBS.filter(c=>c.level<82)).slice(0,2); playerSim={name,position,nationality:null,nationOptions:psNationOptions(),age:startAge,startAge,retireAge,club:null,career:[],moves:0,stays:0,highestRejected:0,fees:0,manualRetired:false,clubs:{},totals:{apps:0,goals:0,assists:0,cleanSheets:0,internationalCaps:0,yellowCards:0,redCards:0,titles:0,championsLeagues:0,leagueCups:0,worldCups:0,ballonDors:0},startOptions:opts}; psChooseNationality(); }
+function psBegin(){ const name=($('psName')?.value||'').trim()||randomName(), position=document.querySelector('[data-ps-pos].sel')?.dataset.psPos||'ST', startAge=rnd(16,19), retireAge=position==='GK'?rnd(37,40):position==='DEF'?rnd(35,38):rnd(34,37); const opts=shuffle(PLAYER_SIM_CLUBS.filter(c=>c.level<82)).slice(0,2); playerSim={name,position,nationality:null,nationOptions:psNationOptions(),age:startAge,startAge,retireAge,club:null,career:[],moves:0,stays:0,highestRejected:0,fees:0,manualRetired:false,clubs:{},totals:{apps:0,goals:0,assists:0,cleanSheets:0,internationalCaps:0,yellowCards:0,redCards:0,titles:0,championsLeagues:0,leagueCups:0,worldCups:0,ballonDors:0},startOptions:opts}; recordStatsEvent('game_start', MODE_LABELS.playerSim, { source:'player_simulation_start', playerCount:1, position }); psChooseNationality(); }
 function psChooseNationality(){
   const p=psPanel();
   const opts=playerSim.nationOptions||psNationOptions();
@@ -1787,5 +1855,5 @@ function resetGame(){ try{ if(online.ref&&online.subscribed&&typeof online.ref.o
 function wireEvents(){
   els.resetBtn?.addEventListener('click', resetGame); els.pickBtn?.addEventListener('click', safe(pickRandomPlayer)); els.acceptBtn?.addEventListener('click', safe(acceptPlayer)); els.declineBtn?.addEventListener('click', safe(declinePlayer)); els.revealBtn?.addEventListener('click', safe(revealScores)); els.bidPickBtn?.addEventListener('click', safe(bidRandomPlayer)); els.awardBidBtn?.addEventListener('click', safe(awardHighestBid)); els.skipBidBtn?.addEventListener('click', safe(skipBidPlayer)); els.leaderboardBtn?.addEventListener('click', safe(showLeaderboard)); els.leaderboardBackBtn?.addEventListener('click', () => { if(state){ hideAllPanels(); show(ratingsRevealed?els.resultsPanel:els.gamePanel,true); } else renderHome(); });
 }
-function init(){ injectStyles(); wireEvents(); loadPlayers(); renderHome(); }
+function init(){ injectStyles(); wireEvents(); loadPlayers(); normaliseLegacyStatsTotals(); renderHome(); }
 init();
