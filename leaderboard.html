@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google-adsense-account" content="ca-pub-8554748241132095">
+  <meta name="description" content="View the Ultimate 5-a-side leaderboards across Solo Mode, Online Battles, League Legends, Player Simulation and Monthly Challenges.">
+  <title>Leaderboards | Ultimate 5-a-side</title>
+  <link rel="stylesheet" href="styles.css?v=leaderboard-mobile-fix-v149-20260817" />
+</head>
+<body>
+  <div class="background-glow glow-one"></div>
+  <div class="background-glow glow-two"></div>
+  <header class="app-header">
+    <a class="header-brand" href="index.html" aria-label="Ultimate 5-a-side home">
+      <img src="Ultimate 5-a-side LOGO.png" alt="Ultimate 5-a-side" class="site-logo">
+      <div>
+        <h1>Ultimate 5-a-side Draft Game</h1>
+        <p class="header-subtitle">Build your ultimate five-a-side team.</p>
+      </div>
+    </a>
+    <div class="header-actions">
+      <a class="btn btn-primary header-btn" href="leaderboard.html">🏆 Leaderboard</a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <details class="nav-dropdown">
+          <summary aria-label="Open menu"><span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></summary>
+          <div class="nav-dropdown-menu">
+            <a href="index.html">Home</a>
+            <a href="about.html">About</a>
+            <a href="how-to-play.html">How to Play</a>
+            <a href="game-modes.html">Game Modes</a>
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="contact.html">Contact</a>
+          </div>
+        </details>
+      </nav>
+    </div>
+  </header>
+  <main class="content-page-shell leaderboard-page-shell">
+    <section class="content-page-card leaderboard-page-card">
+      <div class="section-title-row leaderboard-page-head"><div><p class="eyebrow">Global rankings</p><h2>🏆 Leaderboards</h2><p class="content-intro">Compare the best submitted scores across every Ultimate 5-a-side game mode.</p></div></div>
+      <div id="leaderboardMainTabs" class="leaderboard-tabs leaderboard-main-tabs-v55" aria-label="Leaderboard categories"></div>
+      <div id="leaderboardSubTabs" class="leaderboard-tabs leaderboard-subtabs-v55" aria-label="Leaderboard filters"></div>
+      <div id="leaderboardList" class="leaderboard-list"><div class="leaderboard-empty">Loading leaderboard...</div></div>
+    </section>
+  </main>
+  <footer class="app-footer legal-footer">
+    <nav class="footer-legal-links" aria-label="Footer links">
+      <a href="index.html">Home</a><span aria-hidden="true">•</span>
+      <a href="about.html">About</a><span aria-hidden="true">•</span>
+      <a href="how-to-play.html">How to Play</a><span aria-hidden="true">•</span>
+      <a href="game-modes.html">Game Modes</a><span aria-hidden="true">•</span>
+      <a href="leaderboard.html">Leaderboard</a><span aria-hidden="true">•</span>
+      <a href="privacy.html">Privacy Policy</a><span aria-hidden="true">•</span>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <p>© 2026 Ultimate 5-a-side Draft. All rights reserved.</p>
+    <p>This is an independent fan-made football draft game. It is not affiliated with, endorsed by, sponsored by, licensed by, or otherwise associated with any football club, league, competition, governing body, player association, game publisher, ratings provider, or data provider.</p>
+    <p>Player names, club names, ratings and related data are used for informational, descriptive and gameplay purposes only. No official logos, crests, player images, likenesses or other official branding are used. All trademarks, trade names, player-related rights, ratings, data and other intellectual property rights remain the property of their respective owners.</p>
+  </footer>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+  <script>
+    const FIREBASE_CONFIG = { apiKey:'AIzaSyAcqef5WtEuICYihdza6l_gcad7UUjIjS0', authDomain:'ultimate-5-a-side-draft.firebaseapp.com', databaseURL:'https://ultimate-5-a-side-draft-default-rtdb.europe-west1.firebasedatabase.app', projectId:'ultimate-5-a-side-draft', storageBucket:'ultimate-5-a-side-draft.firebasestorage.app', messagingSenderId:'947937131392', appId:'1:947937131392:web:c2a228b6697cf397439f65', measurementId:'G-22516PSZD7' };
+    const MODE_LABELS = { solo:'Solo Challenge', ultimate:'Ultimate Solo Mode', easy:'Easy Solo Challenge', league:'League Challenge', worldcup:'World Cup 2026 Challenge', leaguelegends:'League Legends Challenge', onlineDraft:'Online Ultimate Draft', onlineBlind:'Online Blind Bidding', onlineLive:'Online Live Auction', playerSim:'Player Simulation' };
+    const TABS = [
+      {key:'solo', label:'Solo Mode', modes:[MODE_LABELS.solo,MODE_LABELS.ultimate,MODE_LABELS.easy,MODE_LABELS.league,MODE_LABELS.worldcup], subs:[['all','All'],[MODE_LABELS.solo,'Standard Solo'],[MODE_LABELS.ultimate,'Ultimate Solo'],[MODE_LABELS.easy,'Easy Solo'],[MODE_LABELS.league,'League Challenge'],[MODE_LABELS.worldcup,'World Cup 2026']]},
+      {key:'online', label:'Online Battles', modes:[MODE_LABELS.onlineDraft,MODE_LABELS.onlineBlind,MODE_LABELS.onlineLive], subs:[['all','All'],[MODE_LABELS.onlineDraft,'Online Ultimate Draft'],[MODE_LABELS.onlineBlind,'Online Blind Bidding'],[MODE_LABELS.onlineLive,'Online Live Auction']]},
+      {key:'legends', label:'League Legends', modes:[MODE_LABELS.leaguelegends], subs:[['all','All']]},
+      {key:'playerSim', label:'Player Simulation', modes:[MODE_LABELS.playerSim], subs:[['all','All'],['GK','GK'],['DEF','DEF'],['MID','MID'],['ST','ST']]},
+      {key:'monthly', label:'Monthly Challenges', modes:[MODE_LABELS.worldcup], subs:[[MODE_LABELS.worldcup,'World Cup 2026']]}
+    ];
+    const PLAYER_SIM_CUTOFF = Date.UTC(2026, 7, 13, 14, 34, 0);
+    let main = 'solo';
+    let sub = 'all';
+    function esc(value){ return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+    function money(value){ return '£' + Math.max(0, Math.round(Number(value) || 0)) + 'm'; }
+    function splitLeaderboardNameAndYears(entry){
+      let name = String(entry.username || 'Player');
+      let years = entry.yearRange ? `Years: ${entry.yearRange.start} - ${entry.yearRange.end}` : '';
+      const match = name.match(/^(.*?)\s*Years:\s*(.+)$/i);
+      if (match) { name = match[1].trim() || 'Player'; years = 'Years: ' + match[2].trim(); }
+      return { name, years };
+    }
+    function firebaseList(value){ if(Array.isArray(value)) return value.filter(Boolean); if(value && typeof value === 'object') return Object.values(value).filter(Boolean); if(typeof value === 'string' && value.trim()) return [value.trim()]; return []; }
+    function leagueLine(entry){
+      if(entry.gameMode !== MODE_LABELS.leaguelegends) return '';
+      const fields = [entry?.leagueSelection?.labels, entry?.leagueSelection?.label, entry?.leagueSelection?.league, entry?.selectedLegendLeague, entry?.legendLeague, entry?.leagueName, entry?.leagueLabel, entry?.challengeLeague, entry?.league, entry?.selectedLeague, entry?.modeLeague, entry?.filterLeague, entry?.leagueFilter];
+      for(const field of fields){ const values = firebaseList(field).map(v => String(v).trim()).filter(Boolean); if(values.length) return 'League: ' + values.join(', '); }
+      return 'League: Not recorded';
+    }
+    function normalRow(entry, index){
+      const parsed = splitLeaderboardNameAndYears(entry);
+      const details = [parsed.years, leagueLine(entry)].filter(Boolean).map(line => `<small class="leaderboard-year-line leaderboard-league-line">${esc(line)}</small>`).join('');
+      const team = (Array.isArray(entry.team) ? entry.team : []).map(p => `<span class="leaderboard-player-chip-v78"><span class="lb-chip-pos">${esc(p.position || '')}</span><span class="lb-chip-name">${esc(p.name || p.player || '')}</span></span>`).join('');
+      return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${index + 1}</span><span class="leaderboard-name"><span class="leaderboard-name-main">${esc(parsed.name)}</span>${details}</span><span class="leaderboard-mode">${esc(entry.gameMode || '')}</span><span class="leaderboard-score">${entry.score}</span>${team ? `<span class="leaderboard-team-v78"><span class="lb-team-label">Team:</span> ${team}</span>` : ''}</div>`;
+    }
+    function playerSimRow(entry, index){
+      const c = entry.careerStats || {};
+      const entryTime = Number(entry.timestamp || 0);
+      const showNewInternationalStats = entryTime >= PLAYER_SIM_CUTOFF && !!String(c.nationality || '').trim() && Object.prototype.hasOwnProperty.call(c, 'internationalCaps');
+      const items = [`Position: ${c.position ?? ''}`, `Apps: ${c.apps ?? 0}`];
+      if(showNewInternationalStats){ items.push(`Nationality: ${c.nationality}`); items.push(`Caps: ${c.internationalCaps ?? 0}`); }
+      items.push(`Goals: ${c.goals ?? 0}`, `Assists: ${c.assists ?? 0}`, `Clean sheets: ${c.cleanSheets ?? 'N/A'}`, `League titles: ${c.titles ?? 0}`, `UCL: ${c.championsLeagues ?? 0}`, `League cups: ${c.leagueCups ?? 0}`, `World Cups: ${c.worldCups ?? 0}`, `Ballon d'Ors: ${c.ballonDors ?? 0}`, `Fees: ${money(c.transferFees || 0)}`, `Loyalty: ${c.loyalty ?? 0}/100`);
+      const chips = items.map(x => `<span class="ps-lb-chip">${esc(x)}</span>`).join('');
+      return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${index + 1}</span><span class="leaderboard-name">${esc(entry.username || 'Player')}</span><span class="leaderboard-mode">Player Simulation</span><span class="leaderboard-score">${entry.score}</span><span class="ps-lb-meta">${chips}</span></div>`;
+    }
+    function renderTabs(){
+      const mainBox = document.getElementById('leaderboardMainTabs');
+      const subBox = document.getElementById('leaderboardSubTabs');
+      const tab = TABS.find(t => t.key === main) || TABS[0];
+      mainBox.innerHTML = TABS.map(t => `<button type="button" class="leaderboard-tab ${main === t.key ? 'active' : ''}" data-main="${esc(t.key)}">${esc(t.label)}</button>`).join('');
+      subBox.innerHTML = tab.subs.map(s => `<button type="button" class="leaderboard-tab ${sub === s[0] ? 'active' : ''}" data-sub="${esc(s[0])}">${esc(s[1])}</button>`).join('');
+      mainBox.querySelectorAll('[data-main]').forEach(btn => btn.addEventListener('click', () => { main = btn.dataset.main; sub = 'all'; renderTabs(); renderLeaderboard(); }));
+      subBox.querySelectorAll('[data-sub]').forEach(btn => btn.addEventListener('click', () => { sub = btn.dataset.sub; renderTabs(); renderLeaderboard(); }));
+    }
+    async function renderLeaderboard(){
+      const list = document.getElementById('leaderboardList');
+      list.innerHTML = '<div class="leaderboard-empty">Loading leaderboard...</div>';
+      try{
+        if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        const snap = await firebase.database().ref('leaderboard').once('value');
+        const tab = TABS.find(t => t.key === main) || TABS[0];
+        let entries = Object.values(snap.val() || {}).filter(e => e && Number.isFinite(Number(e.score))).map(e => ({ ...e, score: Number(e.score || 0) }));
+        entries = entries.filter(e => tab.modes.includes(e.gameMode));
+        if(sub !== 'all'){
+          if(main === 'playerSim') entries = entries.filter(e => (e.careerStats && e.careerStats.position) === sub);
+          else entries = entries.filter(e => e.gameMode === sub);
+        }
+        entries = entries.sort((a,b) => b.score - a.score || Number(b.timestamp || 0) - Number(a.timestamp || 0)).slice(0,50);
+        list.innerHTML = entries.length ? entries.map((entry,index) => main === 'playerSim' ? playerSimRow(entry,index) : normalRow(entry,index)).join('') : '<div class="leaderboard-empty">No scores submitted yet.</div>';
+      }catch(error){
+        list.innerHTML = '<div class="leaderboard-error">Could not load leaderboard. ' + esc(error.message || error) + '</div>';
+      }
+    }
+    renderTabs();
+    renderLeaderboard();
+  </script>
+</body>
+</html>

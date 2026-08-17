@@ -95,6 +95,7 @@ let playerSim = null;
 let playerSimSubmitted = false;
 
 const online = { enabled:false, isHost:false, roomId:null, ref:null, myName:'', loaded:false, subscribed:false, bidMode:'blind' };
+let modeBackTarget = '';
 let firebaseReadyPromise = null;
 
 // ---------- DOM helpers ----------
@@ -344,7 +345,7 @@ function injectStyles(){
 
 // ---------- Home / routing ----------
 function hideAllPanels(){
-  ['gameEntryPanel','onlineLobbyPanel','playerSimulationPanel'].forEach(id => show($(id), false));
+  ['gameEntryPanel','onlineLobbyPanel','playerSimulationPanel','monthlyMenuPanel'].forEach(id => show($(id), false));
   show(els.setupPanel, false); show(els.gamePanel, false); show(els.resultsPanel, false); show(els.leaderboardPanel, false);
 }
 function ensureEntryPanel(){
@@ -1853,6 +1854,35 @@ async function recordPlayerSimulationStats(score, payload){
 
 async function psSubmitScore(sc,pl){ if(playerSimSubmitted)return; try{ await recordPlayerSimulationStats(sc,pl); await ensureFirebase(); await firebase.database().ref('leaderboard').push({username:safeGeneratedLeaderboardName(playerSim.name,'Player'),score:sc,gameMode:MODE_LABELS.playerSim,careerStats:pl,timestamp:Date.now()}); playerSimSubmitted=true; $('psSubmitStatus').textContent='Player Simulation score submitted to leaderboard.'; $('psSubmit').disabled=true; }catch(e){ $('psSubmitStatus').textContent='Could not submit score. '+(e.message||e); } }
 
+
+
+
+
+// ---------- Direct game-mode links from content pages ----------
+function getRequestedModeFromQuery(){ try { const params = new URLSearchParams(location.search); return String(params.get('mode') || params.get('play') || '').trim().toLowerCase(); } catch (error) { return ''; } }
+function focusOnlineRoomEntry(){ renderHome(); setTimeout(() => { const field = $('onlineRoomName'); const panel = $('gameEntryPanel'); if (panel) panel.scrollIntoView({ behavior:'smooth', block:'start' }); if (field) field.focus(); }, 120); }
+function setModeBackTarget(target='game-modes.html'){ modeBackTarget = target; if (els.resetBtn) els.resetBtn.textContent = 'Back'; }
+async function createOnlineRoomFromGameModes(){ renderHome(); setModeBackTarget('game-modes.html'); const enteredName = window.prompt('Enter your name to create an online room:'); if (enteredName === null) { focusOnlineRoomEntry(); return true; } const field = $('onlineRoomName'); if (field) field.value = enteredName.trim(); await createOnlineRoom(); return true; }
+async function handleDirectModeRequest(){
+  const requested = getRequestedModeFromQuery();
+  if (!requested) return false;
+  if (new URLSearchParams(location.search).get('room')) return false;
+  const aliases = { 'leaderboard':'leaderboard','leaderboards':'leaderboard','solo':'solo','standard':'solo','standard-solo':'solo','ultimate':'ultimate','ultimate-solo':'ultimate','easy':'easy','easy-solo':'easy','league':'league','league-challenge':'league','monthly':'monthly','worldcup':'worldcup','world-cup':'worldcup','leaguelegends':'leaguelegends','league-legends':'leaguelegends','player-simulation':'playerSim','playersimulation':'playerSim','player-sim':'playerSim','online':'online','online-create':'onlineCreate','online-room':'onlineCreate','online-battles':'onlineCreate' };
+  const mode = aliases[requested] || requested;
+  try {
+    if (mode === 'leaderboard') { window.location.href = 'leaderboard.html'; return true; }
+    setModeBackTarget('game-modes.html');
+    if (mode === 'onlineCreate') return await createOnlineRoomFromGameModes();
+    if (mode === 'online') { focusOnlineRoomEntry(); return true; }
+    if (mode === 'playerSim') { openPlayerSimulation(); return true; }
+    if (mode === 'monthly') { showMonthlyMenu(); return true; }
+    if (['solo','ultimate','easy','league','worldcup','leaguelegends'].includes(mode)) { await openSetup(mode); return true; }
+  } catch (error) { console.error(error); setMessage(error.message || String(error)); }
+  return false;
+}
+
+
+
 // ---------- Reset and events ----------
 async function resetOnlineRoomToLobby(){
   if (!online.enabled || !online.ref) { resetGame(); return; }
@@ -1873,9 +1903,9 @@ async function restartToModeLobby(){
   return openSetup(selectedPreset || 'solo');
 }
 
-function resetGame(){ try{ if(online.ref&&online.subscribed&&typeof online.ref.off==='function') online.ref.off(); }catch(e){console.warn(e)} online.enabled=false; online.isHost=false; online.roomId=null; online.ref=null; online.myName=''; online.subscribed=false; document.body.classList.remove('ps-active'); if(els.draftControls) els.draftControls.style.removeProperty('display'); setMessage(''); const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove(); if(location.search){ try{history.replaceState({},document.title,location.origin+location.pathname)}catch(e){} } renderHome(); }
+function resetGame(){ if(modeBackTarget){ const target = modeBackTarget; modeBackTarget = ''; window.location.href = target; return; } try{ if(online.ref&&online.subscribed&&typeof online.ref.off==='function') online.ref.off(); }catch(e){console.warn(e)} online.enabled=false; online.isHost=false; online.roomId=null; online.ref=null; online.myName=''; online.subscribed=false; document.body.classList.remove('ps-active'); if(els.draftControls) els.draftControls.style.removeProperty('display'); setMessage(''); const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove(); if(location.search){ try{history.replaceState({},document.title,location.origin+location.pathname)}catch(e){} } if(els.resetBtn) els.resetBtn.textContent='Back'; renderHome(); }
 function wireEvents(){
-  els.resetBtn?.addEventListener('click', resetGame); els.pickBtn?.addEventListener('click', safe(pickRandomPlayer)); els.acceptBtn?.addEventListener('click', safe(acceptPlayer)); els.declineBtn?.addEventListener('click', safe(declinePlayer)); els.revealBtn?.addEventListener('click', safe(revealScores)); els.bidPickBtn?.addEventListener('click', safe(bidRandomPlayer)); els.awardBidBtn?.addEventListener('click', safe(awardHighestBid)); els.skipBidBtn?.addEventListener('click', safe(skipBidPlayer)); els.leaderboardBtn?.addEventListener('click', safe(showLeaderboard)); els.leaderboardBackBtn?.addEventListener('click', () => { if(state){ hideAllPanels(); show(ratingsRevealed?els.resultsPanel:els.gamePanel,true); } else renderHome(); });
+  els.resetBtn?.addEventListener('click', resetGame); els.pickBtn?.addEventListener('click', safe(pickRandomPlayer)); els.acceptBtn?.addEventListener('click', safe(acceptPlayer)); els.declineBtn?.addEventListener('click', safe(declinePlayer)); els.revealBtn?.addEventListener('click', safe(revealScores)); els.bidPickBtn?.addEventListener('click', safe(bidRandomPlayer)); els.awardBidBtn?.addEventListener('click', safe(awardHighestBid)); els.skipBidBtn?.addEventListener('click', safe(skipBidPlayer)); els.leaderboardBtn?.addEventListener('click', () => { window.location.href = 'leaderboard.html'; }); els.leaderboardBackBtn?.addEventListener('click', () => { if(state){ hideAllPanels(); show(ratingsRevealed?els.resultsPanel:els.gamePanel,true); } else renderHome(); });
 }
-function init(){ injectStyles(); wireEvents(); loadPlayers(); normaliseLegacyStatsTotals(); renderHome(); }
+async function init(){ injectStyles(); wireEvents(); loadPlayers(); normaliseLegacyStatsTotals(); renderHome(); await handleDirectModeRequest(); }
 init();
