@@ -6,7 +6,7 @@
   <meta name="google-adsense-account" content="ca-pub-8554748241132095">
   <meta name="description" content="View the Ultimate 5-a-side leaderboards across Solo Mode, Online Battles, League Legends, Player Simulation and Monthly Challenges.">
   <title>Leaderboards | Ultimate 5-a-side</title>
-  <link rel="stylesheet" href="styles.css?v=leaderboard-mobile-fix-v149-20260817" />
+  <link rel="stylesheet" href="styles.css?v=leaderboard-mobile-dynamic-v151-20260818" />
 </head>
 <body>
   <div class="background-glow glow-one"></div>
@@ -81,14 +81,51 @@
       let years = entry.yearRange ? `Years: ${entry.yearRange.start} - ${entry.yearRange.end}` : '';
       const match = name.match(/^(.*?)\s*Years:\s*(.+)$/i);
       if (match) { name = match[1].trim() || 'Player'; years = 'Years: ' + match[2].trim(); }
+      // World Cup 2026 is a fixed-pool monthly challenge, so the year range is intentionally hidden.
+      if (entry?.gameMode === MODE_LABELS.worldcup) years = '';
       return { name, years };
     }
+    let leagueLegendLookup = [];
+    async function loadLeagueLegendLookup(){
+      // Fallback for older League Legends rows which did not include a saved league value.
+      if(leagueLegendLookup.length) return leagueLegendLookup;
+      try{
+        const response = await fetch('league_players.json', { cache:'no-store' });
+        if(!response.ok) throw new Error('league_players.json HTTP ' + response.status);
+        const raw = await response.json();
+        leagueLegendLookup = (Array.isArray(raw) ? raw : []).map(player => ({
+          name: String(player.Player || player.player || '').trim().toLowerCase(),
+          club: String(player.Club || player.club || '').trim().toLowerCase(),
+          league: String(player.League || player.league || '').trim()
+        })).filter(player => player.name && player.league);
+      }catch(error){
+        console.warn('League Legends lookup could not be loaded.', error);
+        leagueLegendLookup = [];
+      }
+      return leagueLegendLookup;
+    }
     function firebaseList(value){ if(Array.isArray(value)) return value.filter(Boolean); if(value && typeof value === 'object') return Object.values(value).filter(Boolean); if(typeof value === 'string' && value.trim()) return [value.trim()]; return []; }
+    function inferLeagueFromSubmittedTeam(entry){
+      if(!Array.isArray(entry?.team) || !entry.team.length || !leagueLegendLookup.length) return '';
+      const counts = {};
+      entry.team.forEach(player => {
+        const name = String(player?.name || player?.player || '').trim().toLowerCase();
+        const club = String(player?.club || '').trim().toLowerCase();
+        if(!name) return;
+        const clubMatches = leagueLegendLookup.filter(legend => legend.name === name && club && legend.club === club);
+        const matches = clubMatches.length ? clubMatches : leagueLegendLookup.filter(legend => legend.name === name);
+        matches.forEach(match => { if(match.league) counts[match.league] = (counts[match.league] || 0) + 1; });
+      });
+      const ranked = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+      if(!ranked.length) return '';
+      return ranked[0][1] >= 2 || ranked.length === 1 || ranked[0][1] > (ranked[1]?.[1] || 0) ? ranked[0][0] : '';
+    }
     function leagueLine(entry){
       if(entry.gameMode !== MODE_LABELS.leaguelegends) return '';
       const fields = [entry?.leagueSelection?.labels, entry?.leagueSelection?.label, entry?.leagueSelection?.league, entry?.selectedLegendLeague, entry?.legendLeague, entry?.leagueName, entry?.leagueLabel, entry?.challengeLeague, entry?.league, entry?.selectedLeague, entry?.modeLeague, entry?.filterLeague, entry?.leagueFilter];
       for(const field of fields){ const values = firebaseList(field).map(v => String(v).trim()).filter(Boolean); if(values.length) return 'League: ' + values.join(', '); }
-      return 'League: Not recorded';
+      const inferred = inferLeagueFromSubmittedTeam(entry);
+      return inferred ? 'League: ' + inferred : 'League: Not recorded';
     }
     function normalRow(entry, index){
       const parsed = splitLeaderboardNameAndYears(entry);
@@ -100,11 +137,12 @@
       const c = entry.careerStats || {};
       const entryTime = Number(entry.timestamp || 0);
       const showNewInternationalStats = entryTime >= PLAYER_SIM_CUTOFF && !!String(c.nationality || '').trim() && Object.prototype.hasOwnProperty.call(c, 'internationalCaps');
+      // Ordered deliberately: portrait mobile shows only the first few chips, while landscape/desktop shows everything.
       const items = [`Position: ${c.position ?? ''}`, `Apps: ${c.apps ?? 0}`];
       if(showNewInternationalStats){ items.push(`Nationality: ${c.nationality}`); items.push(`Caps: ${c.internationalCaps ?? 0}`); }
       items.push(`Goals: ${c.goals ?? 0}`, `Assists: ${c.assists ?? 0}`, `Clean sheets: ${c.cleanSheets ?? 'N/A'}`, `League titles: ${c.titles ?? 0}`, `UCL: ${c.championsLeagues ?? 0}`, `League cups: ${c.leagueCups ?? 0}`, `World Cups: ${c.worldCups ?? 0}`, `Ballon d'Ors: ${c.ballonDors ?? 0}`, `Fees: ${money(c.transferFees || 0)}`, `Loyalty: ${c.loyalty ?? 0}/100`);
       const chips = items.map(x => `<span class="ps-lb-chip">${esc(x)}</span>`).join('');
-      return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${index + 1}</span><span class="leaderboard-name">${esc(entry.username || 'Player')}</span><span class="leaderboard-mode">Player Simulation</span><span class="leaderboard-score">${entry.score}</span><span class="ps-lb-meta">${chips}</span></div>`;
+      return `<div class="leaderboard-row leaderboard-row-v55 player-sim-leaderboard-row"><span class="leaderboard-rank">#${index + 1}</span><span class="leaderboard-name">${esc(entry.username || 'Player')}</span><span class="leaderboard-mode">Player Simulation</span><span class="leaderboard-score">${entry.score}</span><span class="ps-lb-meta">${chips}</span></div>`;
     }
     function renderTabs(){
       const mainBox = document.getElementById('leaderboardMainTabs');
@@ -120,6 +158,7 @@
       list.innerHTML = '<div class="leaderboard-empty">Loading leaderboard...</div>';
       try{
         if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        if(main === 'legends') await loadLeagueLegendLookup();
         const snap = await firebase.database().ref('leaderboard').once('value');
         const tab = TABS.find(t => t.key === main) || TABS[0];
         let entries = Object.values(snap.val() || {}).filter(e => e && Number.isFinite(Number(e.score))).map(e => ({ ...e, score: Number(e.score || 0) }));

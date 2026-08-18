@@ -1802,3 +1802,81 @@ select, input[type="text"], input[type="number"] { width: 100%; padding: 13px 14
 
 /* ===== Leaderboard restore and mobile menu visibility v149 ===== */
 .leaderboard-page-shell{max-width:1280px!important;margin:34px auto 56px!important}.leaderboard-page-card{padding:26px!important;border-radius:28px!important}.leaderboard-page-card .leaderboard-page-head h2{font-size:1.65rem!important;line-height:1.1!important;letter-spacing:0!important;margin:6px 0 6px!important;color:#0f172a!important}.leaderboard-page-card .content-intro{font-size:.96rem!important;font-weight:850!important;color:#475569!important;margin:0!important}.leaderboard-page-card .leaderboard-row-v55{display:grid!important;grid-template-columns:58px minmax(0,1fr) 170px 80px!important;gap:8px 12px!important;align-items:center!important;padding:16px 18px!important;border:1px solid #e2e8f0!important;background:#f8fafc!important;border-radius:16px!important;margin-bottom:10px!important;box-shadow:none!important}.leaderboard-page-card .leaderboard-rank{color:#1e3a8a!important;font-weight:1000!important}.leaderboard-page-card .leaderboard-name{min-width:0!important;display:block!important;line-height:1.15!important}.leaderboard-page-card .leaderboard-name-main{display:block!important;font-weight:1000!important;color:#0f172a!important;font-size:1.02rem!important}.leaderboard-page-card .leaderboard-year-line{display:block!important;margin-top:3px!important;color:#1e3a8a!important;font-size:.78rem!important;font-weight:950!important}.leaderboard-page-card .leaderboard-mode{text-align:right!important;color:#64748b!important;font-size:.83rem!important;font-weight:900!important;line-height:1.15!important}.leaderboard-page-card .leaderboard-score{text-align:right!important;color:#166534!important;font-size:1.05rem!important;font-weight:1000!important}.leaderboard-page-card .leaderboard-team-v78,.leaderboard-page-card .ps-lb-meta{grid-column:2 / span 3!important;display:flex!important;gap:6px!important;flex-wrap:wrap!important;align-items:center!important}.leaderboard-page-card .lb-team-label{font-weight:500!important;color:#334155!important}.leaderboard-page-card .leaderboard-player-chip-v78,.leaderboard-page-card .ps-lb-chip{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border-radius:999px!important;background:#eff6ff!important;border:1px solid #bfdbfe!important;color:#1e3a8a!important;font-size:.74rem!important;font-weight:900!important;line-height:1.1!important}.leaderboard-page-card .lb-chip-pos{color:#1d4ed8!important;font-weight:1000!important}.leaderboard-page-card .lb-chip-name{color:#0f172a!important;font-weight:750!important}.leaderboard-page-card .leaderboard-subtabs-v55{padding:8px 10px!important;background:#eef2ff!important;border:1px solid #c7d2fe!important;border-radius:16px!important}.leaderboard-page-card .leaderboard-subtabs-v55 .leaderboard-tab{font-size:.78rem!important;padding:7px 10px!important;min-height:34px!important;border-radius:12px!important;background:#f1f5f9!important;border-color:#cbd5e1!important;color:#334155!important;box-shadow:none!important}.leaderboard-page-card .leaderboard-subtabs-v55 .leaderboard-tab.active{background:linear-gradient(135deg,#0f172a,#334155)!important;color:#fff!important}.site-nav,.nav-dropdown,.nav-dropdown summary,.menu-icon{visibility:visible!important;opacity:1!important}.nav-dropdown summary{display:inline-flex!important}.menu-icon span{display:block!important}@media(max-width:760px){.header-actions{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;width:100%!important;gap:8px!important}.header-actions .header-btn{min-width:0!important;width:100%!important}.site-nav{display:flex!important;justify-content:flex-end!important;min-width:44px!important}.nav-dropdown summary{width:44px!important;min-width:44px!important;flex:0 0 44px!important}.leaderboard-page-card .leaderboard-main-tabs-v55,.leaderboard-page-card .leaderboard-subtabs-v55{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.leaderboard-page-card .leaderboard-row-v55{grid-template-columns:44px minmax(0,1fr) 72px!important;gap:6px 10px!important;padding:16px!important}.leaderboard-page-card .leaderboard-rank{grid-column:1;grid-row:1 / span 2}.leaderboard-page-card .leaderboard-name{grid-column:2;grid-row:1}.leaderboard-page-card .leaderboard-mode{grid-column:2;grid-row:2;text-align:left!important}.leaderboard-page-card .leaderboard-score{grid-column:3;grid-row:1 / span 2;justify-self:end;align-self:center;font-size:1.25rem!important}.leaderboard-page-card .leaderboard-team-v78,.leaderboard-page-card .ps-lb-meta{grid-column:2 / 4!important;grid-row:3!important}.leaderboard-page-card .lb-team-label{width:100%!important;margin-bottom:2px!important}}@media(max-width:420px){.header-actions{grid-template-columns:minmax(0,1fr) 44px!important}.header-actions .header-btn{font-size:.78rem!important;padding:9px 10px!important}.nav-dropdown-menu{right:0!important;left:auto!important}}
+
+
+/* ===== League Legends leaderboard data and mobile alignment v150 =====
+   Keeps the restored desktop leaderboard look, but makes mobile rows use a clean
+   three-column layout with wrapping chips so player names do not overflow. */
+.leaderboard-page-card *,
+#leaderboardPanel * { box-sizing: border-box; }
+.leaderboard-page-card .leaderboard-list,
+#leaderboardPanel .leaderboard-list { width: 100%; min-width: 0; }
+.leaderboard-page-card .leaderboard-row-v55,
+#leaderboardPanel .leaderboard-row-v55 { width: 100%; min-width: 0; overflow: hidden; }
+.leaderboard-page-card .leaderboard-name,
+.leaderboard-page-card .leaderboard-mode,
+.leaderboard-page-card .leaderboard-team-v78,
+.leaderboard-page-card .ps-lb-meta,
+#leaderboardPanel .leaderboard-name,
+#leaderboardPanel .leaderboard-mode,
+#leaderboardPanel .leaderboard-team-v78,
+#leaderboardPanel .ps-lb-meta { min-width: 0 !important; overflow-wrap: anywhere !important; }
+.leaderboard-page-card .leaderboard-player-chip-v78,
+.leaderboard-page-card .ps-lb-chip,
+#leaderboardPanel .leaderboard-player-chip-v78,
+#leaderboardPanel .ps-lb-chip { max-width: 100%; white-space: normal !important; }
+.leaderboard-page-card .lb-chip-name,
+#leaderboardPanel .lb-chip-name { min-width: 0; overflow-wrap: anywhere; }
+@media(max-width:760px){
+  .leaderboard-page-shell { width: min(100%, calc(100vw - 28px)) !important; padding-left: 0 !important; padding-right: 0 !important; }
+  .leaderboard-page-card { width: 100% !important; padding: 20px 14px !important; }
+  .leaderboard-page-card .leaderboard-main-tabs-v55,
+  .leaderboard-page-card .leaderboard-subtabs-v55 { width: 100% !important; }
+  .leaderboard-page-card .leaderboard-tab { min-width: 0 !important; width: 100% !important; text-align: center !important; white-space: normal !important; line-height: 1.12 !important; }
+  .leaderboard-page-card .leaderboard-row-v55,
+  #leaderboardPanel .leaderboard-row-v55 { grid-template-columns: 42px minmax(0, 1fr) 64px !important; column-gap: 8px !important; row-gap: 6px !important; padding: 14px !important; align-items: start !important; }
+  .leaderboard-page-card .leaderboard-rank,
+  #leaderboardPanel .leaderboard-rank { grid-column: 1 !important; grid-row: 1 / span 2 !important; }
+  .leaderboard-page-card .leaderboard-name,
+  #leaderboardPanel .leaderboard-name { grid-column: 2 !important; grid-row: 1 !important; padding-right: 2px !important; }
+  .leaderboard-page-card .leaderboard-mode,
+  #leaderboardPanel .leaderboard-mode { grid-column: 2 / 4 !important; grid-row: 2 !important; text-align: left !important; }
+  .leaderboard-page-card .leaderboard-score,
+  #leaderboardPanel .leaderboard-score { grid-column: 3 !important; grid-row: 1 !important; align-self: start !important; justify-self: end !important; font-size: 1.12rem !important; }
+  .leaderboard-page-card .leaderboard-team-v78,
+  .leaderboard-page-card .ps-lb-meta,
+  #leaderboardPanel .leaderboard-team-v78,
+  #leaderboardPanel .ps-lb-meta { grid-column: 1 / 4 !important; grid-row: 3 !important; display: flex !important; align-items: flex-start !important; gap: 6px !important; }
+  .leaderboard-page-card .lb-team-label,
+  #leaderboardPanel .lb-team-label { flex: 0 0 100% !important; width: 100% !important; }
+}
+@media(max-width:380px){
+  .leaderboard-page-card .leaderboard-row-v55,
+  #leaderboardPanel .leaderboard-row-v55 { grid-template-columns: 38px minmax(0, 1fr) 58px !important; padding: 12px !important; }
+  .leaderboard-page-card .leaderboard-player-chip-v78,
+  .leaderboard-page-card .ps-lb-chip,
+  #leaderboardPanel .leaderboard-player-chip-v78,
+  #leaderboardPanel .ps-lb-chip { font-size: .68rem !important; padding: 4px 7px !important; }
+}
+
+
+/* ===== Player Simulation responsive leaderboard and World Cup display v151 =====
+   Portrait mobile keeps Player Simulation rows compact by showing the headline stats only.
+   Landscape and desktop keep the full detail list visible. */
+@media (max-width: 760px) and (orientation: portrait) {
+  .leaderboard-page-card .player-sim-leaderboard-row .ps-lb-meta,
+  #leaderboardPanel .player-sim-leaderboard-row .ps-lb-meta {
+    row-gap: 5px !important;
+  }
+  .leaderboard-page-card .player-sim-leaderboard-row .ps-lb-chip:nth-child(n+6),
+  #leaderboardPanel .player-sim-leaderboard-row .ps-lb-chip:nth-child(n+6) {
+    display: none !important;
+  }
+}
+@media (max-width: 420px) and (orientation: portrait) {
+  .leaderboard-page-card .player-sim-leaderboard-row .ps-lb-chip,
+  #leaderboardPanel .player-sim-leaderboard-row .ps-lb-chip {
+    font-size: .70rem !important;
+    padding: 4px 7px !important;
+  }
+}

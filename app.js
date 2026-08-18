@@ -1238,7 +1238,31 @@ async function submitCurrentScore(){
   const btn=$('submitLeaderboardFinal'); if(btn){ btn.disabled=true; btn.textContent='Submitting...'; }
   try{
     await ensureFirebase();
-    await firebase.database().ref('leaderboard').push({ username, score:score.total, gameMode:leaderboardMode(), timestamp:Date.now(), yearRange:state.yearRange||null, leagueSelection:state.leagueSelection||null, selectedLegendLeague:state.selectedLegendLeague||null, legendLeague:state.legendLeague||state.selectedLegendLeague||null, leagueName:state.leagueName||state.selectedLegendLeague||null, leagueLabel:state.leagueLabel||state.selectedLegendLeague||null, team:(score.user.team||[]).map(p=>({name:p.player,position:roleLabel(p.selectedRole||p.mainPosition),club:p.club,year:p.year,rating:p.rating})) });
+    // Store one clear League Legends league value going forward. Older scores are still read using the
+    // compatibility lookup in the leaderboard renderer, which prevents duplicate league fields in Firebase.
+    const leaderboardPayload = {
+      username,
+      score: score.total,
+      gameMode: leaderboardMode(),
+      timestamp: Date.now(),
+      yearRange: state.yearRange || null,
+      team: (score.user.team || []).map(p => ({
+        name: p.player,
+        position: roleLabel(p.selectedRole || p.mainPosition),
+        club: p.club,
+        year: p.year,
+        rating: p.rating
+      }))
+    };
+    if (state.challengePreset === 'leaguelegends') {
+      leaderboardPayload.leagueSelection = {
+        label: state.selectedLegendLeague || state.legendLeague || state.leagueName || state.leagueLabel || '',
+        labels: [state.selectedLegendLeague || state.legendLeague || state.leagueName || state.leagueLabel || ''].filter(Boolean)
+      };
+    } else if (state.leagueSelection) {
+      leaderboardPayload.leagueSelection = state.leagueSelection;
+    }
+    await firebase.database().ref('leaderboard').push(leaderboardPayload);
     state.leaderboardSubmitted=true;
     if(btn){btn.disabled=true;btn.textContent='Submitted';}
   }catch(error){
@@ -1576,17 +1600,26 @@ function firebaseValueToList(value){
   return [];
 }
 function getLeagueFromSubmittedTeam(entry){
+  // Compatibility fallback for older League Legends submissions which did not save a league field.
+  // It uses submitted team names and clubs to infer the selected league from league_players.json.
   if (!Array.isArray(entry?.team) || !entry.team.length || !Array.isArray(legends) || !legends.length) return '';
   const counts = {};
   entry.team.forEach(player => {
     const name = String(player?.name || player?.player || '').trim().toLowerCase();
+    const club = String(player?.club || '').trim().toLowerCase();
     if (!name) return;
-    legends.filter(legend => String(legend.player || '').trim().toLowerCase() === name).forEach(match => {
+    const exactClubMatches = legends.filter(legend =>
+      String(legend.player || '').trim().toLowerCase() === name &&
+      club && String(legend.club || '').trim().toLowerCase() === club
+    );
+    const matches = exactClubMatches.length ? exactClubMatches : legends.filter(legend => String(legend.player || '').trim().toLowerCase() === name);
+    matches.forEach(match => {
       if (match.league) counts[match.league] = (counts[match.league] || 0) + 1;
     });
   });
-  const best = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
-  return best && best[1] >= Math.ceil(entry.team.length / 2) ? best[0] : '';
+  const ranked = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if (!ranked.length) return '';
+  return ranked[0][1] >= 2 || ranked.length === 1 || ranked[0][1] > (ranked[1]?.[1] || 0) ? ranked[0][0] : '';
 }
 function getLeagueLegendLeaderboardLeague(entry){
   if (entry?.gameMode !== MODE_LABELS.leaguelegends) return '';
@@ -1625,6 +1658,8 @@ function splitLeaderboardNameAndYears(entry){
   let years = entry.yearRange ? `Years: ${entry.yearRange.start} - ${entry.yearRange.end}` : '';
   const match = name.match(/^(.*?)\s*Years:\s*(.+)$/i);
   if (match) { name = match[1].trim() || 'Player'; years = 'Years: ' + match[2].trim(); }
+  // World Cup 2026 is a fixed-pool monthly challenge, so the year range is not useful on the leaderboard.
+  if (entry?.gameMode === MODE_LABELS.worldcup) years = '';
   return { name, years };
 }
 const PLAYER_SIM_NATIONALITY_LEADERBOARD_CUTOFF = Date.UTC(2026, 7, 13, 14, 34, 0);
@@ -1632,6 +1667,7 @@ function playerSimLeaderboardRow(e,i){
   const c=e.careerStats||{};
   const entryTime = Number(e.timestamp||0);
   const showNewInternationalStats = entryTime >= PLAYER_SIM_NATIONALITY_LEADERBOARD_CUTOFF && !!String(c.nationality||'').trim() && Object.prototype.hasOwnProperty.call(c,'internationalCaps');
+  // Ordered deliberately: CSS shows the first few chips on portrait mobile and reveals the full set on landscape/desktop.
   const items=[`Position: ${c.position??''}`,`Apps: ${c.apps??0}`];
   if(showNewInternationalStats){
     items.push(`Nationality: ${c.nationality}`);
@@ -1639,7 +1675,7 @@ function playerSimLeaderboardRow(e,i){
   }
   items.push(`Goals: ${c.goals??0}`,`Assists: ${c.assists??0}`,`Clean sheets: ${c.cleanSheets??'N/A'}`,`League titles: ${c.titles??0}`,`UCL: ${c.championsLeagues??0}`,`League cups: ${c.leagueCups??0}`,`World Cups: ${c.worldCups??0}`,`Ballon d'Ors: ${c.ballonDors??0}`,`Fees: ${money(c.transferFees||0)}`,`Loyalty: ${c.loyalty??0}/100`);
   const chips=items.map(x=>`<span class="ps-lb-chip">${esc(x)}</span>`).join('');
-  return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${i+1}</span><span class="leaderboard-name">${esc(e.username||'Player')}</span><span class="leaderboard-mode">Player Simulation</span><span class="leaderboard-score">${e.score}</span><span class="ps-lb-meta">${chips}</span></div>`;
+  return `<div class="leaderboard-row leaderboard-row-v55 player-sim-leaderboard-row"><span class="leaderboard-rank">#${i+1}</span><span class="leaderboard-name">${esc(e.username||'Player')}</span><span class="leaderboard-mode">Player Simulation</span><span class="leaderboard-score">${e.score}</span><span class="ps-lb-meta">${chips}</span></div>`;
 }
 
 const PLAYER_SIM_NATIONS = [
@@ -1696,6 +1732,52 @@ function psStartClub(){
 function psClubCard(c,label,fee,attr,i,extra=''){ return `<button class="ps-choice ${extra}" type="button" ${attr}="${i}"><p class="eyebrow">${esc(label)}</p><h3>${esc(c.name)}</h3><p>${esc(c.league)}</p><span class="ps-pill">${fee?money(fee):'No transfer fee'}</span></button>`; }
 function psCurve(a){ return a<=18?.72+(a-16)*.06:a<=23?.84+(a-19)*.035:a<=29?1:a<=33?.96-(a-30)*.025:.80-(a-34)*.06; }
 function psRate(a,c){ return clamp(Math.round((70+c.level*.22+(playerSim.position==='ST'?1:0)+rnd(-4,5))*psCurve(a)+(c.level-70)*.08+rnd(-3,4)),52,96); }
+function psInternationalCapsForSeason(age, rating, apps, seasonOutput){
+  // International caps are display-only and do not affect the Player Simulation score.
+  // The logic uses a soft career ceiling so 220 caps is possible but extremely rare:
+  // - very good players normally land around 80-120 caps,
+  // - very good players for weaker national sides can push towards 130-160,
+  // - truly elite, long-career players can reach the high 100s,
+  // - 200+ requires a rare record-breaker boost plus sustained elite seasons.
+  const tier = psNationTier();
+  const capsSoFar = Number(playerSim?.totals?.internationalCaps || 0);
+  if (capsSoFar >= 220) return 0;
+
+  const quality = clamp((rating - 70) / 26, 0, 1);
+  const starQuality = clamp((rating - 86) / 10, 0, 1);
+  const ageFactor = age <= 19 ? 0.45 : age <= 23 ? 0.86 : age <= 31 ? 1 : age <= 34 ? 0.84 : age <= 37 ? 0.58 : 0.34;
+  const weakNationCeilingBoost = ({1:35, 2:27, 3:15, 4:4, 5:-5}[tier] ?? 12);
+  const longevityCeilingBoost = Number(playerSim?.retireAge || 35) >= 38 ? 14 : Number(playerSim?.retireAge || 35) >= 36 ? 8 : 2;
+  const calculatedCeiling = 55 + quality * 60 + starQuality * 35 + weakNationCeilingBoost + longevityCeilingBoost + rnd(-7, 7);
+
+  if (!Number.isFinite(Number(playerSim.internationalCapCeiling))) playerSim.internationalCapCeiling = 0;
+  playerSim.internationalCapCeiling = Math.max(playerSim.internationalCapCeiling, Math.round(calculatedCeiling));
+
+  // One-off rare record-breaker lift. This is deliberately strict so 200+ is exceptional, not routine.
+  if (!playerSim.internationalRecordBoostChecked && starQuality >= .92 && rating >= 93 && Number(playerSim?.retireAge || 0) >= 37) {
+    playerSim.internationalRecordBoostChecked = true;
+    if (Math.random() < (tier <= 2 ? .08 : .04)) playerSim.internationalCapCeiling += rnd(18, 32);
+  }
+
+  const careerCeiling = clamp(Math.round(playerSim.internationalCapCeiling), 45, 220);
+  const remaining = Math.max(0, Math.min(220, careerCeiling) - capsSoFar);
+  if (remaining <= 0) return 0;
+
+  const nationPathway = ({1:.18, 2:.13, 3:.07, 4:.00, 5:-.05}[tier] ?? .05);
+  const topNationEliteBoost = tier >= 4 ? starQuality * .18 : starQuality * .08;
+  const regularStarterBoost = apps >= 38 ? .06 : apps >= 30 ? .03 : 0;
+  const callUpChance = clamp(.20 + quality * .46 + nationPathway + topNationEliteBoost + regularStarterBoost + (age >= 21 && age <= 32 ? .07 : 0), .03, .92);
+  if (Math.random() > callUpChance) return 0;
+
+  const weakerTeamMinutes = ({1:3.0, 2:2.4, 3:1.4, 4:.5, 5:0}[tier] ?? 1.0);
+  const eliteStarMinutes = tier >= 4 ? starQuality * 3.2 : starQuality * 1.3;
+  const productionBoost = clamp(Number(seasonOutput || 0) / 50, 0, 2.2);
+  const lateCareerReduction = age > 34 ? (age - 34) * 1.15 : 0;
+  const rawCaps = rnd(2, 6) + quality * 4.3 + ageFactor * 2.1 + weakerTeamMinutes + eliteStarMinutes + productionBoost - lateCareerReduction;
+  const seasonMax = starQuality >= .9 && age >= 24 && age <= 32 ? 16 : 13;
+
+  return clamp(Math.round(rawCaps), 0, Math.min(seasonMax, remaining));
+}
 function psSimSeason(){
   const a=playerSim.age,c=playerSim.club,r=psRate(a,c),tf=c.level/100,apps=clamp(Math.round(rnd(22,44)+(r-75)*.22+(a>34?-rnd(4,12):0)),5,60);
   let g=0,ast=0,cs=0;
@@ -1706,8 +1788,8 @@ function psSimSeason(){
   const titleChance=c.band==='elite'?clamp((c.level-82)/42,.08,.55):c.band==='top'?clamp((c.level-80)/60,.03,.22):c.band==='upper'?clamp((c.level-72)/100,.01,.09):.01;
   const titles=Math.random()<titleChance?1:0,ucl=Math.random()<(['elite','top'].includes(c.band)?clamp((c.level-88)/58,.003,.22):.001)?1:0,cups=Math.random()<clamp((c.level-62)/120,.02,.22)?1:0;
   const tier=psNationTier();
-  const capChance=clamp((r-74)/34+(tier-2)*.055+(a>=21&&a<=32?.08:0)-(a>34?.18:0),0,.82);
-  const internationalCaps=Math.random()<capChance?clamp(Math.round(rnd(1,8)+(r-78)*.18+(tier>=4?1:0)),0,14):0;
+  const seasonOutput=g+ast+(playerSim.position==='GK'||playerSim.position==='DEF'?Math.max(0,cs)*.35:0);
+  const internationalCaps=psInternationalCapsForSeason(a,r,apps,seasonOutput);
   const isWorldCupYear=[22,26,30,34,38].includes(a);
   const wcBase={1:.002,2:.004,3:.008,4:.015,5:.026}[tier]||.006;
   const wcBoost=clamp((r-86)/260,0,.025)+(internationalCaps>=6?.006:0)+(playerSim.position==='ST'&&g>=20?.004:0);
@@ -1746,7 +1828,9 @@ function psScore(){
   const appsScore=Math.min(18, apps/36);
   let output=0;
   if(pos==='ST') output=Math.min(30, goals/18 + assists/85);
-  else if(pos==='MID') output=Math.min(28, assists/16 + goals/55);
+  // Midfielders should be rated more on creativity and career legacy than raw goals.
+  // Goals still help, but assists carry more of the position-specific output score.
+  else if(pos==='MID') output=Math.min(28, assists/13.5 + goals/80);
   else if(pos==='DEF') output=Math.min(24, cleanSheets/12 + goals/75 + assists/95);
   else output=Math.min(24, cleanSheets/11 + assists/120);
 
@@ -1754,7 +1838,8 @@ function psScore(){
   const individual=Math.min(18, bdor*8.5);
   const reputation=Math.min(8.5, eliteSeasons*.38 + topSeasons*.22 + Math.max(0,avgLevel-78)/4.5 + Number(playerSim.fees||0)/210);
   const loyaltyScore=Math.min(5, l*.05);
-  const capScore=Math.min(2.5, caps/55);
+  // Caps are shown as a realistic career stat, but they do not influence the Player Simulation score.
+  const capScore=0;
 
   let bonus=0;
   if(apps>=550) bonus+=2;
@@ -1799,10 +1884,13 @@ function psScore(){
   if(pos==='ST' && goals>=280 && apps>=550 && (titles>=1 || cups>=2 || wc>=1)) sc=Math.max(sc,78);
   if(pos==='ST' && goals>=290 && apps>=550 && wc>=1 && titles>=2) sc=Math.max(sc,82);
 
-  if(pos==='MID' && assists>=130 && apps>=450) sc=Math.max(sc,62);
-  if(pos==='MID' && assists>=150 && apps>=520) sc=Math.max(sc,66);
-  if(pos==='MID' && assists>=165 && goals>=70 && apps>=550) sc=Math.max(sc,70);
-  if(pos==='MID' && assists>=180 && goals>=90 && apps>=600 && (titles>=1 || cups>=1 || wc>=1)) sc=Math.max(sc,72);
+  // Midfielder floors: strong creative careers should not rely on striker-level goal totals.
+  // These floors keep good midfielders in a realistic band, while the 90+ guardrails above still prevent easy elite scores.
+  if(pos==='MID' && assists>=130 && apps>=450) sc=Math.max(sc,64);
+  if(pos==='MID' && assists>=150 && apps>=520 && (titles>=1 || cups>=1 || wc>=1)) sc=Math.max(sc,68);
+  if(pos==='MID' && assists>=160 && goals>=70 && apps>=560 && (titles>=1 || cups>=2 || wc>=1)) sc=Math.max(sc,72);
+  if(pos==='MID' && assists>=175 && apps>=580 && (titles>=3 || ucl>=1 || bdor>=1 || wc>=1)) sc=Math.max(sc,75);
+  if(pos==='MID' && assists>=190 && apps>=600 && (titles>=5 || ucl>=2 || bdor>=1 || wc>=1)) sc=Math.max(sc,79);
 
   if(pos==='DEF' && cleanSheets>=150 && apps>=450) sc=Math.max(sc,68);
   if(pos==='DEF' && cleanSheets>=190 && apps>=550 && (titles>=1 || cups>=1 || wc>=1)) sc=Math.max(sc,76);
