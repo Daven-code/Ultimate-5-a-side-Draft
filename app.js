@@ -93,6 +93,9 @@ let ratingsRevealed = false;
 let applyingRemote = false;
 let playerSim = null;
 let playerSimSubmitted = false;
+let playerSimNameWasTyped = false;
+let playerSimSavedManualName = '';
+let playerSimUseSavedManualName = false;
 
 const online = { enabled:false, isHost:false, roomId:null, ref:null, myName:'', loaded:false, subscribed:false, bidMode:'blind' };
 let modeBackTarget = '';
@@ -1707,13 +1710,16 @@ function addPlayerSimRestartButton(){
 }
 function renderPSStart(){
   const p=psPanel(); playerSimSubmitted=false;
-  p.innerHTML=`<div class="ps-card"><div class="ps-grid"><div class="ps-box"><p class="eyebrow">Player Simulation</p><h2>Build a career, season by season</h2><p>Type a player name or generate one, choose a position, then guide the player from breakthrough prospect to retirement.</p><div class="ps-form"><div><label for="psName">Player name</label><input id="psName" type="text" maxlength="32" value="${esc(randomName())}"></div><button class="btn btn-secondary" id="psRandom">Random name</button></div><label>Position</label><div class="ps-pos">${['GK','DEF','MID','ST'].map(k=>`<button type="button" class="${k==='ST'?'sel':''}" data-ps-pos="${k}">${k}<br><small>${k==='ST'?'Striker':k==='DEF'?'Defender':k==='MID'?'Midfielder':'Goalkeeper'}</small></button>`).join('')}</div><div class="ps-actions ps-start-actions"><button class="btn btn-primary" id="psBegin">Begin professional career</button></div></div><div class="ps-box ps-dark"><p class="eyebrow">How it works</p><p><strong>1.</strong> Start professionally between age 16 and 19.</p><p><strong>2.</strong> Bigger, richer clubs only bid when performance and reputation justify it.</p><p><strong>3.</strong> From age 33, choose whether to retire or risk carrying on.</p><p><strong>4.</strong> At retirement, reveal the career stats one by one.</p></div></div></div>`;
-  $('psRandom').onclick=()=>{$('psName').value=randomName()};
+  const initialPlayerName = playerSimUseSavedManualName && playerSimSavedManualName ? playerSimSavedManualName : randomName();
+  playerSimNameWasTyped = !!(playerSimUseSavedManualName && playerSimSavedManualName);
+  p.innerHTML=`<div class="ps-card"><div class="ps-grid"><div class="ps-box"><p class="eyebrow">Player Simulation</p><h2>Build a career, season by season</h2><p>Type a player name or generate one, choose a position, then guide the player from breakthrough prospect to retirement.</p><div class="ps-form"><div><label for="psName">Player name</label><input id="psName" type="text" maxlength="32" value="${esc(initialPlayerName)}"></div><button class="btn btn-secondary" id="psRandom">Random name</button></div><label>Position</label><div class="ps-pos">${['GK','DEF','MID','ST'].map(k=>`<button type="button" class="${k==='ST'?'sel':''}" data-ps-pos="${k}">${k}<br><small>${k==='ST'?'Striker':k==='DEF'?'Defender':k==='MID'?'Midfielder':'Goalkeeper'}</small></button>`).join('')}</div><div class="ps-actions ps-start-actions"><button class="btn btn-primary" id="psBegin">Begin professional career</button></div></div><div class="ps-box ps-dark"><p class="eyebrow">How it works</p><p><strong>1.</strong> Start professionally between age 16 and 19.</p><p><strong>2.</strong> Bigger, richer clubs only bid when performance and reputation justify it.</p><p><strong>3.</strong> From age 33, choose whether to retire or risk carrying on.</p><p><strong>4.</strong> At retirement, reveal the career stats one by one.</p></div></div></div>`;
+  $('psRandom').onclick=()=>{ $('psName').value=randomName(); playerSimNameWasTyped=false; playerSimUseSavedManualName=false; playerSimSavedManualName=''; };
+  $('psName')?.addEventListener('input',()=>{ playerSimNameWasTyped=true; playerSimUseSavedManualName=true; });
   $('psBegin').onclick=psBegin;
   p.querySelectorAll('[data-ps-pos]').forEach(b=>b.onclick=()=>{p.querySelectorAll('[data-ps-pos]').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')});
 }
 
-function psBegin(){ const name=($('psName')?.value||'').trim()||randomName(), position=document.querySelector('[data-ps-pos].sel')?.dataset.psPos||'ST', startAge=rnd(16,19), retireAge=position==='GK'?rnd(37,40):position==='DEF'?rnd(35,38):rnd(34,37); const opts=shuffle(PLAYER_SIM_CLUBS.filter(c=>c.level<82)).slice(0,2); playerSim={name,position,nationality:null,nationOptions:psNationOptions(),age:startAge,startAge,retireAge,club:null,career:[],moves:0,stays:0,highestRejected:0,fees:0,manualRetired:false,clubs:{},totals:{apps:0,goals:0,assists:0,cleanSheets:0,internationalCaps:0,yellowCards:0,redCards:0,titles:0,championsLeagues:0,leagueCups:0,worldCups:0,ballonDors:0},startOptions:opts}; recordStatsEvent('game_start', MODE_LABELS.playerSim, { source:'player_simulation_start', playerCount:1, position }); psChooseNationality(); }
+function psBegin(){ const enteredName=($('psName')?.value||'').trim(), name=enteredName||randomName(), position=document.querySelector('[data-ps-pos].sel')?.dataset.psPos||'ST', startAge=rnd(16,19), retireAge=position==='GK'?rnd(37,40):position==='DEF'?rnd(35,38):rnd(34,37); if(playerSimNameWasTyped&&enteredName){ playerSimSavedManualName=enteredName; playerSimUseSavedManualName=true; } else { playerSimSavedManualName=''; playerSimUseSavedManualName=false; } const opts=shuffle(PLAYER_SIM_CLUBS.filter(c=>c.level<82)).slice(0,2); playerSim={name,position,nationality:null,nationOptions:psNationOptions(),age:startAge,startAge,retireAge,club:null,career:[],moves:0,stays:0,highestRejected:0,fees:0,manualRetired:false,clubs:{},totals:{apps:0,goals:0,assists:0,cleanSheets:0,internationalCaps:0,yellowCards:0,redCards:0,titles:0,championsLeagues:0,leagueCups:0,worldCups:0,ballonDors:0},startOptions:opts}; recordStatsEvent('game_start', MODE_LABELS.playerSim, { source:'player_simulation_start', playerCount:1, position }); psChooseNationality(); }
 function psChooseNationality(){
   const p=psPanel();
   const opts=playerSim.nationOptions||psNationOptions();
