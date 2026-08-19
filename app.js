@@ -389,8 +389,7 @@ function renderHome(){
   panel.querySelector('[data-player-sim-open]')?.addEventListener('click', openPlayerSimulation);
   const params = new URLSearchParams(location.search); const room = params.get('room');
   if (room) { $('joinRoomCode').value = room.toUpperCase(); $('onlineRoomStatus').textContent = 'Room code detected: ' + room.toUpperCase() + '. Type your player name, then click Join room.'; }
-  startHomeVisitCounter();
-  recordStatsEvent('home_view', '', { source:'render_home' }).finally(updateHomeVisitCounter);
+  recordStatsEvent('home_view', '', { source:'render_home' }).finally(startHomeVisitCounter);
 }
 
 function miniPitch(){ return `<div class="mini-pitch-clean"><span class="mini-pos fwd">FWD</span><span class="mini-pos mid1">MID</span><span class="mini-pos mid2">MID</span><span class="mini-pos def">DEF</span><span class="mini-pos gk">GK</span></div>`; }
@@ -1093,8 +1092,9 @@ function statsModeKey(label){ return String(label || 'unknown').toLowerCase().re
 function statsAlreadyRecordedKey(modeKey){ return 'statsRecorded_' + modeKey; }
 const PUBLIC_VISIT_BASELINE = 6000;
 const HOME_VISIT_COUNTER_PATHS = [
-  'stats/totals/pageViews/home',
   'totals/pageViews/home',
+  'stats/totals/pageViews/home',
+  'publicCounters/homeViews',
   'stats/pageViews/home',
   'pageViews/home'
 ];
@@ -1166,6 +1166,7 @@ async function getHomeVisitCounterValue(){
     console.warn('Firebase SDK visit counter read failed. REST value will be used if available.', error);
   }
   const best = Math.max(PUBLIC_VISIT_BASELINE, ...pathValues, ...restValues, ...branchValues);
+  console.info('Home visit counter lookup', { best, pathValues, restValues, branchValues });
   return Number.isFinite(best) ? best : PUBLIC_VISIT_BASELINE;
 }
 function stopHomeVisitCounterRealtime(){
@@ -1216,7 +1217,11 @@ async function recordStatsEvent(eventType, modeLabel='', extra={}){
     const updates = {};
     const modeKey = modeLabel ? statsModeKey(modeLabel) : '';
     if(eventType === 'home_view'){
+      // Keep the public visit counter and the stats counter in sync.
+      // The homepage reads totals/pageViews/home first, because it is the simplest path to allow as public read-only in Firebase rules.
+      updates['totals/pageViews/home'] = inc;
       updates['stats/totals/pageViews/home'] = inc;
+      updates['publicCounters/homeViews'] = inc;
       updates['stats/daily/'+today+'/pageViews/home'] = inc;
       updates['stats/lastHomeViewAt'] = now;
     } else if(eventType === 'game_start'){
