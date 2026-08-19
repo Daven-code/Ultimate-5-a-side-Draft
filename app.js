@@ -389,6 +389,7 @@ function renderHome(){
   panel.querySelector('[data-player-sim-open]')?.addEventListener('click', openPlayerSimulation);
   const params = new URLSearchParams(location.search); const room = params.get('room');
   if (room) { $('joinRoomCode').value = room.toUpperCase(); $('onlineRoomStatus').textContent = 'Room code detected: ' + room.toUpperCase() + '. Type your player name, then click Join room.'; }
+  startHomeVisitCounter();
   recordStatsEvent('home_view', '', { source:'render_home' }).finally(updateHomeVisitCounter);
 }
 
@@ -1090,22 +1091,120 @@ function renderResults(){
 function leaderboardMode(){ if(state?.challengePreset==='leaguelegends') return MODE_LABELS.leaguelegends; if(state?.challengePreset==='worldcup') return MODE_LABELS.worldcup; if(state?.challengePreset==='easy') return MODE_LABELS.easy; if(state?.challengePreset==='ultimate') return MODE_LABELS.ultimate; if(state?.challengePreset==='league') return MODE_LABELS.league; if(state?.isOnlineGame&&state.gameMode==='draft') return MODE_LABELS.onlineDraft; if(state?.isOnlineGame&&state.gameMode==='bid') return state.onlineBidMode==='live'?MODE_LABELS.onlineLive:MODE_LABELS.onlineBlind; return MODE_LABELS.solo; }
 function statsModeKey(label){ return String(label || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
 function statsAlreadyRecordedKey(modeKey){ return 'statsRecorded_' + modeKey; }
+const PUBLIC_VISIT_BASELINE = 6000;
+const HOME_VISIT_COUNTER_PATHS = [
+  'stats/totals/pageViews/home',
+  'totals/pageViews/home',
+  'stats/pageViews/home',
+  'pageViews/home'
+];
+let homeVisitCounterListeners = [];
+function numericVisitValue(value){
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
+}
 function formatPublicVisitCounter(value){
-  const count = Math.max(0, Number(value || 0));
-  const rounded = Math.max(0, Math.floor(count / 500) * 500);
+  const count = Math.max(PUBLIC_VISIT_BASELINE, numericVisitValue(value));
+  const rounded = Math.max(PUBLIC_VISIT_BASELINE, Math.floor(count / 500) * 500);
   return String(rounded) + '+ total visits and counting';
+}
+function setHomeVisitCounterText(value){
+  const el = $('homeVisitCounter');
+  if(!el) return;
+  el.textContent = formatPublicVisitCounter(value);
+  el.classList.remove('visit-counter-loading');
+}
+function collectHomeVisitValues(node, values=[]){
+  if(!node || typeof node !== 'object') return values;
+  const direct = node?.totals?.pageViews?.home;
+  if(Number.isFinite(Number(direct))) values.push(Number(direct));
+  const statsDirect = node?.stats?.totals?.pageViews?.home;
+  if(Number.isFinite(Number(statsDirect))) values.push(Number(statsDirect));
+  Object.entries(node).forEach(([key, value]) => {
+    if(key === 'home' && Number.isFinite(Number(value))) values.push(Number(value));
+    else if(value && typeof value === 'object') collectHomeVisitValues(value, values);
+  });
+  return values;
+}
+async function readFirebaseNumberPath(path){
+  const snap = await firebase.database().ref(path).once('value');
+  return numericVisitValue(snap.val());
+}
+async function readFirebaseNumberPathByRest(path){
+  try{
+    const url = FIREBASE_CONFIG.databaseURL.replace(/\/$/, '') + '/' + path + '.json?cacheBust=' + Date.now();
+    const res = await fetch(url, { cache:'no-store' });
+    if(!res.ok) return 0;
+    return numericVisitValue(await res.json());
+  }catch(error){
+    console.warn('Home visit REST read failed for ' + path, error);
+    return 0;
+  }
+}
+async function getHomeVisitCounterValue(){
+  // Read the public counter using REST first. This avoids the homepage staying on the fallback
+  // value if the Firebase SDK is slow, cached, blocked, or not ready yet.
+  const restValues = await Promise.all(HOME_VISIT_COUNTER_PATHS.map(path => readFirebaseNumberPathByRest(path)));
+  let pathValues = [];
+  let branchValues = [];
+  try{
+    await ensureFirebase();
+    pathValues = await Promise.all(HOME_VISIT_COUNTER_PATHS.map(path => readFirebaseNumberPath(path).catch(() => 0)));
+    try{
+      const statsSnap = await firebase.database().ref('stats').once('value');
+      branchValues = branchValues.concat(collectHomeVisitValues({ stats:statsSnap.val() }));
+    }catch(error){
+      console.warn('Home visit stats branch lookup failed.', error);
+    }
+    try{
+      const totalsSnap = await firebase.database().ref('totals').once('value');
+      branchValues = branchValues.concat(collectHomeVisitValues({ totals:totalsSnap.val() }));
+    }catch(error){
+      console.warn('Home visit totals branch lookup failed.', error);
+    }
+  }catch(error){
+    console.warn('Firebase SDK visit counter read failed. REST value will be used if available.', error);
+  }
+  const best = Math.max(PUBLIC_VISIT_BASELINE, ...pathValues, ...restValues, ...branchValues);
+  return Number.isFinite(best) ? best : PUBLIC_VISIT_BASELINE;
+}
+function stopHomeVisitCounterRealtime(){
+  homeVisitCounterListeners.forEach(item => {
+    try { item.ref.off('value', item.handler); } catch(error) { console.warn('Home visit counter listener could not be removed.', error); }
+  });
+  homeVisitCounterListeners = [];
+}
+async function startHomeVisitCounter(){
+  const el = $('homeVisitCounter');
+  if(!el) return;
+  stopHomeVisitCounterRealtime();
+  setHomeVisitCounterText(PUBLIC_VISIT_BASELINE);
+  try{
+    const initialValue = await getHomeVisitCounterValue();
+    setHomeVisitCounterText(initialValue);
+    const latestValues = { initial: initialValue };
+    HOME_VISIT_COUNTER_PATHS.forEach(path => {
+      const ref = firebase.database().ref(path);
+      const handler = snap => {
+        latestValues[path] = numericVisitValue(snap.val());
+        setHomeVisitCounterText(Math.max(PUBLIC_VISIT_BASELINE, ...Object.values(latestValues).filter(Number.isFinite)));
+      };
+      ref.on('value', handler, error => console.warn('Home visit counter listener failed for ' + path, error));
+      homeVisitCounterListeners.push({ ref, handler });
+    });
+  }catch(error){
+    console.warn('Home visit counter could not be loaded.', error);
+    setHomeVisitCounterText(PUBLIC_VISIT_BASELINE);
+  }
 }
 async function updateHomeVisitCounter(){
   const el = $('homeVisitCounter');
   if(!el) return;
   try{
-    await ensureFirebase();
-    const snap = await firebase.database().ref('stats/totals/pageViews/home').once('value');
-    el.textContent = formatPublicVisitCounter(snap.val());
-    el.classList.remove('visit-counter-loading');
+    setHomeVisitCounterText(await getHomeVisitCounterValue());
   }catch(error){
     console.warn('Home visit counter could not be loaded.', error);
-    el.textContent = '6000+ total visits and counting';
+    setHomeVisitCounterText(PUBLIC_VISIT_BASELINE);
   }
 }
 async function recordStatsEvent(eventType, modeLabel='', extra={}){
