@@ -320,7 +320,7 @@ function injectStyles(){
     .game-entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.entry-card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(219,234,254,.98),rgba(191,219,254,.88));border:1px solid rgba(147,197,253,.70);border-radius:24px;padding:22px;box-shadow:0 24px 70px rgba(15,23,42,.24)}.entry-card h3{margin:0 0 10px}.entry-card p{font-weight:750;color:#24364d}.online-room-box{background:rgba(255,255,255,.72);border:1px solid rgba(147,197,253,.46);border-radius:18px;padding:14px;display:grid;gap:10px}.online-room-actions{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.online-room-status{font-weight:850;color:#1e3a8a;margin:0}.online-room-link{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:10px;color:#1e3a8a;font-weight:900;overflow-wrap:anywhere}
     .mode-hero{max-width:1040px;margin:34px auto 18px;padding:26px;border-radius:28px;background:linear-gradient(115deg,#fff,#f8fafc 62%,#dcfce7);display:grid;grid-template-columns:1fr 330px;gap:20px;align-items:center}.mode-hero h2{font-size:clamp(2.4rem,5vw,4rem);line-height:.95;letter-spacing:-.06em;margin:8px 0 10px}.mode-hero p{color:#475569;font-weight:850}.mode-pills{display:flex;gap:8px;flex-wrap:wrap}.mode-pills span{border:1px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:999px;padding:8px 12px;font-weight:950}.mini-pitch-clean,.pitch{position:relative;border-radius:22px;overflow:hidden;background:repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 34px,transparent 34px 68px),linear-gradient(180deg,#16a34a,#166534);border:3px solid rgba(255,255,255,.75);box-shadow:inset 0 0 0 2px rgba(255,255,255,.16),0 18px 34px rgba(22,101,52,.20)}.mini-pitch-clean{height:230px}.pitch:before,.mini-pitch-clean:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid rgba(255,255,255,.72)}.pitch:after,.mini-pitch-clean:after{content:"";position:absolute;width:92px;height:92px;border:2px solid rgba(255,255,255,.72);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}.mini-pos{position:absolute;transform:translate(-50%,-50%);background:#fff;color:#0f172a;border-radius:999px;padding:8px 12px;font-weight:1000;font-size:.78rem;z-index:2}.mini-pos.gk{left:50%;top:88%}.mini-pos.def{left:50%;top:68%}.mini-pos.mid1{left:32%;top:50%}.mini-pos.mid2{left:68%;top:50%}.mini-pos.fwd{left:50%;top:17%}
     .popular-challenges-v2{margin:30px 0 24px;text-align:center}.challenge-grid-v2{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.challenge-card-v2{border:1px solid rgba(147,197,253,.16)!important;border-radius:20px;padding:18px;text-align:left;background:rgba(255,255,255,.09)!important;color:#fff;min-height:176px;display:flex;flex-direction:column;gap:8px;cursor:pointer}.challenge-card-v2:hover{transform:translateY(-3px);background:rgba(59,130,246,.25)!important}.challenge-badge{display:inline-flex;width:fit-content;padding:4px 8px;border-radius:999px;background:#16a34a;color:#fff;font-size:.72rem;font-weight:1000}.challenge-badge.new{background:#f59e0b;color:#111827}.challenge-action{margin-top:auto;color:#bfdbfe;font-weight:950}.u5-hero-card{max-width:1040px;margin:22px auto;padding:26px;border-radius:28px;color:#fff;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;border:1px solid rgba(147,197,253,.32);box-shadow:0 24px 68px rgba(15,23,42,.30)}.u5-hero-blue{background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(30,64,175,.66))}.u5-hero-green{background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(22,101,52,.66))}.u5-hero-card h3{font-size:clamp(1.8rem,3vw,2.65rem);margin:8px 0 10px;line-height:.98;letter-spacing:-.05em}.u5-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.u5-new{display:inline-flex;border-radius:999px;padding:5px 10px;background:#f59e0b;color:#111827;font-weight:1000;font-size:.72rem}.u5-new.green{background:#22c55e;color:#052e16}
-    .home-visit-counter{max-width:720px;margin:34px auto 8px;text-align:center}.visit-counter-card{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;text-align:center;border-radius:20px;padding:14px 20px;background:rgba(31,41,55,.88);border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 42px rgba(15,23,42,.18);color:#fff}.visit-counter-card:before,.visit-counter-card:after{display:none}.visit-counter-icon{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:auto;height:auto;border-radius:0;background:transparent;border:0;font-size:.88rem;box-shadow:none;line-height:1}.visit-counter-copy{position:relative;z-index:1}.visit-counter-copy strong{display:block;color:rgba(255,255,255,.94);font-size:.88rem;line-height:1.12;font-weight:950;letter-spacing:.08em;text-transform:uppercase}.visit-counter-subtitle{margin:10px auto 0;color:#dbeafe;font-size:.86rem;line-height:1.2;font-weight:900;text-align:center}.visit-counter-loading{opacity:.88}
+    .home-visit-counter{max-width:720px;margin:34px auto 8px;text-align:center}.visit-counter-card{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;text-align:center;border-radius:20px;padding:14px 20px;background:rgba(31,41,55,.88);border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 42px rgba(15,23,42,.18);color:#fff}.visit-counter-card:before,.visit-counter-card:after{display:none}.visit-counter-icon{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:auto;height:auto;border-radius:0;background:transparent;border:0;font-size:.88rem;box-shadow:none;line-height:1}.visit-counter-copy{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}.visit-counter-copy strong{display:block;color:rgba(255,255,255,.94);font-size:.88rem;line-height:1.12;font-weight:950;letter-spacing:.08em;text-transform:uppercase}.counter-divider{color:rgba(255,255,255,.45);font-weight:900}.visit-counter-subtitle{margin:10px auto 0;color:#dbeafe;font-size:.86rem;line-height:1.2;font-weight:900;text-align:center}.visit-counter-loading{opacity:.88}
     .setup-card-home{display:block;max-width:1040px}.setup-panel-card{max-width:1040px;margin:0 auto}.setup-controls-grid{display:block}.setup-note-box{display:none}.year-slicer{margin:14px 0;padding:15px;border:1px solid #dbeafe;border-radius:20px;background:linear-gradient(135deg,#eff6ff,#f8fafc);box-shadow:0 10px 28px rgba(15,23,42,.08)}.year-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.year-head label{margin:0}.year-summary{color:#1d4ed8;font-weight:1000}.year-values{display:flex;justify-content:space-between;margin:12px 0 8px;font-weight:900;color:#334155}.year-shell{position:relative;height:36px}.year-track,.year-fill{position:absolute;left:0;right:0;top:16px;height:7px;border-radius:999px}.year-track{background:#cbd5e1}.year-fill{background:linear-gradient(90deg,#22c55e,#2563eb)}.year-range{position:absolute;left:0;top:6px;width:100%;height:26px;background:transparent;pointer-events:none;appearance:none;-webkit-appearance:none}.year-range::-webkit-slider-thumb{pointer-events:auto;appearance:none;-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #2563eb;box-shadow:0 4px 12px rgba(15,23,42,.24);cursor:pointer}.summary-lines{border:1px solid #bfdbfe;border-radius:16px;background:#f8fafc;margin:12px 0}.summary-line{display:flex;justify-content:space-between;gap:10px;padding:12px;border-bottom:1px solid #bfdbfe;font-weight:950}.summary-line:last-child{border-bottom:0}.summary-badge{background:#2563eb;color:#fff;border-radius:999px;padding:7px 10px}.league-selector{padding:16px;border:1px solid #bfdbfe;border-radius:18px;background:#f8fafc;margin:14px 0}.league-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.league-btn{border:2px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:14px;padding:12px;font-weight:1000;cursor:pointer}.league-btn.selected{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-color:transparent;box-shadow:0 12px 24px rgba(37,99,235,.26)}.setup-info{padding:13px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-weight:900;margin:12px 0}.setup-info.good{background:#ecfdf5;border-color:#bbf7d0;color:#166534}
     .game-grid.clean-game{max-width:1280px;width:min(1280px,calc(100vw - 32px));margin:0 auto;grid-template-columns:minmax(0,1.18fr) minmax(440px,.92fr);gap:22px}.clean-game .draft-card,.clean-game .teams-card{border-radius:26px}.clean-game .player-card{min-height:300px;border-radius:28px}.candidate-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.clean-game #draftControls{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;width:100%;align-items:stretch}.clean-game #draftControls .btn{width:100%;min-height:54px;padding-left:18px;padding-right:18px}.clean-game.league-legends-active #activePoolNote,.clean-game.league-legends-active #message{display:none!important}.pitch{height:520px}.pitch-player{position:absolute;width:min(128px,28%);min-width:96px;transform:translate(-50%,-50%);border-radius:14px;background:#fff;border:1px solid rgba(15,23,42,.14);box-shadow:0 10px 24px rgba(0,0,0,.20);padding:8px;text-align:center;z-index:3}.pitch-player.empty-slot{background:rgba(255,255,255,.35);color:#fff;border:1px dashed rgba(255,255,255,.75);box-shadow:none}.pitch-player.selectable{background:#dbeafe!important;color:#1e3a8a!important;border:2px solid #60a5fa!important;cursor:pointer}.pitch-player.selected{background:#dcfce7!important;color:#166534!important;border-color:#22c55e!important}.pitch-player .pos{display:inline-block;background:#0f172a;color:#fff;border-radius:999px;padding:2px 7px;font-weight:1000;font-size:.62rem}.pitch-player .name{display:block;font-weight:1000;font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pitch-player .club,.pitch-player .year{display:block;font-weight:850;font-size:.62rem;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pitch-player .rating{color:#b45309;font-weight:1000}.pitch-player.gk{left:50%;top:88%}.pitch-player.def{left:50%;top:68%}.pitch-player.mid1{left:32%;top:50%}.pitch-player.mid2{left:68%;top:50%}.pitch-player.fwd{left:50%;top:22%}.team-card .pitch{height:520px}.team-top-row{align-items:flex-start}.active-pool,.turn-note{margin-top:12px;padding:10px 12px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-weight:900}.online-room-mini{display:inline-flex;border-radius:999px;padding:6px 10px;background:rgba(15,23,42,.88);color:#fff;font-size:.72rem;font-weight:950}.teams-scroll{max-height:calc(100vh - 230px);overflow-y:auto;display:grid!important;grid-template-columns:1fr!important;gap:14px!important;padding-right:8px}.bid-status-summary{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:950}.bid-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.bid-submit-status{font-weight:950}.live-status-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:10px}.live-pill{border-radius:999px;padding:5px 9px;background:#e2e8f0;font-weight:950}.live-pill.good{background:#dcfce7;color:#166534}.live-pill.bad{background:#fee2e2;color:#991b1b}.live-pill.high{background:#dbeafe;color:#1d4ed8}
     .finished-results-page{max-width:1120px!important;width:min(1120px,calc(100vw - 32px));margin:24px auto!important}.finished-hero{display:grid;grid-template-columns:1fr;justify-items:center;text-align:center;padding:20px;border-radius:24px;background:linear-gradient(135deg,#dcfce7,#e0f2fe);margin-bottom:18px}.finished-hero h2{font-size:clamp(2.2rem,5vw,3.8rem);margin:4px 0}.winner-badge-large{display:inline-flex;border-radius:999px;padding:12px 18px;background:#eff6ff;color:#1d4ed8;font-weight:1000}.finished-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.finished-results-grid{display:grid;grid-template-columns:minmax(360px,780px);justify-content:center}.finished-team-card{background:#fff;border:1px solid #bfdbfe;border-radius:22px;padding:22px}.finished-player-list{display:grid;gap:9px;margin-top:12px}.finished-player-row{display:grid;grid-template-columns:56px 1fr 46px;gap:10px;align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:9px 12px}.finished-pos{background:#dcfce7;color:#166534;border-radius:999px;text-align:center;font-weight:1000;padding:4px}.finished-player-name{display:block;font-weight:1000}.finished-player-meta{display:block;color:#64748b;font-weight:800;font-size:.78rem}.finished-player-rating{color:#1d4ed8;font-weight:1000;text-align:right}
@@ -379,7 +379,7 @@ function renderHome(){
       <button class="challenge-card-v2" data-open-preset="monthly"><span class="challenge-badge">LIVE</span><h4>🗓️ Monthly Challenges</h4><p>July 2026: World Cup 2026</p><span class="challenge-action">Play Now →</span></button>
     </div></div>
     <div class="landing-how-play-inline"><h3>⚽ How to Play</h3><div class="landing-how-inline-row"><div class="inline-step"><span>🎮</span><strong>Choose Mode</strong><small>Solo Challenge or Online Play</small></div><div class="inline-arrow">→</div><div class="inline-step"><span>👤</span><strong>Pick Players</strong><small>Accept, decline or bid</small></div><div class="inline-arrow">→</div><div class="inline-step"><span>⚽</span><strong>Build Team</strong><small>Fill all 5 positions</small></div><div class="inline-arrow">→</div><div class="inline-step"><span>🏆</span><strong>Reveal Ratings</strong><small>Highest score wins</small></div></div></div>
-    <section class="home-visit-counter" aria-label="Ultimate 5-a-side total visits"><div class="visit-counter-card"><span class="visit-counter-icon" aria-hidden="true">⚽</span><div class="visit-counter-copy"><strong id="homeVisitCounter" class="visit-counter-loading">6000+ total visits and counting</strong></div></div><p class="visit-counter-subtitle">Players are drafting their ultimate 5-a-side teams every day</p></section>`;
+    <section class="home-visit-counter" aria-label="Ultimate 5-a-side activity totals"><div class="visit-counter-card"><span class="visit-counter-icon" aria-hidden="true">⚽</span><div class="visit-counter-copy"><strong id="homeVisitCounter" class="visit-counter-loading">Total visits: loading...</strong><span class="counter-divider" aria-hidden="true">•</span><strong id="gameStartCounter" class="visit-counter-loading">Games started: loading...</strong></div></div><p class="visit-counter-subtitle">Players are drafting their ultimate 5-a-side teams every day</p></section>`;
   $('createOnlineRoomBtn')?.addEventListener('click', safe(createOnlineRoom));
   $('joinOnlineRoomBtn')?.addEventListener('click', safe(() => joinOnlineRoom($('joinRoomCode')?.value)));
   $('startLocalGameBtn')?.addEventListener('click', () => openSetup('solo'));
@@ -1090,22 +1090,34 @@ function renderResults(){
 function leaderboardMode(){ if(state?.challengePreset==='leaguelegends') return MODE_LABELS.leaguelegends; if(state?.challengePreset==='worldcup') return MODE_LABELS.worldcup; if(state?.challengePreset==='easy') return MODE_LABELS.easy; if(state?.challengePreset==='ultimate') return MODE_LABELS.ultimate; if(state?.challengePreset==='league') return MODE_LABELS.league; if(state?.isOnlineGame&&state.gameMode==='draft') return MODE_LABELS.onlineDraft; if(state?.isOnlineGame&&state.gameMode==='bid') return state.onlineBidMode==='live'?MODE_LABELS.onlineLive:MODE_LABELS.onlineBlind; return MODE_LABELS.solo; }
 function statsModeKey(label){ return String(label || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
 function statsAlreadyRecordedKey(modeKey){ return 'statsRecorded_' + modeKey; }
-const PUBLIC_VISIT_BASELINE = 6000;
 const HOME_VISIT_COUNTER_PATH = 'stats/totals/pageViews/home';
+const GAME_START_COUNTER_PATH = 'stats/totals/starts/total';
 let homeVisitCounterListeners = [];
 function numericVisitValue(value){
   const number = Number(value || 0);
   return Number.isFinite(number) ? Math.max(0, number) : 0;
 }
+function formatCounterBlock(value, label){
+  const firebaseValue = numericVisitValue(value);
+  const rounded = Math.floor(firebaseValue / 500) * 500;
+  return rounded.toLocaleString('en-GB') + '+ ' + label;
+}
 function formatPublicVisitCounter(value){
-  const count = Math.max(PUBLIC_VISIT_BASELINE, numericVisitValue(value));
-  const rounded = Math.max(PUBLIC_VISIT_BASELINE, Math.floor(count / 500) * 500);
-  return String(rounded) + '+ total visits and counting';
+  return formatCounterBlock(value, 'total homepage visits');
 }
 function setHomeVisitCounterText(value){
   const el = $('homeVisitCounter');
   if(!el) return;
   el.textContent = formatPublicVisitCounter(value);
+  el.classList.remove('visit-counter-loading');
+}
+function formatPublicGameStartCounter(value){
+  return formatCounterBlock(value, 'games started');
+}
+function setGameStartCounterText(value){
+  const el = $('gameStartCounter');
+  if(!el) return;
+  el.textContent = formatPublicGameStartCounter(value);
   el.classList.remove('visit-counter-loading');
 }
 function collectHomeVisitValues(node, values=[]){
@@ -1135,20 +1147,24 @@ async function readFirebaseNumberPathByRest(path){
     return 0;
   }
 }
-async function getHomeVisitCounterValue(){
-  // The public homepage counter has one authoritative Firebase source:
-  // stats > totals > pageViews > home
-  const restValue = await readFirebaseNumberPathByRest(HOME_VISIT_COUNTER_PATH);
+async function getPublicCounterValue(path, baseline, label){
+  const restValue = await readFirebaseNumberPathByRest(path);
   let sdkValue = 0;
   try{
     await ensureFirebase();
-    sdkValue = await readFirebaseNumberPath(HOME_VISIT_COUNTER_PATH);
+    sdkValue = await readFirebaseNumberPath(path);
   }catch(error){
-    console.warn('Firebase SDK visit counter read failed. REST value will be used if available.', error);
+    console.warn(label + ' Firebase SDK read failed. REST value will be used if available.', error);
   }
-  const value = Math.max(PUBLIC_VISIT_BASELINE, restValue, sdkValue);
-  console.info('Home visit counter lookup', { path: HOME_VISIT_COUNTER_PATH, value, restValue, sdkValue });
-  return Number.isFinite(value) ? value : PUBLIC_VISIT_BASELINE;
+  const value = Math.max(baseline, restValue, sdkValue);
+  console.info(label + ' lookup', { path, value, restValue, sdkValue });
+  return Number.isFinite(value) ? value : baseline;
+}
+function getHomeVisitCounterValue(){
+  return getPublicCounterValue(HOME_VISIT_COUNTER_PATH, 0, 'Home visit counter');
+}
+function getGameStartCounterValue(){
+  return getPublicCounterValue(GAME_START_COUNTER_PATH, 0, 'Game start counter');
 }
 function stopHomeVisitCounterRealtime(){
   homeVisitCounterListeners.forEach(item => {
@@ -1157,21 +1173,29 @@ function stopHomeVisitCounterRealtime(){
   homeVisitCounterListeners = [];
 }
 async function startHomeVisitCounter(){
-  const el = $('homeVisitCounter');
-  if(!el) return;
+  const visitEl = $('homeVisitCounter');
+  const gamesEl = $('gameStartCounter');
+  if(!visitEl && !gamesEl) return;
   stopHomeVisitCounterRealtime();
-  setHomeVisitCounterText(PUBLIC_VISIT_BASELINE);
   try{
-    const initialValue = await getHomeVisitCounterValue();
-    setHomeVisitCounterText(initialValue);
-    const ref = firebase.database().ref(HOME_VISIT_COUNTER_PATH);
-    const handler = snap => setHomeVisitCounterText(numericVisitValue(snap.val()));
-    ref.on('value', handler, error => console.warn('Home visit counter listener failed for ' + HOME_VISIT_COUNTER_PATH, error));
-    homeVisitCounterListeners.push({ ref, handler });
+    const [visitValue, gameStartValue] = await Promise.all([
+      getHomeVisitCounterValue(),
+      getGameStartCounterValue()
+    ]);
+    setHomeVisitCounterText(visitValue);
+    setGameStartCounterText(gameStartValue);
+    [
+      { path:HOME_VISIT_COUNTER_PATH, setter:setHomeVisitCounterText },
+      { path:GAME_START_COUNTER_PATH, setter:setGameStartCounterText }
+    ].forEach(counter => {
+      const ref = firebase.database().ref(counter.path);
+      const handler = snap => counter.setter(numericVisitValue(snap.val()));
+      ref.on('value', handler, error => console.warn('Public counter listener failed for ' + counter.path, error));
+      homeVisitCounterListeners.push({ ref, handler });
+    });
   }catch(error){
-    console.warn('Home visit counter could not be loaded.', error);
-    setHomeVisitCounterText(PUBLIC_VISIT_BASELINE);
-  }
+    console.warn('Public counters could not be loaded.', error);
+      }
 }
 async function updateHomeVisitCounter(){
   const el = $('homeVisitCounter');
@@ -1180,8 +1204,7 @@ async function updateHomeVisitCounter(){
     setHomeVisitCounterText(await getHomeVisitCounterValue());
   }catch(error){
     console.warn('Home visit counter could not be loaded.', error);
-    setHomeVisitCounterText(PUBLIC_VISIT_BASELINE);
-  }
+    }
 }
 async function recordStatsEvent(eventType, modeLabel='', extra={}){
   try{
