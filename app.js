@@ -1091,13 +1091,7 @@ function leaderboardMode(){ if(state?.challengePreset==='leaguelegends') return 
 function statsModeKey(label){ return String(label || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
 function statsAlreadyRecordedKey(modeKey){ return 'statsRecorded_' + modeKey; }
 const PUBLIC_VISIT_BASELINE = 6000;
-const HOME_VISIT_COUNTER_PATHS = [
-  'totals/pageViews/home',
-  'stats/totals/pageViews/home',
-  'publicCounters/homeViews',
-  'stats/pageViews/home',
-  'pageViews/home'
-];
+const HOME_VISIT_COUNTER_PATH = 'stats/totals/pageViews/home';
 let homeVisitCounterListeners = [];
 function numericVisitValue(value){
   const number = Number(value || 0);
@@ -1142,32 +1136,19 @@ async function readFirebaseNumberPathByRest(path){
   }
 }
 async function getHomeVisitCounterValue(){
-  // Read the public counter using REST first. This avoids the homepage staying on the fallback
-  // value if the Firebase SDK is slow, cached, blocked, or not ready yet.
-  const restValues = await Promise.all(HOME_VISIT_COUNTER_PATHS.map(path => readFirebaseNumberPathByRest(path)));
-  let pathValues = [];
-  let branchValues = [];
+  // The public homepage counter has one authoritative Firebase source:
+  // stats > totals > pageViews > home
+  const restValue = await readFirebaseNumberPathByRest(HOME_VISIT_COUNTER_PATH);
+  let sdkValue = 0;
   try{
     await ensureFirebase();
-    pathValues = await Promise.all(HOME_VISIT_COUNTER_PATHS.map(path => readFirebaseNumberPath(path).catch(() => 0)));
-    try{
-      const statsSnap = await firebase.database().ref('stats').once('value');
-      branchValues = branchValues.concat(collectHomeVisitValues({ stats:statsSnap.val() }));
-    }catch(error){
-      console.warn('Home visit stats branch lookup failed.', error);
-    }
-    try{
-      const totalsSnap = await firebase.database().ref('totals').once('value');
-      branchValues = branchValues.concat(collectHomeVisitValues({ totals:totalsSnap.val() }));
-    }catch(error){
-      console.warn('Home visit totals branch lookup failed.', error);
-    }
+    sdkValue = await readFirebaseNumberPath(HOME_VISIT_COUNTER_PATH);
   }catch(error){
     console.warn('Firebase SDK visit counter read failed. REST value will be used if available.', error);
   }
-  const best = Math.max(PUBLIC_VISIT_BASELINE, ...pathValues, ...restValues, ...branchValues);
-  console.info('Home visit counter lookup', { best, pathValues, restValues, branchValues });
-  return Number.isFinite(best) ? best : PUBLIC_VISIT_BASELINE;
+  const value = Math.max(PUBLIC_VISIT_BASELINE, restValue, sdkValue);
+  console.info('Home visit counter lookup', { path: HOME_VISIT_COUNTER_PATH, value, restValue, sdkValue });
+  return Number.isFinite(value) ? value : PUBLIC_VISIT_BASELINE;
 }
 function stopHomeVisitCounterRealtime(){
   homeVisitCounterListeners.forEach(item => {
@@ -1183,16 +1164,10 @@ async function startHomeVisitCounter(){
   try{
     const initialValue = await getHomeVisitCounterValue();
     setHomeVisitCounterText(initialValue);
-    const latestValues = { initial: initialValue };
-    HOME_VISIT_COUNTER_PATHS.forEach(path => {
-      const ref = firebase.database().ref(path);
-      const handler = snap => {
-        latestValues[path] = numericVisitValue(snap.val());
-        setHomeVisitCounterText(Math.max(PUBLIC_VISIT_BASELINE, ...Object.values(latestValues).filter(Number.isFinite)));
-      };
-      ref.on('value', handler, error => console.warn('Home visit counter listener failed for ' + path, error));
-      homeVisitCounterListeners.push({ ref, handler });
-    });
+    const ref = firebase.database().ref(HOME_VISIT_COUNTER_PATH);
+    const handler = snap => setHomeVisitCounterText(numericVisitValue(snap.val()));
+    ref.on('value', handler, error => console.warn('Home visit counter listener failed for ' + HOME_VISIT_COUNTER_PATH, error));
+    homeVisitCounterListeners.push({ ref, handler });
   }catch(error){
     console.warn('Home visit counter could not be loaded.', error);
     setHomeVisitCounterText(PUBLIC_VISIT_BASELINE);
@@ -1217,11 +1192,8 @@ async function recordStatsEvent(eventType, modeLabel='', extra={}){
     const updates = {};
     const modeKey = modeLabel ? statsModeKey(modeLabel) : '';
     if(eventType === 'home_view'){
-      // Keep the public visit counter and the stats counter in sync.
-      // The homepage reads totals/pageViews/home first, because it is the simplest path to allow as public read-only in Firebase rules.
-      updates['totals/pageViews/home'] = inc;
+      // Use one authoritative home page-view counter.
       updates['stats/totals/pageViews/home'] = inc;
-      updates['publicCounters/homeViews'] = inc;
       updates['stats/daily/'+today+'/pageViews/home'] = inc;
       updates['stats/lastHomeViewAt'] = now;
     } else if(eventType === 'game_start'){
