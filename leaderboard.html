@@ -66,13 +66,13 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
   <script>
     const FIREBASE_CONFIG = { apiKey:'AIzaSyAcqef5WtEuICYihdza6l_gcad7UUjIjS0', authDomain:'ultimate-5-a-side-draft.firebaseapp.com', databaseURL:'https://ultimate-5-a-side-draft-default-rtdb.europe-west1.firebasedatabase.app', projectId:'ultimate-5-a-side-draft', storageBucket:'ultimate-5-a-side-draft.firebasestorage.app', messagingSenderId:'947937131392', appId:'1:947937131392:web:c2a228b6697cf397439f65', measurementId:'G-22516PSZD7' };
-    const MODE_LABELS = { solo:'Solo Challenge', ultimate:'Ultimate Solo Mode', easy:'Easy Solo Challenge', league:'League Challenge', worldcup:'World Cup 2026 Challenge', leaguelegends:'League Legends Challenge', onlineDraft:'Online Ultimate Draft', onlineBlind:'Online Blind Bidding', onlineLive:'Online Live Auction', playerSim:'Player Simulation' };
+    const MODE_LABELS = { solo:'Solo Challenge', ultimate:'Ultimate Solo Mode', easy:'Easy Solo Challenge', league:'League Challenge', worldcup:'World Cup 2026 Challenge', ballondor:"Ballon d'Or Winners Challenge", leaguelegends:'League Legends Challenge', onlineDraft:'Online Ultimate Draft', onlineBlind:'Online Blind Bidding', onlineLive:'Online Live Auction', playerSim:'Player Simulation' };
     const TABS = [
       {key:'solo', label:'Solo Mode', modes:[MODE_LABELS.solo,MODE_LABELS.ultimate,MODE_LABELS.easy,MODE_LABELS.league,MODE_LABELS.worldcup], subs:[['all','All'],[MODE_LABELS.solo,'Standard Solo'],[MODE_LABELS.ultimate,'Ultimate Solo'],[MODE_LABELS.easy,'Easy Solo'],[MODE_LABELS.league,'League Challenge'],[MODE_LABELS.worldcup,'World Cup 2026']]},
       {key:'online', label:'Online Battles', modes:[MODE_LABELS.onlineDraft,MODE_LABELS.onlineBlind,MODE_LABELS.onlineLive], subs:[['all','All'],[MODE_LABELS.onlineDraft,'Online Ultimate Draft'],[MODE_LABELS.onlineBlind,'Online Blind Bidding'],[MODE_LABELS.onlineLive,'Online Live Auction']]},
       {key:'legends', label:'League Legends', modes:[MODE_LABELS.leaguelegends], subs:[['all','All']]},
       {key:'playerSim', label:'Player Simulation', modes:[MODE_LABELS.playerSim], subs:[['all','All'],['GK','GK'],['DEF','DEF'],['MID','MID'],['ST','ST']]},
-      {key:'monthly', label:'Monthly Challenges', modes:[MODE_LABELS.worldcup], subs:[[MODE_LABELS.worldcup,'World Cup 2026']]}
+      {key:'monthly', label:'Monthly Challenges', modes:[MODE_LABELS.worldcup,MODE_LABELS.ballondor], subs:[[MODE_LABELS.worldcup,'World Cup 2026'],[MODE_LABELS.ballondor,"Ballon d'Or Winners"]]}
     ];
     const PLAYER_SIM_CUTOFF = Date.UTC(2026, 7, 13, 14, 34, 0);
     let main = 'solo';
@@ -85,7 +85,7 @@
       const match = name.match(/^(.*?)\s*Years:\s*(.+)$/i);
       if (match) { name = match[1].trim() || 'Player'; years = 'Years: ' + match[2].trim(); }
       // World Cup 2026 is a fixed-pool monthly challenge, so the year range is intentionally hidden.
-      if (entry?.gameMode === MODE_LABELS.worldcup) years = '';
+      if ([MODE_LABELS.worldcup,MODE_LABELS.ballondor].includes(entry?.gameMode)) years = '';
       return { name, years };
     }
     let leagueLegendLookup = [];

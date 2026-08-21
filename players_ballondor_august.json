@@ -1,0 +1,848 @@
+[
+  {
+    "Player": "Lionel Messi",
+    "Rank": 1,
+    "Game_Year": 0,
+    "Rating_OVR": 100,
+    "Position": "RW/CF",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Argentina",
+    "Ballon_dOr_Wins": 8,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.95,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Cristiano Ronaldo",
+    "Rank": 2,
+    "Game_Year": 0,
+    "Rating_OVR": 99,
+    "Position": "RW/LW",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Portugal",
+    "Ballon_dOr_Wins": 5,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.9,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Johan Cruyff",
+    "Rank": 3,
+    "Game_Year": 0,
+    "Rating_OVR": 97,
+    "Position": "CF/AM",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Netherlands",
+    "Ballon_dOr_Wins": 3,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Franz Beckenbauer",
+    "Rank": 4,
+    "Game_Year": 0,
+    "Rating_OVR": 96,
+    "Position": "SW/CB",
+    "Main_Position": "DEF",
+    "Club": "",
+    "Nation": "West Germany",
+    "Ballon_dOr_Wins": 2,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 1.0,
+      "MID": 0.85,
+      "FWD": 0.58,
+      "ST": 0.58
+    }
+  },
+  {
+    "Player": "Alfredo Di Stefano",
+    "Rank": 5,
+    "Game_Year": 0,
+    "Rating_OVR": 96,
+    "Position": "CF",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Spain",
+    "Ballon_dOr_Wins": 2,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.85,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Michel Platini",
+    "Rank": 6,
+    "Game_Year": 0,
+    "Rating_OVR": 95,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "France",
+    "Ballon_dOr_Wins": 3,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 0.9,
+      "ST": 0.9
+    }
+  },
+  {
+    "Player": "Marco van Basten",
+    "Rank": 7,
+    "Game_Year": 0,
+    "Rating_OVR": 95,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Netherlands",
+    "Ballon_dOr_Wins": 3,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Ronaldo Nazario",
+    "Rank": 8,
+    "Game_Year": 0,
+    "Rating_OVR": 95,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Brazil",
+    "Ballon_dOr_Wins": 2,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Zinedine Zidane",
+    "Rank": 9,
+    "Game_Year": 0,
+    "Rating_OVR": 94,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "France",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 0.9,
+      "ST": 0.9
+    }
+  },
+  {
+    "Player": "Gerd Muller",
+    "Rank": 10,
+    "Game_Year": 0,
+    "Rating_OVR": 94,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "West Germany",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Eusebio",
+    "Rank": 11,
+    "Game_Year": 0,
+    "Rating_OVR": 94,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Portugal",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Ronaldinho",
+    "Rank": 12,
+    "Game_Year": 0,
+    "Rating_OVR": 93,
+    "Position": "LW/AM",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Brazil",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "George Best",
+    "Rank": 13,
+    "Game_Year": 0,
+    "Rating_OVR": 93,
+    "Position": "RW/LW",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Northern Ireland",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Lothar Matthaus",
+    "Rank": 14,
+    "Game_Year": 0,
+    "Rating_OVR": 93,
+    "Position": "CM/DM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "West Germany",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.95,
+      "MID": 1.0,
+      "FWD": 0.8,
+      "ST": 0.8
+    }
+  },
+  {
+    "Player": "Lev Yashin",
+    "Rank": 15,
+    "Game_Year": 0,
+    "Rating_OVR": 92,
+    "Position": "GK",
+    "Main_Position": "GK",
+    "Club": "",
+    "Nation": "Soviet Union",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.0,
+      "MID": 0.0,
+      "FWD": 0.0,
+      "ST": 0.0
+    }
+  },
+  {
+    "Player": "Bobby Charlton",
+    "Rank": 16,
+    "Game_Year": 0,
+    "Rating_OVR": 92,
+    "Position": "AM/CM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "England",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1.0,
+      "FWD": 0.9,
+      "ST": 0.9
+    }
+  },
+  {
+    "Player": "Luis Figo",
+    "Rank": 17,
+    "Game_Year": 0,
+    "Rating_OVR": 92,
+    "Position": "RW",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Portugal",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.9,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Ruud Gullit",
+    "Rank": 18,
+    "Game_Year": 0,
+    "Rating_OVR": 92,
+    "Position": "AM/CF",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "Netherlands",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Karl-Heinz Rummenigge",
+    "Rank": 19,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "ST/RW",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "West Germany",
+    "Ballon_dOr_Wins": 2,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Roberto Baggio",
+    "Rank": 20,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "SS/AM",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Italy",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 0.98,
+      "ST": 0.98
+    }
+  },
+  {
+    "Player": "Rivaldo",
+    "Rank": 21,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "AM/LW",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "Brazil",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Kaka",
+    "Rank": 22,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "Brazil",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 0.9,
+      "ST": 0.9
+    }
+  },
+  {
+    "Player": "Karim Benzema",
+    "Rank": 23,
+    "Game_Year": 0,
+    "Rating_OVR": 91,
+    "Position": "ST/CF",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "France",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Luka Modric",
+    "Rank": 24,
+    "Game_Year": 0,
+    "Rating_OVR": 90,
+    "Position": "CM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "Croatia",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1.0,
+      "FWD": 0.8,
+      "ST": 0.8
+    }
+  },
+  {
+    "Player": "George Weah",
+    "Rank": 25,
+    "Game_Year": 0,
+    "Rating_OVR": 90,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Liberia",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Hristo Stoichkov",
+    "Rank": 26,
+    "Game_Year": 0,
+    "Rating_OVR": 90,
+    "Position": "LW/ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Bulgaria",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.9,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Kevin Keegan",
+    "Rank": 27,
+    "Game_Year": 0,
+    "Rating_OVR": 89,
+    "Position": "SS/CF",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "England",
+    "Ballon_dOr_Wins": 2,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.58,
+      "MID": 0.9,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Luis Suarez Miramontes",
+    "Rank": 28,
+    "Game_Year": 0,
+    "Rating_OVR": 89,
+    "Position": "AM/CM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "Spain",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1.0,
+      "FWD": 0.9,
+      "ST": 0.9
+    }
+  },
+  {
+    "Player": "Gianni Rivera",
+    "Rank": 29,
+    "Game_Year": 0,
+    "Rating_OVR": 89,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "Italy",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 0.9,
+      "ST": 0.9
+    }
+  },
+  {
+    "Player": "Denis Law",
+    "Rank": 30,
+    "Game_Year": 0,
+    "Rating_OVR": 89,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Scotland",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Andriy Shevchenko",
+    "Rank": 31,
+    "Game_Year": 0,
+    "Rating_OVR": 89,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Ukraine",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Pavel Nedved",
+    "Rank": 32,
+    "Game_Year": 0,
+    "Rating_OVR": 88,
+    "Position": "LM/AM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "Czech Republic",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.75,
+      "MID": 1.0,
+      "FWD": 0.9,
+      "ST": 0.9
+    }
+  },
+  {
+    "Player": "Fabio Cannavaro",
+    "Rank": 33,
+    "Game_Year": 0,
+    "Rating_OVR": 88,
+    "Position": "CB",
+    "Main_Position": "DEF",
+    "Club": "",
+    "Nation": "Italy",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 1.0,
+      "MID": 0.82,
+      "FWD": 0.55,
+      "ST": 0.55
+    }
+  },
+  {
+    "Player": "Paolo Rossi",
+    "Rank": 34,
+    "Game_Year": 0,
+    "Rating_OVR": 88,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Italy",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Raymond Kopa",
+    "Rank": 35,
+    "Game_Year": 0,
+    "Rating_OVR": 88,
+    "Position": "AM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "France",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 0.9,
+      "ST": 0.9
+    }
+  },
+  {
+    "Player": "Oleg Blokhin",
+    "Rank": 36,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "LW/ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Soviet Union",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Michael Owen",
+    "Rank": 37,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "England",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Jean-Pierre Papin",
+    "Rank": 38,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "ST",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "France",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.55,
+      "MID": 0.75,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Omar Sivori",
+    "Rank": 39,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "SS/CF",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Italy",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.58,
+      "MID": 0.84,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Stanley Matthews",
+    "Rank": 40,
+    "Game_Year": 0,
+    "Rating_OVR": 87,
+    "Position": "RW",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "England",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Matthias Sammer",
+    "Rank": 41,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "SW/DM",
+    "Main_Position": "DEF",
+    "Club": "",
+    "Nation": "Germany",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 1.0,
+      "MID": 1.0,
+      "FWD": 0.7,
+      "ST": 0.7
+    }
+  },
+  {
+    "Player": "Josef Masopust",
+    "Rank": 42,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "CM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "Czechoslovakia",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.85,
+      "MID": 1.0,
+      "FWD": 0.8,
+      "ST": 0.8
+    }
+  },
+  {
+    "Player": "Florian Albert",
+    "Rank": 43,
+    "Game_Year": 0,
+    "Rating_OVR": 86,
+    "Position": "CF/AM",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Hungary",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 1.0,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Allan Simonsen",
+    "Rank": 44,
+    "Game_Year": 0,
+    "Rating_OVR": 85,
+    "Position": "RW/SS",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Denmark",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.84,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Igor Belanov",
+    "Rank": 45,
+    "Game_Year": 0,
+    "Rating_OVR": 85,
+    "Position": "ST/RW",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "Soviet Union",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.82,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  },
+  {
+    "Player": "Rodri",
+    "Rank": 46,
+    "Game_Year": 0,
+    "Rating_OVR": 88,
+    "Position": "DM/CM",
+    "Main_Position": "MID",
+    "Club": "",
+    "Nation": "Spain",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.95,
+      "MID": 1.0,
+      "FWD": 0.7,
+      "ST": 0.7
+    }
+  },
+  {
+    "Player": "Ousmane Dembele",
+    "Rank": 47,
+    "Game_Year": 0,
+    "Rating_OVR": 88,
+    "Position": "RW/CF",
+    "Main_Position": "FWD",
+    "Club": "",
+    "Nation": "France",
+    "Ballon_dOr_Wins": 1,
+    "Challenge_Mode": "BALLONDOR_AUGUST",
+    "Position_Multipliers": {
+      "DEF": 0.65,
+      "MID": 0.9,
+      "FWD": 1.0,
+      "ST": 1.0
+    }
+  }
+]
