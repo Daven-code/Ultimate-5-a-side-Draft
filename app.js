@@ -1489,7 +1489,17 @@ async function createSummarySvg(){
     const total = Number(row.total || 0);
     const slots = buildSlots(user);
     const pitch = { x:92, y:238, w:1016, h:548 };
-    const positions = [
+    // The August Ballon d'Or challenge has six visible players in its summary image:
+    // five drafted outfield players plus Lev Yashin as the fixed goalkeeper.
+    // All other game modes keep the existing five-player summary layout unchanged.
+    const positions = state?.challengePreset === 'ballondor' ? [
+      { i:4, x:pitch.x + pitch.w*.30, y:pitch.y + pitch.h*.135 },
+      { i:5, x:pitch.x + pitch.w*.70, y:pitch.y + pitch.h*.135 },
+      { i:2, x:pitch.x + pitch.w*.30, y:pitch.y + pitch.h*.47 },
+      { i:3, x:pitch.x + pitch.w*.70, y:pitch.y + pitch.h*.47 },
+      { i:1, x:pitch.x + pitch.w*.50, y:pitch.y + pitch.h*.69 },
+      { i:0, x:pitch.x + pitch.w*.50, y:pitch.y + pitch.h*.865 }
+    ] : [
       { i:4, x:pitch.x + pitch.w*.50, y:pitch.y + pitch.h*.135 },
       { i:2, x:pitch.x + pitch.w*.30, y:pitch.y + pitch.h*.47 },
       { i:3, x:pitch.x + pitch.w*.70, y:pitch.y + pitch.h*.47 },
