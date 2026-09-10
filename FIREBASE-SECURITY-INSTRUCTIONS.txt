@@ -1,0 +1,36 @@
+ULTIMATE 5-A-SIDE FIREBASE SAFETY UPDATE
+
+FILES
+- app.js: reviewed. Leaderboard submissions create a unique child with push(), then write only to that child. No leaderboard test, delete, parent set, or parent update operation was found.
+- leaderboard.html: reviewed. Read-only access to /leaderboard.
+- database.rules.json: publish these rules in Firebase Realtime Database > Rules.
+
+IMPORTANT
+1. Wait for Firebase Support to restore the historical database into the separate restore project.
+2. Do not import leaderboard-recovery-import.json. It is superseded by the official restore.
+3. Delete leaderboard-recovery-import.json and RECOVERY-INSTRUCTIONS.txt from the website/repository and local deployment folder. They are not runtime website files. You may retain one private offline copy temporarily until the official restoration is verified, then delete it.
+4. In the LIVE Firebase project, open Realtime Database > Rules.
+5. Copy the contents of database.rules.json into the editor.
+6. Use Rules Playground before publishing:
+   - Read /leaderboard should succeed unauthenticated.
+   - Create /leaderboard/test-entry with a proper score object should succeed.
+   - Overwrite /leaderboard/test-entry should fail.
+   - Delete /leaderboard/test-entry should fail.
+   - Write directly to /leaderboard should fail.
+   Use a temporary valid child only in the Rules Playground, not the Data tab.
+7. Publish the rules.
+8. Deploy the included website files normally. No visual or game-mode behaviour has been changed.
+9. After the restored leaderboard is copied back, export a fresh JSON safety copy.
+
+WHY THIS PREVENTS THE SAME LOSS
+- There is no write permission at /leaderboard itself.
+- Writes are granted only at /leaderboard/$entryId.
+- !data.exists() allows creation only, so existing scores cannot be overwritten.
+- newData.exists() prevents deletion.
+- Validation rejects malformed records such as a lone test timestamp.
+
+LIMITATION
+Because the public site has no user authentication or trusted server, public clients can still attempt to append valid-looking entries. The rules prevent replacement and deletion of historical scores. Strong anti-cheat protection would require Firebase Authentication, App Check, or a server-side submission endpoint, which would be a separate functional architecture change.
+
+ROOMS AND STATS
+The current online-room and statistics permissions are retained to avoid changing any game-mode functionality. These areas remain more permissive than ideal and should be hardened separately with authentication/App Check after the leaderboard has been restored and tested.

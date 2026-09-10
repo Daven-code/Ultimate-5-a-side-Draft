@@ -1,0 +1,33 @@
+{
+  "rules": {
+    "leaderboard": {
+      ".read": true,
+      "$entryId": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['username','score','gameMode','timestamp']) && newData.child('username').isString() && newData.child('username').val().length >= 3 && newData.child('username').val().length <= 18 && newData.child('score').isNumber() && newData.child('gameMode').isString() && newData.child('timestamp').isNumber()"
+      }
+    },
+    "rooms": {
+      ".read": true,
+      ".write": true
+    },
+    "stats": {
+      ".read": false,
+      ".write": true,
+      "totals": {
+        "pageViews": {
+          "home": {
+            ".read": true
+          }
+        },
+        "starts": {
+          "total": {
+            ".read": true
+          }
+        }
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}

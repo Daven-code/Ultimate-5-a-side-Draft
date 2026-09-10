@@ -1892,3 +1892,117 @@ select, input[type="text"], input[type="number"] { width: 100%; padding: 13px 14
 .guess-video-card-copy{padding:15px 16px}.guess-video-card h3{margin:0;color:#0f172a;font-size:1.05rem}.guess-video-card p{margin:6px 0 0;color:#64748b;font-size:.84rem;font-weight:800}
 @media(max-width:900px){.guess-video-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.guess-video-page-shell{padding:0 14px;margin-top:14px}.guess-video-grid{grid-template-columns:1fr}.guess-video-hero{border-radius:24px}.guess-video-card video{max-height:76vh}}
+
+/* ===== Legends Lock-In refinement v171 ===== */
+.league-legends-home-card{display:block!important}
+.league-legends-home-content{width:100%}
+.league-legends-home-options,.league-legends-page-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+.league-legends-home-option,.league-legends-page-option{display:flex;flex-direction:column;align-items:flex-start;min-height:210px;padding:20px;border-radius:20px;background:rgba(255,255,255,.10);border:1px solid rgba(191,219,254,.34);box-shadow:inset 0 1px 0 rgba(255,255,255,.10)}
+.league-legends-home-option h4,.league-legends-page-option h4{margin:10px 0 8px;font-size:1.22rem;color:#fff}
+.league-legends-home-option p,.league-legends-page-option p{margin:0 0 16px;color:#dbeafe;font-weight:800;line-height:1.42}
+.league-legends-home-option .btn,.league-legends-page-option .btn{margin-top:auto;text-decoration:none}
+.league-legends-option-kicker{display:inline-flex;padding:5px 10px;border-radius:999px;background:rgba(96,165,250,.18);border:1px solid rgba(147,197,253,.42);color:#dbeafe;font-size:.72rem;font-weight:1000;letter-spacing:.08em}
+.league-legends-home-option-new,.league-legends-page-option-new{border:2px solid #f59e0b;background:linear-gradient(145deg,rgba(245,158,11,.24),rgba(37,99,235,.18));box-shadow:0 16px 34px rgba(245,158,11,.16)}
+.league-legends-feature-card{grid-column:1 / -1}
+.clean-game.legends-lock-in-active{max-width:1040px!important;width:min(1040px,calc(100vw - 32px))!important}
+.clean-game.legends-lock-in-active .draft-card{display:none!important}
+.clean-game.legends-lock-in-active .teams-card{width:100%!important;padding:20px!important}
+.clean-game.legends-lock-in-active .teams-card>.section-title-row{display:none!important}
+.clean-game.legends-lock-in-active .teams-container{display:block!important}
+.lock-in-team-card{max-width:960px;margin:0 auto;padding:18px;background:linear-gradient(145deg,#f8fafc,#eef6ff)}
+.lock-in-game-head{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:16px}
+.lock-in-game-head h2{margin:5px 0 6px;font-size:clamp(1.45rem,3vw,2rem)}
+.lock-in-status{margin:0;color:#475569;font-weight:850;line-height:1.35}
+.lock-in-randomise-btn{min-width:180px;min-height:48px}
+.lock-in-pitch{height:690px;width:100%;max-width:900px;margin:0 auto}
+.lock-in-pitch .pitch-player{width:min(170px,30%);min-width:122px;min-height:96px;padding:10px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.lock-in-pitch .pitch-player .name{font-size:.86rem;white-space:normal;line-height:1.08;overflow:visible;text-overflow:clip}
+.lock-in-pitch .pitch-player .club{margin-top:4px;font-size:.68rem;white-space:normal;line-height:1.08;overflow:visible;text-overflow:clip}
+.lock-in-blank{background:rgba(15,23,42,.40)!important;border:2px dashed rgba(255,255,255,.70)!important;color:#fff!important;box-shadow:none!important;filter:grayscale(1)}
+.lock-in-placeholder{display:block;font-size:2rem;font-weight:1000;line-height:1;color:rgba(255,255,255,.72);margin:7px 0}
+.lock-in-offer{appearance:none;background:linear-gradient(145deg,#d1d5db,#9ca3af)!important;color:#111827!important;border:3px solid #6b7280!important;opacity:.78;filter:grayscale(1);cursor:pointer;box-shadow:0 12px 26px rgba(15,23,42,.26)!important;transition:transform .16s ease,filter .16s ease,opacity .16s ease,background .16s ease,border-color .16s ease}
+.lock-in-offer:hover,.lock-in-offer:focus-visible{opacity:1;filter:grayscale(.55);transform:translate(-50%,-50%) scale(1.045);border-color:#334155!important;outline:4px solid rgba(255,255,255,.34);outline-offset:2px}
+.lock-in-offer.lock-in-clicked{opacity:1!important;filter:none!important;background:linear-gradient(145deg,#fef3c7,#f59e0b)!important;border-color:#f97316!important;color:#7c2d12!important;transform:translate(-50%,-50%) scale(1.07);box-shadow:0 0 0 6px rgba(245,158,11,.28),0 18px 38px rgba(124,45,18,.30)!important}
+.lock-in-kept{opacity:1!important;filter:none!important;background:linear-gradient(145deg,#dcfce7,#86efac)!important;color:#14532d!important;border:3px solid #16a34a!important;box-shadow:0 0 0 5px rgba(34,197,94,.18),0 16px 34px rgba(22,101,52,.26)!important}
+.lock-in-prompt{display:block;margin-top:7px;padding:4px 8px;border-radius:999px;background:rgba(15,23,42,.12);font-size:.62rem;font-weight:1000;text-transform:uppercase;letter-spacing:.06em}
+.lock-in-kept .lock-in-prompt{background:#166534;color:#fff}
+.lock-in-clicked .lock-in-prompt{background:#9a3412;color:#fff}
+.lock-in-shuffling{animation:lockInCardShuffle .14s ease-in-out both}
+@keyframes lockInCardShuffle{0%{opacity:.30;transform:translate(-50%,-50%) scale(.92)}50%{opacity:.95;transform:translate(-50%,-50%) scale(1.04)}100%{opacity:.72;transform:translate(-50%,-50%) scale(1)}}
+@media(max-width:760px){.league-legends-home-options,.league-legends-page-options{grid-template-columns:1fr}.league-legends-home-option,.league-legends-page-option{min-height:0}.clean-game.legends-lock-in-active{width:min(100%,calc(100vw - 20px))!important}.clean-game.legends-lock-in-active .teams-card{padding:10px!important}.lock-in-team-card{padding:12px}.lock-in-game-head{display:grid;grid-template-columns:1fr;gap:12px}.lock-in-randomise-btn{width:100%}.lock-in-pitch{height:590px}.lock-in-pitch .pitch-player{width:38%;min-width:108px;max-width:142px;min-height:86px;padding:8px}.lock-in-pitch .pitch-player .name{font-size:.72rem}.lock-in-pitch .pitch-player .club{font-size:.58rem}.lock-in-pitch .pitch-player.mid1{left:25%}.lock-in-pitch .pitch-player.mid2{left:75%}}
+@media(max-width:400px){.lock-in-pitch{height:550px}.lock-in-pitch .pitch-player{width:40%;min-width:104px;max-width:128px;min-height:80px}.lock-in-pitch .pitch-player .name{font-size:.66rem}.lock-in-pitch .pitch-player .club{font-size:.54rem}}
+
+/* ===== Legends Lock-In pitch layout refinement v174 =====
+   Keeps this game mode centred, gives the pitch more presence and spaces the
+   opening cards so they do not touch or overlap on shorter desktop screens. */
+.clean-game.legends-lock-in-active {
+  grid-template-columns: minmax(0, 1fr) !important;
+  max-width: 1180px !important;
+  width: min(1180px, calc(100vw - 32px)) !important;
+}
+
+.clean-game.legends-lock-in-active .teams-card {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 auto !important;
+}
+
+.clean-game.legends-lock-in-active .lock-in-team-card {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.clean-game.legends-lock-in-active .lock-in-pitch {
+  width: min(100%, 980px) !important;
+  max-width: 980px !important;
+  height: 760px !important;
+  margin: 0 auto !important;
+}
+
+.clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.fwd {
+  top: 11% !important;
+}
+
+.clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.mid1,
+.clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.mid2 {
+  top: 47% !important;
+}
+
+.clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.def {
+  top: 70% !important;
+}
+
+.clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.gk {
+  top: 89% !important;
+}
+
+@media (max-width: 760px) {
+  .clean-game.legends-lock-in-active {
+    width: min(100%, calc(100vw - 20px)) !important;
+  }
+
+  .clean-game.legends-lock-in-active .lock-in-pitch {
+    width: 100% !important;
+    height: 620px !important;
+  }
+
+  .clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.fwd {
+    top: 10% !important;
+  }
+
+  .clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.mid1,
+  .clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.mid2 {
+    top: 46% !important;
+  }
+
+  .clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.def {
+    top: 69% !important;
+  }
+
+  .clean-game.legends-lock-in-active .lock-in-pitch .pitch-player.gk {
+    top: 88% !important;
+  }
+}
+/* ===== Legends Lock-In formation selector v175 ===== */
+.lock-in-formation-selector{margin:18px 0 2px;padding-top:18px;border-top:1px solid #dbeafe}.lock-in-formation-selector h3{margin:0 0 5px;color:#0f172a}.lock-in-formation-selector>p{margin:0 0 14px;color:#475569;font-weight:800}.lock-in-formation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.lock-in-formation-option{appearance:none;border:2px solid #bfdbfe;background:#fff;border-radius:20px;padding:14px;color:#0f172a;cursor:pointer;text-align:left;box-shadow:0 10px 25px rgba(15,23,42,.08);transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease}.lock-in-formation-option:hover{transform:translateY(-2px);border-color:#60a5fa}.lock-in-formation-option.selected{border-color:#2563eb;background:#eff6ff;box-shadow:0 0 0 4px rgba(37,99,235,.12),0 14px 30px rgba(37,99,235,.14)}.formation-option-title{display:block;font-size:1rem;font-weight:1000}.formation-option-shape{display:block;margin:4px 0 10px;color:#475569;font-size:.72rem;font-weight:900;line-height:1.25}.formation-mini-pitch{position:relative;display:block;height:210px;border-radius:16px;overflow:hidden;background:repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 22px,transparent 22px 44px),linear-gradient(180deg,#16a34a,#166534);border:2px solid rgba(255,255,255,.8);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}.formation-mini-pitch:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid rgba(255,255,255,.7)}.formation-mini-pitch:after{content:"";position:absolute;width:52px;height:52px;border:1px solid rgba(255,255,255,.7);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}.formation-player{position:absolute;z-index:2;display:grid;place-items:center;min-width:38px;height:26px;padding:0 7px;transform:translate(-50%,-50%);border-radius:999px;background:#fff;color:#0f172a;font-size:.58rem;font-weight:1000;box-shadow:0 5px 12px rgba(0,0,0,.22)}.formation-gk-1{left:50%;top:89%}.formation-def-1{left:35%;top:69%}.formation-def-2{left:65%;top:69%}.formation-mid-1{left:35%;top:47%}.formation-mid-2{left:65%;top:47%}.formation-fwd-1{left:35%;top:16%}.formation-fwd-2{left:65%;top:16%}.lock-in-formation-option[data-lock-in-formation="balanced"] .formation-def-1{left:50%;top:69%}.lock-in-formation-option[data-lock-in-formation="balanced"] .formation-fwd-1{left:50%;top:16%}.lock-in-formation-option[data-lock-in-formation="defensive"] .formation-mid-1{left:50%;top:43%}.lock-in-formation-option[data-lock-in-formation="defensive"] .formation-fwd-1{left:50%;top:16%}.lock-in-formation-option[data-lock-in-formation="attacking"] .formation-def-1{left:50%;top:69%}.lock-in-formation-option[data-lock-in-formation="attacking"] .formation-mid-1{left:50%;top:43%}.legends-lock-in-active .lock-in-pitch .pitch-player.def1{left:32%;top:70%!important}.legends-lock-in-active .lock-in-pitch .pitch-player.def2{left:68%;top:70%!important}.legends-lock-in-active .lock-in-pitch .pitch-player.mid{left:50%;top:47%!important}.legends-lock-in-active .lock-in-pitch .pitch-player.fwd1{left:32%;top:11%!important}.legends-lock-in-active .lock-in-pitch .pitch-player.fwd2{left:68%;top:11%!important}@media(max-width:760px){.lock-in-formation-grid{grid-template-columns:1fr}.formation-mini-pitch{height:250px}.legends-lock-in-active .lock-in-pitch .pitch-player.def1{left:27%;top:69%!important}.legends-lock-in-active .lock-in-pitch .pitch-player.def2{left:73%;top:69%!important}.legends-lock-in-active .lock-in-pitch .pitch-player.mid{left:50%;top:46%!important}.legends-lock-in-active .lock-in-pitch .pitch-player.fwd1{left:27%;top:10%!important}.legends-lock-in-active .lock-in-pitch .pitch-player.fwd2{left:73%;top:10%!important}}

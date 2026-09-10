@@ -7,7 +7,7 @@
   <meta name="google-adsense-account" content="ca-pub-8554748241132095">
   <meta name="description" content="View the Ultimate 5-a-side leaderboards across Solo Mode, Online Battles, League Legends, Player Simulation and Monthly Challenges.">
   <title>Leaderboards | Ultimate 5-a-side</title>
-  <link rel="stylesheet" href="styles.css?v=leaderboard-mobile-dynamic-v151-20260818" />
+  <link rel="stylesheet" href="styles.css?v=legends-lock-in-refine-v171-20260902" />
 </head>
 <body>
   <div class="background-glow glow-one"></div>
@@ -66,11 +66,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
   <script>
     const FIREBASE_CONFIG = { apiKey:'AIzaSyAcqef5WtEuICYihdza6l_gcad7UUjIjS0', authDomain:'ultimate-5-a-side-draft.firebaseapp.com', databaseURL:'https://ultimate-5-a-side-draft-default-rtdb.europe-west1.firebasedatabase.app', projectId:'ultimate-5-a-side-draft', storageBucket:'ultimate-5-a-side-draft.firebasestorage.app', messagingSenderId:'947937131392', appId:'1:947937131392:web:c2a228b6697cf397439f65', measurementId:'G-22516PSZD7' };
-    const MODE_LABELS = { solo:'Solo Challenge', ultimate:'Ultimate Solo Mode', easy:'Easy Solo Challenge', league:'League Challenge', worldcup:'World Cup 2026 Challenge', ballondor:"Ballon d'Or Winners Challenge", leaguelegends:'League Legends Challenge', onlineDraft:'Online Ultimate Draft', onlineBlind:'Online Blind Bidding', onlineLive:'Online Live Auction', playerSim:'Player Simulation' };
+    const MODE_LABELS = { solo:'Solo Challenge', ultimate:'Ultimate Solo Mode', easy:'Easy Solo Challenge', league:'League Challenge', worldcup:'World Cup 2026 Challenge', ballondor:"Ballon d'Or Winners Challenge", leaguelegends:'League Legends Challenge', legendslockin:'Legends Lock-In', onlineDraft:'Online Ultimate Draft', onlineBlind:'Online Blind Bidding', onlineLive:'Online Live Auction', playerSim:'Player Simulation' };
     const TABS = [
       {key:'solo', label:'Solo Mode', modes:[MODE_LABELS.solo,MODE_LABELS.ultimate,MODE_LABELS.easy,MODE_LABELS.league,MODE_LABELS.worldcup], subs:[['all','All'],[MODE_LABELS.solo,'Standard Solo'],[MODE_LABELS.ultimate,'Ultimate Solo'],[MODE_LABELS.easy,'Easy Solo'],[MODE_LABELS.league,'League Challenge'],[MODE_LABELS.worldcup,'World Cup 2026']]},
       {key:'online', label:'Online Battles', modes:[MODE_LABELS.onlineDraft,MODE_LABELS.onlineBlind,MODE_LABELS.onlineLive], subs:[['all','All'],[MODE_LABELS.onlineDraft,'Online Ultimate Draft'],[MODE_LABELS.onlineBlind,'Online Blind Bidding'],[MODE_LABELS.onlineLive,'Online Live Auction']]},
-      {key:'legends', label:'League Legends', modes:[MODE_LABELS.leaguelegends], subs:[['all','All']]},
+      {key:'legends', label:'League Legends', modes:[MODE_LABELS.leaguelegends,MODE_LABELS.legendslockin], subs:[['all','All'],[MODE_LABELS.leaguelegends,'Original'],[MODE_LABELS.legendslockin,'Legends Lock-In']]},
       {key:'playerSim', label:'Player Simulation', modes:[MODE_LABELS.playerSim], subs:[['all','All'],['GK','GK'],['DEF','DEF'],['MID','MID'],['ST','ST']]},
       {key:'monthly', label:'Monthly Challenges', modes:[MODE_LABELS.worldcup,MODE_LABELS.ballondor], subs:[[MODE_LABELS.worldcup,'World Cup 2026'],[MODE_LABELS.ballondor,"Ballon d'Or Winners"]]}
     ];
@@ -124,7 +124,7 @@
       return ranked[0][1] >= 2 || ranked.length === 1 || ranked[0][1] > (ranked[1]?.[1] || 0) ? ranked[0][0] : '';
     }
     function leagueLine(entry){
-      if(entry.gameMode !== MODE_LABELS.leaguelegends) return '';
+      if(![MODE_LABELS.leaguelegends,MODE_LABELS.legendslockin].includes(entry.gameMode)) return '';
       const fields = [entry?.leagueSelection?.labels, entry?.leagueSelection?.label, entry?.leagueSelection?.league, entry?.selectedLegendLeague, entry?.legendLeague, entry?.leagueName, entry?.leagueLabel, entry?.challengeLeague, entry?.league, entry?.selectedLeague, entry?.modeLeague, entry?.filterLeague, entry?.leagueFilter];
       for(const field of fields){ const values = firebaseList(field).map(v => String(v).trim()).filter(Boolean); if(values.length) return 'League: ' + values.join(', '); }
       const inferred = inferLeagueFromSubmittedTeam(entry);

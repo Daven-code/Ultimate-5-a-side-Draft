@@ -13,6 +13,11 @@ const DECLINES_ALLOWED = 3;
 const AUCTION_BUDGET = 100;
 const BID_SKIPS_ALLOWED = 3;
 const TEAM_SHAPE = ['GK', 'DEF', 'MID', 'MID', 'FWD'];
+const LOCK_IN_FORMATIONS = {
+  defensive: { label:'Defensive', shape:['GK','DEF','DEF','MID','FWD'] },
+  balanced: { label:'Balanced', shape:['GK','DEF','MID','MID','FWD'] },
+  attacking: { label:'Attacking', shape:['GK','DEF','MID','FWD','FWD'] }
+};
 const OUTFIELD_ROLES = ['DEF', 'MID', 'FWD'];
 const GBP = String.fromCharCode(163);
 
@@ -35,6 +40,7 @@ const MODE_LABELS = {
   worldcup: 'World Cup 2026 Challenge',
   ballondor: "Ballon d'Or Winners Challenge",
   leaguelegends: 'League Legends Challenge',
+  legendslockin: 'Legends Lock-In',
   localDraft: 'Solo Challenge',
   onlineDraft: 'Online Ultimate Draft',
   onlineBlind: 'Online Blind Bidding',
@@ -90,6 +96,7 @@ let selectedGameMode = 'draft';
 let selectedYearRange = null;
 let selectedLeagueKeys = new Set(['premier_league']);
 let selectedLegendLeague = 'Premier League';
+let selectedLockInFormation = 'balanced';
 let state = null;
 let currentCandidate = null;
 let ratingsRevealed = false;
@@ -355,7 +362,7 @@ function injectStyles(){
     .leaderboard-main-tabs-v55,.leaderboard-subtabs-v55{display:flex;gap:10px;flex-wrap:wrap}.leaderboard-row-v55{grid-template-columns:58px minmax(0,1fr) 170px 80px!important}.leaderboard-team-v78,.ps-lb-meta{grid-column:2 / span 3;display:flex;gap:6px;flex-wrap:wrap}.leaderboard-player-chip-v78,.ps-lb-chip{padding:4px 8px;border-radius:999px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:.74rem;font-weight:900}.leaderboard-tab.active{background:linear-gradient(135deg,#2563eb,#1d4ed8)!important;color:#fff!important;border-color:transparent!important}
     .ps-panel{max-width:1180px;margin:28px auto 56px;color:#0f172a}.ps-hidden{display:none!important}body.ps-active #setupPanel,body.ps-active #gamePanel,body.ps-active #resultsPanel,body.ps-active #leaderboardPanel,body.ps-active #onlineLobbyPanel,body.ps-active #gameEntryPanel{display:none!important}.ps-card{background:rgba(255,255,255,.97);border-radius:30px;padding:clamp(20px,3vw,30px);box-shadow:0 24px 80px rgba(0,0,0,.28)}.ps-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.ps-box{border-radius:24px;padding:22px;background:linear-gradient(135deg,#eff6ff,#ecfdf5);border:1px solid #bfdbfe}.ps-box h2{font-size:clamp(2rem,4vw,3.2rem);line-height:.98;letter-spacing:-.055em}.ps-dark{background:linear-gradient(135deg,#0f172a,#1e3a8a)!important;color:#fff!important}.ps-dark p{color:#edf5ff!important}.ps-form{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.ps-pos{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.ps-pos button{border:2px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:16px;padding:13px 10px;font-weight:1000;cursor:pointer}.ps-pos button.sel{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-color:transparent}.ps-actions{display:flex;gap:10px;flex-wrap:wrap}.ps-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}.ps-choice{border:2px solid #93c5fd;background:linear-gradient(135deg,#eef6ff,#dbeafe);border-radius:22px;padding:18px;text-align:left;cursor:pointer}.ps-choice.retire{background:linear-gradient(135deg,#fef3c7,#fed7aa);border-color:#f59e0b}.ps-choice.disabled{cursor:default;opacity:.75}.ps-pill{display:inline-flex;margin-top:12px;padding:7px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000}.ps-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.ps-stat,.ps-year{opacity:0;transform:translateY(8px);transition:.35s ease}.ps-stat.show,.ps-year.show{opacity:1;transform:none}.ps-stat{padding:13px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0}.ps-stat span{display:block;color:#64748b;font-size:.72rem;text-transform:uppercase;font-weight:900}.ps-stat strong{font-size:1.35rem}.ps-score{min-height:230px;border-radius:28px;background:linear-gradient(135deg,#052e16,#1e3a8a);color:#fff;display:grid;place-items:center;text-align:center}.ps-score strong{font-size:4.4rem}.ps-timeline{display:grid;gap:8px;margin-top:14px;max-height:420px;overflow:auto}.ps-year{display:grid;grid-template-columns:58px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0}.ps-clubs{display:flex;flex-wrap:wrap;gap:8px}.ps-clubs span{padding:7px 10px;border-radius:999px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-weight:900}
 
-    .leaderboard-name{font-weight:900!important;display:block;line-height:1.15}.leaderboard-name-main{display:block;font-weight:1000!important;color:#0f172a;font-size:1.02rem}.leaderboard-year-line,.leaderboard-meta-v55{display:block;margin-top:3px;color:#64748b!important;font-size:.78rem;font-weight:800!important}.leaderboard-player-chip-v78{display:inline-flex!important;align-items:center;gap:5px}.lb-chip-pos{color:#1d4ed8;font-weight:1000}.lb-chip-name{color:#0f172a;font-weight:750}.finished-hero{max-width:820px;margin-left:auto!important;margin-right:auto!important;text-align:center!important}.winner-badge-large{font-size:1.15rem;gap:10px}.winner-badge-large .score-number{display:inline-block;font-size:2.4rem;line-height:1;color:#1d4ed8}.finished-score{font-size:3.2rem!important;line-height:1!important;color:#0f172a!important;font-weight:1000!important}.finished-team-top{align-items:flex-start}.pro-score-header{display:flex;align-items:center!important;justify-content:space-between;gap:16px;margin-bottom:16px}.pro-score-header h3{font-size:1.45rem;margin:0}.finished-score-card{min-width:150px;text-align:center;border-radius:22px;padding:12px 18px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;box-shadow:0 12px 28px rgba(37,99,235,.16)}.finished-score-card span{display:block;text-transform:uppercase;letter-spacing:.12em;font-size:.72rem;font-weight:1000;color:#64748b}.finished-score-card strong{display:block;font-size:3rem;line-height:1;color:#1d4ed8;font-weight:1000}.finished-team-top{align-items:flex-start}.lb-team-label{font-weight:500!important;color:#334155}.year-slicer-locked{opacity:.58;filter:grayscale(.55)}.year-slicer-locked input[disabled]{pointer-events:none}.year-slicer-locked .year-fill{background:#cbd5e1!important}.year-slicer-locked .year-range::-webkit-slider-thumb{border-color:#94a3b8!important;background:#f8fafc!important}.year-slicer-locked .year-range::-moz-range-thumb{border-color:#94a3b8!important;background:#f8fafc!important}.monthly-menu-card{color:#0f172a!important;background:linear-gradient(135deg,#ffffff,#eff6ff)!important;border-color:#bfdbfe!important}.monthly-menu-card p{color:#334155!important}.monthly-menu-card .challenge-action{color:#2563eb!important}.monthly-menu-card.monthly-featured-new{border:2px solid #f59e0b!important;background:linear-gradient(145deg,#fff7ed,#eff6ff)!important;box-shadow:0 18px 44px rgba(245,158,11,.20)!important}.monthly-menu-card.monthly-featured-new:hover{border-color:#d97706!important;box-shadow:0 22px 52px rgba(245,158,11,.28)!important}.monthly-menu-layout{position:relative}.monthly-menu-back{position:absolute;right:24px;top:24px;float:none!important}
+    .leaderboard-name{font-weight:900!important;display:block;line-height:1.15}.leaderboard-name-main{display:block;font-weight:1000!important;color:#0f172a;font-size:1.02rem}.leaderboard-year-line,.leaderboard-meta-v55{display:block;margin-top:3px;color:#64748b!important;font-size:.78rem;font-weight:800!important}.leaderboard-player-chip-v78{display:inline-flex!important;align-items:center;gap:5px}.lb-chip-pos{color:#1d4ed8;font-weight:1000}.lb-chip-name{color:#0f172a;font-weight:750}.finished-hero{max-width:820px;margin-left:auto!important;margin-right:auto!important;text-align:center!important}.winner-badge-large{font-size:1.15rem;gap:10px}.winner-badge-large .score-number{display:inline-block;font-size:2.4rem;line-height:1;color:#1d4ed8}.finished-score{font-size:3.2rem!important;line-height:1!important;color:#0f172a!important;font-weight:1000!important}.finished-team-top{align-items:flex-start}.pro-score-header{display:flex;align-items:center!important;justify-content:space-between;gap:16px;margin-bottom:16px}.pro-score-header h3{font-size:1.45rem;margin:0}.finished-score-card{min-width:150px;text-align:center;border-radius:22px;padding:12px 18px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;box-shadow:0 12px 28px rgba(37,99,235,.16)}.finished-score-card span{display:block;text-transform:uppercase;letter-spacing:.12em;font-size:.72rem;font-weight:1000;color:#64748b}.finished-score-card strong{display:block;font-size:3rem;line-height:1;color:#1d4ed8;font-weight:1000}.finished-team-top{align-items:flex-start}.lb-team-label{font-weight:500!important;color:#334155}.year-slicer-locked{opacity:.58;filter:grayscale(.55)}.year-slicer-locked input[disabled]{pointer-events:none}.year-slicer-locked .year-fill{background:#cbd5e1!important}.year-slicer-locked .year-range::-webkit-slider-thumb{border-color:#94a3b8!important;background:#f8fafc!important}.year-slicer-locked .year-range::-moz-range-thumb{border-color:#94a3b8!important;background:#f8fafc!important}.monthly-menu-card{color:#0f172a!important;background:linear-gradient(135deg,#ffffff,#eff6ff)!important;border-color:#bfdbfe!important}.monthly-menu-card p{color:#334155!important}.monthly-menu-card .challenge-action{color:#2563eb!important}.monthly-menu-card.{border:2px solid #f59e0b!important;background:linear-gradient(145deg,#fff7ed,#eff6ff)!important;box-shadow:0 18px 44px rgba(245,158,11,.20)!important}.monthly-menu-card.:hover{border-color:#d97706!important;box-shadow:0 22px 52px rgba(245,158,11,.28)!important}.monthly-menu-layout{position:relative}.monthly-menu-back{position:absolute;right:24px;top:24px;float:none!important}
     .u5-popular-badge{display:inline-flex;border-radius:999px;padding:5px 10px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.45);color:#bbf7d0;font-weight:1000;font-size:.72rem;letter-spacing:.04em}.leaderboard-subtabs-v55{padding:8px 10px!important;background:#eef2ff!important;border:1px solid #c7d2fe!important;border-radius:16px!important}.leaderboard-subtabs-v55 .leaderboard-tab{font-size:.78rem!important;padding:7px 10px!important;min-height:34px!important;border-radius:12px!important;background:#f1f5f9!important;border-color:#cbd5e1!important;color:#334155!important;box-shadow:none!important}.leaderboard-subtabs-v55 .leaderboard-tab.active{background:linear-gradient(135deg,#0f172a,#334155)!important;color:#fff!important}.pitch-player.selected-role{background:#dcfce7!important;color:#166534!important;border:3px solid #22c55e!important;box-shadow:0 0 0 4px rgba(34,197,94,.18),0 14px 30px rgba(22,163,74,.26)!important}.pitch-player.selection-muted{opacity:.45!important;filter:grayscale(.65);box-shadow:none!important}.in-game-restart-btn{margin-left:auto;min-width:112px}.draft-card .turn-row{align-items:flex-start}.finished-team-card .pitch{height:560px;width:100%;max-width:760px;margin:0 auto}.finished-team-card .pitch-player{width:min(142px,30%)}.finished-team-card .pitch-player.fwd{top:12%}.finished-team-card .pitch-player.mid1{left:25%;top:48%}.finished-team-card .pitch-player.mid2{left:75%;top:48%}.finished-team-card .pitch-player.def{top:70%}.finished-team-card .pitch-player.gk{top:88%}.finished-team-card .pitch-player .name{font-size:.70rem;line-height:1.02}.finished-team-card .pitch-player .club{font-size:.58rem}.finished-team-card .pitch-player .year,.finished-team-card .pitch-player .rating{font-size:.58rem}.finished-actions .btn{min-width:150px}
     .finished-team-card .pitch-player{width:min(154px,32%);min-height:82px;padding:7px 8px}.finished-team-card .pitch-player .name{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:break-word;font-size:.68rem;line-height:1.03;display:block}.finished-team-card .pitch-player .club,.finished-team-card .pitch-player .year{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:.56rem;line-height:1.04}.finished-team-card .pitch-player .rating{font-size:.56rem;line-height:1.04}.ps-restart-btn{min-width:112px}
     .finished-team-card .ballondor-pitch{height:500px;max-width:700px;border-radius:24px;padding:0}.finished-team-card .ballondor-pitch .pitch-player{width:min(138px,27%);min-height:72px;padding:8px 9px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center}.finished-team-card .ballondor-pitch .pitch-player.fwd{left:25%;top:18%}.finished-team-card .ballondor-pitch .pitch-player.fwd2{left:75%;top:18%}.finished-team-card .ballondor-pitch .pitch-player.mid1{left:25%;top:46%}.finished-team-card .ballondor-pitch .pitch-player.mid2{left:75%;top:46%}.finished-team-card .ballondor-pitch .pitch-player.def{left:50%;top:68%}.finished-team-card .ballondor-pitch .pitch-player.gk{left:50%;top:87%}.finished-team-card .ballondor-pitch .pitch-player .name{font-size:.72rem;line-height:1.08;text-align:center}.finished-team-card .ballondor-pitch .pitch-player .year{font-size:.60rem;line-height:1.05;margin-top:4px}.finished-team-card .ballondor-pitch .pitch-player.yashin-ghost{min-height:58px;width:min(126px,25%)}
@@ -371,6 +378,25 @@ function injectStyles(){
     @media(max-width:620px){.challenge-grid-v2,.league-grid,.ps-choices,.ps-stats,.ps-pos,.ps-form,.online-room-actions{grid-template-columns:1fr}.candidate-actions{grid-template-columns:1fr}.clean-game #draftControls{grid-template-columns:1fr!important;gap:12px}.clean-game #draftControls .btn{width:100%;min-height:50px}.mode-hero,.u5-card{padding:18px}.pitch{height:500px}.leaderboard-main-tabs-v55,.leaderboard-subtabs-v55{display:grid!important;grid-template-columns:1fr 1fr;gap:10px}.leaderboard-main-tabs-v55 .leaderboard-tab,.leaderboard-subtabs-v55 .leaderboard-tab{width:100%;min-height:42px}.leaderboard-row-v55{display:grid!important;grid-template-columns:44px minmax(0,1fr) 62px!important;gap:6px 10px!important;align-items:start!important;padding:16px!important}.leaderboard-rank{grid-column:1;grid-row:1 / span 2;align-self:start;padding-top:3px}.leaderboard-name{grid-column:2;grid-row:1;min-width:0}.leaderboard-mode{grid-column:2;grid-row:2;text-align:left!important;color:#64748b;font-weight:900}.leaderboard-score{grid-column:3;grid-row:1 / span 2;justify-self:end;align-self:center;font-size:1.25rem!important}.leaderboard-team-v78,.ps-lb-meta{grid-column:2 / 4;grid-row:3;display:flex!important;gap:6px;align-items:flex-start;min-width:0}.leaderboard-team-v78 .lb-team-label{width:100%;margin-bottom:2px}.leaderboard-player-chip-v78,.ps-lb-chip{font-size:.72rem!important;max-width:100%;white-space:normal}.ps-lb-meta .ps-lb-chip:nth-child(n+6){display:none!important}.ps-lb-meta:after{content:'More details on desktop';font-size:.72rem;color:#64748b;font-weight:800;padding:4px 0}.finished-results-grid{grid-template-columns:1fr}.pro-score-header{align-items:center!important}.finished-score-card{min-width:118px;padding:10px 12px}.finished-score-card strong{font-size:2.2rem}}
 
     @media(max-width:620px){.home-visit-counter{margin:30px auto 6px}.visit-counter-card{display:flex;gap:8px;padding:13px 14px}.visit-counter-icon{margin:0;font-size:.82rem}.visit-counter-copy strong{font-size:.78rem;letter-spacing:.06em}.visit-counter-subtitle{font-size:.78rem;margin-top:9px}}
+
+    /* Legends Lock-In result pitch: preserve the selected formation. */
+    .lock-in-result-card .pitch{height:560px!important;overflow:hidden!important}
+    .lock-in-result-card .pitch-player{width:min(154px,32%)!important;min-width:112px!important;max-width:154px!important}
+    .lock-in-result-card .pitch-player.gk{left:50%!important;top:88%!important}
+    .lock-in-result-card .pitch-player.def{left:50%!important;top:70%!important}
+    .lock-in-result-card .pitch-player.def1{left:27%!important;top:70%!important}
+    .lock-in-result-card .pitch-player.def2{left:73%!important;top:70%!important}
+    .lock-in-result-card .pitch-player.mid{left:50%!important;top:47%!important}
+    .lock-in-result-card .pitch-player.mid1{left:27%!important;top:47%!important}
+    .lock-in-result-card .pitch-player.mid2{left:73%!important;top:47%!important}
+    .lock-in-result-card .pitch-player.fwd{left:50%!important;top:13%!important}
+    .lock-in-result-card .pitch-player.fwd1{left:27%!important;top:13%!important}
+    .lock-in-result-card .pitch-player.fwd2{left:73%!important;top:13%!important}
+    @media(max-width:620px){
+      .lock-in-result-card .pitch-player{width:38%!important;min-width:104px!important;max-width:128px!important}
+      .lock-in-result-card .pitch-player.def1,.lock-in-result-card .pitch-player.mid1,.lock-in-result-card .pitch-player.fwd1{left:25%!important}
+      .lock-in-result-card .pitch-player.def2,.lock-in-result-card .pitch-player.mid2,.lock-in-result-card .pitch-player.fwd2{left:75%!important}
+    }
   `;
   document.head.appendChild(style);
 }
@@ -399,14 +425,14 @@ function renderHome(){
       <article class="entry-card online-card"><h3>Online Game</h3><p>Create a room and share the link, or join using a room code.</p><div class="online-room-box"><div class="online-room-actions"><input id="onlineRoomName" type="text" placeholder="Your name"><button id="createOnlineRoomBtn" type="button" class="btn btn-secondary">Create online room</button></div><div class="online-room-actions"><input id="joinRoomCode" type="text" placeholder="Room code"><button id="joinOnlineRoomBtn" type="button" class="btn btn-secondary">Join room</button></div><p id="onlineRoomStatus" class="online-room-status">Online games use joined player names automatically.</p><p id="onlineRoomLink" class="online-room-link hidden"></p></div></article>
       <article class="entry-card local-card"><h3>Solo Challenge</h3><p>Play a quick single-player draft on this device. Pick, accept or decline players and build your best 5-a-side team.</p><button id="startLocalGameBtn" type="button" class="btn btn-primary btn-wide">Set up Solo Challenge</button></article>
     </div>
-    <section class="u5-hero-card u5-hero-blue" id="leagueLegendsHome"><div><div class="u5-line"><span class="u5-new green">LIVE</span><span class="u5-popular-badge">Most popular game mode</span><p class="eyebrow">Game mode</p></div><h3>League Legends</h3><p>Choose a league. Draft its legends. Pick their positions - but out-of-position picks affect the final rating.</p></div><button type="button" class="btn btn-primary" data-open-preset="leaguelegends">Play League Legends</button></section>
-    <section class="u5-hero-card u5-hero-green" id="playerSimulationHome"><div><div class="u5-line"><span class="u5-new">NEW</span><p class="eyebrow">Game mode</p></div><h3>Player Simulation</h3><p>Create a player, choose a position, pick your career path each season and see how your legacy ranks out of 100.</p></div><button type="button" class="btn btn-primary" data-player-sim-open>Play Player Simulation</button></section>
+    <section class="u5-hero-card u5-hero-blue league-legends-home-card" id="leagueLegendsHome"><div class="league-legends-home-content"><div class="u5-line"><span class="u5-new green">LIVE</span><span class="u5-popular-badge">Most popular game mode</span><p class="eyebrow">Two game modes</p></div><h3>League Legends</h3><p>Choose one of five leagues, then select which League Legends format you want to play.</p><div class="league-legends-home-options"><article class="league-legends-home-option"><span class="league-legends-option-kicker">ORIGINAL</span><h4>League Legends</h4><p>Randomise legends, use up to three declines and place each player into your chosen five-a-side role.</p><button type="button" class="btn btn-primary" data-open-preset="leaguelegends">Play original mode</button></article><article class="league-legends-home-option league-legends-home-option-new"><span class="u5-new">NEW</span><h4>Legends Lock-In</h4><p>Randomise a complete in-position team on the pitch, then lock in one legend while all remaining cards reroll.</p><button type="button" class="btn btn-primary" data-open-preset="legendslockin">Play Legends Lock-In</button></article></div></div></section>
+    <section class="u5-hero-card u5-hero-green" id="playerSimulationHome"><div><div class="u5-line"><p class="eyebrow">Game mode</p></div><h3>Player Simulation</h3><p>Create a player, choose a position, pick your career path each season and see how your legacy ranks out of 100.</p></div><button type="button" class="btn btn-primary" data-player-sim-open>Play Player Simulation</button></section>
     <section class="home-latest-video" aria-labelledby="latestGuessVideoHeading"><h3 id="latestGuessVideoHeading">Latest 'Guess the Player' Video</h3><div class="home-video-frame"><video controls playsinline preload="metadata" aria-label="Latest 'Guess the Player' video"><source src="GuessThePlayer.mp4" type="video/mp4">Your browser does not support embedded video.</video></div><a class="home-video-library-link" href="guess-the-player.html">View all 'Guess the Player' videos</a></section>
     <div class="popular-challenges-v2"><h3>🔥 Popular Challenges</h3><div class="challenge-grid-v2">
       <button class="challenge-card-v2" data-open-preset="ultimate"><span class="challenge-badge">LIVE</span><h4>⭐ Ultimate Solo Mode</h4><p>Full player database. No year filters. No league filters.</p><span class="challenge-action">Play Now →</span></button>
       <button class="challenge-card-v2" data-open-preset="easy"><span class="challenge-badge">LIVE</span><h4>🎯 Easy Solo Challenge</h4><p>Top players only. Keep year selection but use a simplified player pool.</p><span class="challenge-action">Play Now →</span></button>
       <button class="challenge-card-v2" data-open-preset="league"><span class="challenge-badge">LIVE</span><h4>🏟️ League Challenge</h4><p>Filter the all-years player pool by Premier League, La Liga and other eligible leagues.</p><span class="challenge-action">Play Now →</span></button>
-      <button class="challenge-card-v2 monthly-home-new" data-open-preset="monthly"><span class="challenge-badge new">NEW • AUGUST</span><h4>🗓️ Monthly Challenges</h4><p>New August challenge available: Ballon d'Or Winners.</p><span class="challenge-action">View Monthly Challenges →</span></button>
+      <button class="challenge-card-v2" data-open-preset="monthly"><span class="challenge-badge">LIVE • AUGUST</span><h4>🗓️ Monthly Challenges</h4><p>New August challenge available: Ballon d'Or Winners.</p><span class="challenge-action">View Monthly Challenges →</span></button>
     </div></div>
     <div class="landing-how-play-inline"><h3>⚽ How to Play</h3><div class="landing-how-inline-row"><div class="inline-step"><span>🎮</span><strong>Choose Mode</strong><small>Solo Challenge or Online Play</small></div><div class="inline-arrow">→</div><div class="inline-step"><span>👤</span><strong>Pick Players</strong><small>Accept, decline or bid</small></div><div class="inline-arrow">→</div><div class="inline-step"><span>⚽</span><strong>Build Team</strong><small>Fill all 5 positions</small></div><div class="inline-arrow">→</div><div class="inline-step"><span>🏆</span><strong>Reveal Ratings</strong><small>Highest score wins</small></div></div></div>
     <section class="home-visit-counter" aria-label="Ultimate 5-a-side activity totals"><div class="visit-counter-card"><span class="visit-counter-icon" aria-hidden="true">⚽</span><div class="visit-counter-copy"><strong id="homeVisitCounter" class="visit-counter-loading">Total visits: loading...</strong><span class="counter-divider" aria-hidden="true">•</span><strong id="gameStartCounter" class="visit-counter-loading">Games started: loading...</strong></div></div><p class="visit-counter-subtitle">Players are drafting their ultimate 5-a-side teams every day</p></section>
@@ -435,16 +461,18 @@ function modeHero(preset){
     league:['🏟️ League Challenge','League Challenge','Select one or more eligible leagues, then build your best 5-a-side team from that filtered all-years player pool.'],
     worldcup:['July Monthly Challenge','World Cup 2026 Challenge','Solo Challenge rules with a dedicated World Cup 2026 player pool. The usual year filter is disabled for this challenge.'],
     ballondor:["August Monthly Challenge","Ballon d'Or Winners Challenge","Draft five Ballon d'Or winners, choose their outfield positions and build the strongest team. Position multipliers apply."],
-    leaguelegends:['League Legends Challenge','Draft your legends','Choose a league, then draft from its legends. Choose their positions, but be careful - the ratings will be affected if they are out of position.']
+    leaguelegends:['League Legends Challenge','Draft your legends','Choose a league, then draft from its legends. Choose their positions, but be careful - the ratings will be affected if they are out of position.'],
+    legendslockin:['New League Legends Mode','Legends Lock-In','Five position-specific legends appear directly on the pitch. Lock in one player each round while the other positions are randomised again.']
   }[preset];
   const shape = preset === 'ballondor' ? '⚽ Yashin (visual) • DEF • MID • MID • ST • ST' : '⚽ GK • DEF • MID • MID • FWD';
   return `<section class="mode-hero"><div><p class="eyebrow">${esc(map[0])}</p><h2>${esc(map[1])}</h2><p>${esc(map[2])}</p><div class="mode-pills"><span>${shape}</span><span>🏆 Reveal scores at the end</span></div></div>${miniPitch(preset)}</section>`;
 }
 async function openSetup(preset){
-  injectStyles(); await ensurePlayersReady(); if (preset === 'worldcup') await loadWorldCupPlayers(); if (preset === 'leaguelegends') await loadLegends(); if (preset === 'ballondor') await loadBallonDorPlayers();
+  injectStyles(); await ensurePlayersReady(); if (preset === 'worldcup') await loadWorldCupPlayers(); if (['leaguelegends','legendslockin'].includes(preset)) await loadLegends(); if (preset === 'ballondor') await loadBallonDorPlayers();
   selectedPreset = preset; selectedGameMode = 'draft'; online.enabled = false; online.isHost=false; online.roomId=null; online.myName=''; playerSim = null; state = null; currentCandidate = null; const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove(); setMessage('');
   selectedYearRange = null;
   if (preset === 'league') selectedLeagueKeys = new Set(['premier_league']);
+  if (preset === 'legendslockin') selectedLockInFormation = 'balanced';
   hideAllPanels(); show(els.setupPanel,true); if (els.resetBtn) els.resetBtn.style.display = '';
   const setup = els.setupPanel; setup.className = 'setup-card-home';
   setup.innerHTML = modeHero(preset) + `<div class="setup-panel-card u5-card" id="cleanSetupCard"></div>`;
@@ -507,12 +535,12 @@ function renderSetupControls(){
   if (selectedPreset === 'ballondor') intro = "August monthly challenge. Draft five unique Ballon d'Or winners and place them into DEF, MID, MID, ST and ST.";
   if (selectedPreset === 'league') intro = 'Single-player draft mode. Select eligible leagues and draft from that filtered all-years pool.';
   const leagueSelector = selectedPreset === 'league' ? leagueSelectorHtml() : '';
-  const legendsSelector = selectedPreset === 'leaguelegends' ? legendsSelectorHtml() : selectedPreset === 'ballondor' ? ballonDorRulesHtml() : '';
-  const showYear = !['ultimate','worldcup','ballondor','leaguelegends','league'].includes(selectedPreset);
+  const legendsSelector = ['leaguelegends','legendslockin'].includes(selectedPreset) ? legendsSelectorHtml() : selectedPreset === 'ballondor' ? ballonDorRulesHtml() : '';
+  const showYear = !['ultimate','worldcup','ballondor','leaguelegends','legendslockin','league'].includes(selectedPreset);
   const disabledYear = selectedPreset === 'ultimate';
   const yearHtml = showYear ? yearSlicerHtml(false) : (disabledYear ? yearSlicerHtml(true) : '');
   const introHtml = selectedPreset === 'leaguelegends' ? '' : `<div class="setup-info"><strong>${esc(introTitle)}</strong><br>${esc(intro)}</div>`;
-  const statsHtml = ['leaguelegends','ballondor'].includes(selectedPreset) ? '' : '<div id="setupStats" class="summary-lines"></div>';
+  const statsHtml = ['leaguelegends','legendslockin','ballondor'].includes(selectedPreset) ? '' : '<div id="setupStats" class="summary-lines"></div>';
   card.innerHTML = `${introHtml}${leagueSelector}${legendsSelector}${yearHtml}${statsHtml}${selectedPreset==='worldcup'?'<div class="setup-info good">World Cup 2026 Challenge: solo draft using only the dedicated World Cup 2026 player pool.</div>':''}<label class="checkbox-row"><input id="setupExcludeDeclines" type="checkbox" checked> Exclude declined players</label><button id="cleanStartBtn" class="btn btn-primary btn-wide">Start ${esc(introTitle)}</button>`;
   if (showYear) wireYearSlicer();
   if (disabledYear) selectedYearRange = null;
@@ -521,15 +549,28 @@ function renderSetupControls(){
 function leagueSelectorHtml(){
   return `<div class="league-selector"><h3>Choose leagues</h3><div class="league-grid">${LEAGUE_OPTIONS.map(o => `<button type="button" class="league-btn ${selectedLeagueKeys.has(o.key)?'selected':''}" data-league-key="${o.key}">${esc(o.label)}</button>`).join('')}</div><p class="setup-info good" id="leagueSummary"></p></div>`;
 }
-function legendsSelectorHtml(){
-  return `<div class="league-selector"><h3>Choose your league</h3><div class="league-grid">${LEAGUE_LEGENDS.map(l => `<button type="button" class="league-btn ${selectedLegendLeague===l?'selected':''}" data-legend-league="${esc(l)}">${esc(l)}</button>`).join('')}</div><div class="setup-info good"><strong>Rules:</strong> 3 declines only. GK is fixed. Outfield players can be placed DEF, MID or ST, with position multipliers applied at reveal.</div><div class="setup-info"><strong>Ratings note:</strong> League Legends ratings are relative to the selected league and are based on prime ability, legacy and longevity.</div></div>`;
+function lockInFormationPitch(key, formation){
+  const counts={};
+  const chips=formation.shape.map(role=>{
+    counts[role]=(counts[role]||0)+1;
+    return `<span class="formation-player formation-${role.toLowerCase()}-${counts[role]}">${roleLabel(role)}</span>`;
+  }).join('');
+  return `<button type="button" class="lock-in-formation-option ${selectedLockInFormation===key?'selected':''}" data-lock-in-formation="${key}" aria-pressed="${selectedLockInFormation===key}"><span class="formation-option-title">${esc(formation.label)}</span><span class="formation-option-shape">${formation.shape.map(roleLabel).join(' • ')}</span><span class="formation-mini-pitch" aria-hidden="true">${chips}</span></button>`;
 }
-function ballonDorRulesHtml(){
-  return `<div class="league-selector"><div class="setup-info good"><strong>Rules:</strong> 3 declines. Draft five winners and place them at DEF, MID, MID, ST or ST. Ratings are adjusted using the position multipliers.</div></div>`;
+function lockInFormationSelectorHtml(){
+  return `<div class="lock-in-formation-selector"><h3>Choose your formation</h3><p>The selected shape stays fixed while the available legends are randomised.</p><div class="lock-in-formation-grid">${Object.entries(LOCK_IN_FORMATIONS).map(([key,formation])=>lockInFormationPitch(key,formation)).join('')}</div></div>`;
+}
+function legendsSelectorHtml(){
+  const formationSelector=selectedPreset==='legendslockin'?lockInFormationSelectorHtml():'';
+  return `<div class="league-selector"><h3>Choose your league</h3><div class="league-grid">${LEAGUE_LEGENDS.map(l => `<button type="button" class="league-btn ${selectedLegendLeague===l?'selected':''}" data-legend-league="${esc(l)}">${esc(l)}</button>`).join('')}</div>${formationSelector}<div class="setup-info good"><strong>Rules:</strong> ${selectedPreset==='legendslockin'?'Choose a formation, then pick one player to keep each round while the remaining positions reroll. No declines and every player is in position.':'3 declines only. GK is fixed. Outfield players can be placed DEF, MID or ST, with position multipliers applied at reveal.'}</div><div class="setup-info"><strong>Ratings note:</strong> League Legends ratings are relative to the selected league and are based on prime ability, legacy and longevity.</div></div>`;
 }
 function wireLeagueSelectors(){
   document.querySelectorAll('[data-league-key]').forEach(btn => btn.addEventListener('click', () => { const k=btn.dataset.leagueKey; selectedLeagueKeys.has(k) ? selectedLeagueKeys.delete(k) : selectedLeagueKeys.add(k); if(!selectedLeagueKeys.size) selectedLeagueKeys.add(k); renderSetupControls(); }));
   document.querySelectorAll('[data-legend-league]').forEach(btn => btn.addEventListener('click', () => { selectedLegendLeague = btn.dataset.legendLeague; renderSetupControls(); }));
+  document.querySelectorAll('[data-lock-in-formation]').forEach(btn => btn.addEventListener('click', () => { selectedLockInFormation = btn.dataset.lockInFormation; renderSetupControls(); }));
+}
+function ballonDorRulesHtml(){
+  return `<div class="league-selector"><div class="setup-info good"><strong>Rules:</strong> 3 declines. Draft five winners and place them at DEF, MID, MID, ST or ST. Ratings are adjusted using the position multipliers.</div></div>`;
 }
 function filterByRange(pool){ if(selectedPreset === 'ultimate' || selectedPreset === 'worldcup' || selectedPreset === 'league') return pool; const r=selectedYearRange || getDefaultRange(); return pool.filter(p => p.year >= r.start && p.year <= r.end); }
 function easyPool(pool){
@@ -563,11 +604,11 @@ function clubGuessLeague(club){
   const found = PLAYER_SIM_CLUBS.find(c => c.name === club); return found?.league || '';
 }
 function setupEligiblePool(){
-  if (selectedPreset === 'leaguelegends') return legends.filter(p => p.league === selectedLegendLeague);
+  if (['leaguelegends','legendslockin'].includes(selectedPreset)) return legends.filter(p => p.league === selectedLegendLeague);
   return filterByRange(currentSetupPool());
 }
 function renderSetupStats(){
-  if (['leaguelegends','ballondor'].includes(selectedPreset)) return;
+  if (['leaguelegends','legendslockin','ballondor'].includes(selectedPreset)) return;
   const pool = setupEligiblePool(); const stats = estimatePoolStats(pool); const box=$('setupStats');
   if (box) box.innerHTML = `<div class="summary-line"><span>Average 5-a-side score for this setup</span><span class="summary-badge">${stats.average}</span></div><div class="summary-line"><span>Maximum 5-a-side score for this setup</span><span class="summary-badge">${stats.maximum}</span></div>`;
   if ($('leagueSummary')) { const names=[...selectedLeagueKeys].map(k => LEAGUE_OPTIONS.find(o=>o.key===k)?.label).filter(Boolean).join(', '); $('leagueSummary').textContent = 'Selected: ' + names + ' • Active pool: ' + pool.length + ' players'; }
@@ -625,13 +666,14 @@ function showMonthlyMenu(){
   const shell=document.querySelector('.app-shell')||document.body; let p=$('monthlyMenuPanel');
   if(!p){ p=document.createElement('section'); p.id='monthlyMenuPanel'; p.className='u5-panel u5-card monthly-menu-layout'; shell.insertBefore(p, els.setupPanel || null); }
   p.className = 'u5-panel u5-card monthly-menu-layout';
-  p.innerHTML = `<button id="monthlyBack" class="btn btn-secondary monthly-menu-back">Back</button><p class="eyebrow">Monthly Challenges</p><h2>Monthly Challenges</h2><p class="muted">Play limited-time solo challenges with special player pools.</p><div class="monthly-challenge-grid"><button class="challenge-card-v2 monthly-menu-card monthly-featured-new" data-open-preset="ballondor"><span class="challenge-badge new">NEW • AUGUST</span><h3>August 2026: Ballon d'Or Winners</h3><p>Draft five all-time winners and use position multipliers to build your strongest team.</p><span class="challenge-action">Play Now →</span></button><button class="challenge-card-v2 monthly-menu-card" data-open-preset="worldcup"><span class="challenge-badge">LIVE</span><h3>July 2026: World Cup 2026</h3><p>Draft your solo 5-a-side team from the dedicated World Cup 2026 player pool.</p><span class="challenge-action">Play Now →</span></button></div>`;
+  p.innerHTML = `<button id="monthlyBack" class="btn btn-secondary monthly-menu-back">Back</button><p class="eyebrow">Monthly Challenges</p><h2>Monthly Challenges</h2><p class="muted">Play limited-time solo challenges with special player pools.</p><div class="monthly-challenge-grid"><button class="challenge-card-v2 monthly-menu-card " data-open-preset="ballondor"><span class="challenge-badge">LIVE • AUGUST</span><h3>August 2026: Ballon d'Or Winners</h3><p>Draft five all-time winners and use position multipliers to build your strongest team.</p><span class="challenge-action">Play Now →</span></button><button class="challenge-card-v2 monthly-menu-card" data-open-preset="worldcup"><span class="challenge-badge">LIVE</span><h3>July 2026: World Cup 2026</h3><p>Draft your solo 5-a-side team from the dedicated World Cup 2026 player pool.</p><span class="challenge-action">Play Now →</span></button></div>`;
   show(p,true); p.querySelectorAll('[data-open-preset]').forEach(btn=>btn.addEventListener('click',()=>{show(p,false);openSetup(btn.dataset.openPreset)})); $('monthlyBack')?.addEventListener('click',()=>{show(p,false);renderHome()});
 }
 
 // ---------- Game state and drawing ----------
 async function startSoloGame(){
   if (selectedPreset === 'leaguelegends') return startLeagueLegends();
+  if (selectedPreset === 'legendslockin') return startLegendsLockIn();
   if (selectedPreset === 'ballondor') return startBallonDor();
   await ensurePlayersReady(); if(selectedPreset === 'worldcup') await loadWorldCupPlayers();
   const pool = setupEligiblePool(); if(!pool.length) throw new Error('No players available for this setup.');
@@ -660,16 +702,69 @@ async function startLeagueLegends(){
   recordStatsEvent('game_start', MODE_LABELS.leaguelegends, { source:'league_legends_start', league:selectedLegendLeague, playerCount:1 });
   ratingsRevealed=false; currentCandidate=null; hideAllPanels(); show(els.gamePanel,true); if(els.resetBtn) els.resetBtn.style.display=''; prepareGamePanel(); clearCandidate('Click Randomise player to begin.'); renderGame();
 }
+async function startLegendsLockIn(){
+  await loadLegends();
+  const pool=legends.filter(p=>p.league===selectedLegendLeague);
+  if(!pool.length) throw new Error('No legends available for this league.');
+  state=baseState('draft',[selectedLegendLeague],false);
+  state.challengePreset='legendslockin'; state.challengeName=MODE_LABELS.legendslockin;
+  state.selectedLegendLeague=selectedLegendLeague; state.legendLeague=selectedLegendLeague;
+  state.lockInFormation=selectedLockInFormation;
+  state.lockInShape=[...LOCK_IN_FORMATIONS[selectedLockInFormation].shape];
+  state.excludeDeclines=false; state.offerPlayers={}; state.lockInStarted=false; state.lockInAnimating=false; state.lockInSelectedSlot=null;
+  state.leagueSelection={labels:[selectedLegendLeague],playerCount:pool.length};
+  recordStatsEvent('game_start',MODE_LABELS.legendslockin,{source:'legends_lock_in_start',league:selectedLegendLeague,playerCount:1});
+  ratingsRevealed=false; currentCandidate=null; hideAllPanels(); show(els.gamePanel,true);
+  if(els.resetBtn) els.resetBtn.style.display=''; prepareGamePanel(); renderGame();
+}
+function lockInSlotKey(role,index){ return role==='MID' ? 'MID'+index : role; }
+function buildLockInOffers(){
+  const user=currentUser(), used=new Set((user.team||[]).map(playerKey));
+  const chosen=[]; const shape=state.lockInShape || LOCK_IN_FORMATIONS.balanced.shape; const offers={};
+  shape.forEach((role,index)=>{
+    if((user.team||[]).some(p=>Number(p.lockSlot)===index)) return;
+    const pool=legends.filter(p=>p.league===state.selectedLegendLeague && p.naturalMainPosition===role && !used.has(playerKey(p)) && !chosen.includes(playerKey(p)));
+    if(!pool.length) throw new Error('Not enough unique '+roleLabel(role)+' legends are available.');
+    const offered={...pick(pool),selectedRole:role,mainPosition:role,lockSlot:index};
+    offers[index]=offered; chosen.push(playerKey(offered));
+  });
+  return offers;
+}
+function lockInDelay(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+async function randomiseLockInOffers(){
+  if(state?.challengePreset!=='legendslockin' || state.lockInAnimating) return;
+  state.lockInStarted=true; state.lockInAnimating=true; state.lockInSelectedSlot=null;
+  renderGame();
+  // Cycle several different names through every unlocked card so the draw is visibly animated.
+  for(let frame=0;frame<14;frame++){
+    state.offerPlayers=buildLockInOffers();
+    renderLockInTeam();
+    await lockInDelay(55 + frame*10);
+  }
+  state.offerPlayers=buildLockInOffers();
+  state.lockInAnimating=false;
+  renderGame();
+}
+async function chooseLockInPlayer(index){
+  if(state?.challengePreset!=='legendslockin' || state.lockInAnimating) return;
+  const offered=state.offerPlayers?.[index]; if(!offered) return;
+  state.lockInSelectedSlot=index; renderLockInTeam(); await lockInDelay(320);
+  const user=currentUser(); user.team.push({...offered}); state.acceptedPlayerNames.add(playerKey(offered));
+  state.history.push({user:user.name,decision:'LOCK_IN',player:offered}); state.lockInSelectedSlot=null;
+  if(isGameComplete()){ state.offerPlayers={}; state.lockInAnimating=false; completeGame(); renderGame(); return; }
+  await randomiseLockInOffers();
+}
 function prepareGamePanel(){
   els.gamePanel?.classList.add('clean-game');
-  els.gamePanel?.classList.toggle('league-legends-active', state?.challengePreset==='leaguelegends');
+  els.gamePanel?.classList.toggle('league-legends-active', ['leaguelegends','legendslockin'].includes(state?.challengePreset));
   els.gamePanel?.classList.toggle('ballondor-active', state?.challengePreset==='ballondor');
+  els.gamePanel?.classList.toggle('legends-lock-in-active', state?.challengePreset==='legendslockin');
   if(els.pickBtn) els.pickBtn.textContent = ['leaguelegends','ballondor'].includes(state?.challengePreset) ? 'Randomise player' : 'Pick player';
   const isBid = state?.gameMode === 'bid';
   show(els.draftControls, !isBid);
   show(els.bidControls, isBid);
   if(els.draftControls){
-    if(isBid) els.draftControls.style.setProperty('display','none','important');
+    if(isBid || state?.challengePreset==='legendslockin') els.draftControls.style.setProperty('display','none','important');
     else els.draftControls.style.removeProperty('display');
   }
   if(els.bidControls){
@@ -684,7 +779,7 @@ function prepareGamePanel(){
 
 function activePool(){
   if (state?.challengePreset === 'ballondor') return ballonDorPlayers.filter(p=>p.naturalMainPosition!=='GK');
-  if (state?.challengePreset === 'leaguelegends') return legends.filter(p=>p.league===state.selectedLegendLeague);
+  if (['leaguelegends','legendslockin'].includes(state?.challengePreset)) return legends.filter(p=>p.league===state.selectedLegendLeague);
   let pool = state?.challengePreset === 'worldcup' ? worldCupPlayers : players;
   if (state?.challengePreset === 'easy') pool = easyPool(pool);
   if (state?.challengePreset === 'league') pool = filterByLeagueSelection(pool);
@@ -697,7 +792,7 @@ function activePool(){
 function currentUser(){ if(!state?.users?.length) return null; const idx=clamp(Number(state.currentUserIndex||0),0,state.users.length-1); state.currentUserIndex=idx; return state.users[idx]; }
 function getNeededPositions(user=currentUser()){
   const counts={GK:0,DEF:0,MID:0,FWD:0}; (user?.team||[]).forEach(p=>{ const r=p.selectedRole||p.mainPosition; if(counts[r]!==undefined) counts[r]++; });
-  const shape=state?.challengePreset==='ballondor'?['DEF','MID','MID','FWD','FWD']:TEAM_SHAPE;
+  const shape=state?.challengePreset==='ballondor'?['DEF','MID','MID','FWD','FWD']:state?.challengePreset==='legendslockin'?(state.lockInShape || LOCK_IN_FORMATIONS.balanced.shape):TEAM_SHAPE;
   const needed=[]; shape.forEach(pos=>{ if(counts[pos]>0) counts[pos]--; else needed.push(pos); }); return needed;
 }
 function isGameComplete(){ return !!state && state.users.every(u=>getNeededPositions(u).length===0); }
@@ -788,9 +883,28 @@ function updateButtons(){
   if(els.revealBtn){ els.revealBtn.classList.toggle('hidden', !complete || ratingsRevealed); els.revealBtn.disabled = !complete || ratingsRevealed; }
 }
 function buildSlots(user){
+  if(state?.challengePreset==='legendslockin'){
+    const shape=state.lockInShape || LOCK_IN_FORMATIONS.balanced.shape;
+    const lockedBySlot=new Map((user.team||[]).map(player=>[Number(player.lockSlot),player]));
+    return shape.map((role,index)=>({label:roleLabel(role),player:lockedBySlot.get(index),role}));
+  }
   if(state?.challengePreset==='ballondor'){ const team=user.team||[], mids=team.filter(p=>(p.selectedRole||p.mainPosition)==='MID'), fwds=team.filter(p=>(p.selectedRole||p.mainPosition)==='FWD'); return [{label:'GK',player:{player:'Lev Yashin',club:'',rating:0,ghost:true},role:'GK',ghost:true},{label:'DEF',player:team.find(p=>(p.selectedRole||p.mainPosition)==='DEF'),role:'DEF'},{label:'MID',player:mids[0],role:'MID'},{label:'MID',player:mids[1],role:'MID'},{label:'FWD',player:fwds[0],role:'FWD'},{label:'FWD',player:fwds[1],role:'FWD'}]; }
   const mids=(user.team||[]).filter(p=>(p.selectedRole||p.mainPosition)==='MID'); return [ {label:'GK',player:(user.team||[]).find(p=>(p.selectedRole||p.mainPosition)==='GK'),role:'GK'}, {label:'DEF',player:(user.team||[]).find(p=>(p.selectedRole||p.mainPosition)==='DEF'),role:'DEF'}, {label:'MID',player:mids[0],role:'MID'}, {label:'MID',player:mids[1],role:'MID'}, {label:'FWD',player:(user.team||[]).find(p=>(p.selectedRole||p.mainPosition)==='FWD'),role:'FWD'} ]; }
-function slotClass(i){ return (state?.challengePreset==='ballondor'?['gk','def','mid1','mid2','fwd','fwd2']:['gk','def','mid1','mid2','fwd'])[i]; }
+function formationSlotClasses(shape){
+  const totals=shape.reduce((out,role)=>(out[role]=(out[role]||0)+1,out),{});
+  const seen={};
+  return shape.map(role=>{
+    seen[role]=(seen[role]||0)+1;
+    if(role==='GK') return 'gk';
+    if(totals[role]===1) return role==='FWD'?'fwd':role.toLowerCase();
+    return role.toLowerCase()+seen[role];
+  });
+}
+function slotClass(i){
+  if(state?.challengePreset==='ballondor') return ['gk','def','mid1','mid2','fwd','fwd2'][i];
+  if(state?.challengePreset==='legendslockin') return formationSlotClasses(state.lockInShape || LOCK_IN_FORMATIONS.balanced.shape)[i];
+  return ['gk','def','mid1','mid2','fwd'][i];
+}
 function shortName(name,max=22){ if(!name || name.length<=max) return name||''; const parts=name.split(' '); return parts.length>1 ? (parts[0][0]+'. '+parts.slice(1).join(' ')).slice(0,max) : name.slice(0,max-1)+'...'; }
 function shortClub(club){ const map={'Manchester City':'Man City','Manchester United':'Man United','FC Barcelona':'Barcelona','Paris Saint-Germain':'PSG','Tottenham Hotspur':'Spurs','Bayern Munich':'Bayern'}; const out=map[club]||club||''; return out.length>18?out.slice(0,17)+'...':out; }
 function renderPitch(slots, selectable=false){ return `<div class="pitch ${state?.challengePreset==='ballondor'?'ballondor-pitch':''}"><div class="penalty-box top"></div><div class="penalty-box bottom"></div>${slots.map((s,i)=>renderPitchPlayer(s,slotClass(i),selectable)).join('')}</div>`; }
@@ -809,12 +923,12 @@ function renderGame(){
   ensureInGameRestartButton();
   const user=currentUser();
   const isBid = state.gameMode === 'bid';
-  show(els.draftControls, !isBid);
+  show(els.draftControls, !isBid && state.challengePreset!=='legendslockin');
   show(els.bidControls, isBid);
-  show(els.declinesPill, state.gameMode==='draft');
+  show(els.declinesPill, state.gameMode==='draft' && state.challengePreset!=='legendslockin');
   show(els.budgetPill, isBid && !online.enabled);
   if(els.draftControls){
-    if(isBid) els.draftControls.style.setProperty('display','none','important');
+    if(isBid || state?.challengePreset==='legendslockin') els.draftControls.style.setProperty('display','none','important');
     else els.draftControls.style.removeProperty('display');
   }
   if(els.turnEyebrow) els.turnEyebrow.textContent = state.challengeName || (online.enabled ? 'Online draft' : 'Solo Challenge');
@@ -857,9 +971,32 @@ function renderPoolNote(){
   else note.textContent='Active player pool: All eligible players';
 }
 function renderTeams(){
-  if(!els.teamsContainer || !state) return; if(online.enabled) els.teamsContainer.classList.add('teams-scroll'); else els.teamsContainer.classList.remove('teams-scroll');
+  if(!els.teamsContainer || !state) return;
+  if(state.challengePreset==='legendslockin') return renderLockInTeam(); if(online.enabled) els.teamsContainer.classList.add('teams-scroll'); else els.teamsContainer.classList.remove('teams-scroll');
   els.teamsContainer.innerHTML = state.users.map((u,ix)=>{ const total=(u.team||[]).reduce((sum,p)=>sum+Number(p.rating||0),0), needs=getNeededPositions(u).map(roleLabel).join(', '), displayName=(u.name==='You'?'':u.name); return `<article class="team-card"><div class="team-top-row"><div>${displayName?`<h3>${esc(displayName)}</h3>`:''}<div class="team-meta">${needs?'Positions Remaining: '+needs:'Complete'}</div></div><div class="score">${ratingsRevealed?total:'Score Hidden'}</div></div>${renderPitch(buildSlots(u), ['leaguelegends','ballondor'].includes(state.challengePreset) && ix===0)}<div class="score">${state.gameMode==='draft'?'Declines used: '+(u.declines||0)+'/'+DECLINES_ALLOWED:'Skips used: '+(u.bidSkips||0)+'/'+BID_SKIPS_ALLOWED}</div></article>`; }).join('');
   els.teamsContainer.querySelectorAll('[data-place-role]').forEach(btn=>btn.addEventListener('click',()=>{ if(currentCandidate){ currentCandidate.legendRole=btn.dataset.placeRole; renderCandidate(currentCandidate); renderGame(); } }));
+}
+function renderLockInTeam(){
+  const user=currentUser();
+  const lockedBySlot=new Map((user.team||[]).map(p=>[Number(p.lockSlot),p]));
+  const shape=state.lockInShape || LOCK_IN_FORMATIONS.balanced.shape;
+  const slots=shape.map((role,index)=>({role,player:lockedBySlot.get(index)||state.offerPlayers?.[index],locked:lockedBySlot.has(index),slotIndex:index}));
+  const remaining=5-(user.team||[]).length, complete=remaining===0;
+  const status=!state.lockInStarted?'Press Randomise Team to reveal your first five legends.':state.lockInAnimating?'Randomising the available players...':complete?'Your five legends are locked in. Reveal the score when ready.':remaining+' selection'+(remaining===1?'':'s')+' remaining. Choose one grey card to keep.';
+  els.teamsContainer.classList.remove('teams-scroll');
+  els.teamsContainer.innerHTML=`<article class="team-card lock-in-team-card"><div class="lock-in-game-head"><div><p class="eyebrow">${esc(state.selectedLegendLeague)} • ${esc(LOCK_IN_FORMATIONS[state.lockInFormation]?.label || 'Balanced')} formation • Legends Lock-In</p><h2>Choose one legend to lock in</h2><p class="lock-in-status">${esc(status)}</p></div><div class="lock-in-game-actions"><button type="button" id="randomiseLockInBtn" class="btn btn-primary" ${state.lockInAnimating||state.lockInStarted?'disabled':''}>${state.lockInAnimating?'Randomising...':'Randomise Team'}</button><button type="button" id="revealLockInBtn" class="btn btn-primary ${complete&&!ratingsRevealed?'':'hidden'}">Reveal score</button><button type="button" id="restartLockInBtn" class="btn btn-secondary">Restart</button></div></div>${renderLockInPitch(slots)}</article>`;
+  $('randomiseLockInBtn')?.addEventListener('click',safe(randomiseLockInOffers));
+  $('revealLockInBtn')?.addEventListener('click',safe(revealScores));
+  $('restartLockInBtn')?.addEventListener('click',safe(restartToModeLobby));
+  els.teamsContainer.querySelectorAll('[data-lock-in-slot]').forEach(btn=>btn.addEventListener('click',()=>chooseLockInPlayer(Number(btn.dataset.lockInSlot))));
+}
+function renderLockInPitch(slots){
+  return `<div class="pitch lock-in-pitch ${state.lockInAnimating?'lock-in-pitch-animating':''}"><div class="penalty-box top"></div><div class="penalty-box bottom"></div>${slots.map((slot,i)=>{
+    const p=slot.player, cls=slotClass(i);
+    if(!p) return `<div class="pitch-player ${cls} lock-in-blank"><span class="pos">${roleLabel(slot.role)}</span><span class="lock-in-placeholder">?</span><span class="lock-in-prompt">Waiting</span></div>`;
+    if(!slot.locked){ const selected=state.lockInSelectedSlot===slot.slotIndex; return `<button type="button" class="pitch-player ${cls} lock-in-offer ${selected?'lock-in-clicked':''} ${state.lockInAnimating?'lock-in-shuffling':''}" data-lock-in-slot="${slot.slotIndex}" ${state.lockInAnimating?'disabled':''}><span class="pos">${roleLabel(slot.role)}</span><span class="name">${esc(p.player)}</span><span class="lock-in-prompt">${selected?'Selected':'Select player'}</span></button>`; }
+    return `<div class="pitch-player ${cls} lock-in-kept"><span class="pos">${roleLabel(slot.role)}</span><span class="name">${esc(p.player)}</span><span class="lock-in-prompt">Locked in</span></div>`;
+  }).join('')}</div>`;
 }
 function currentPlayerCanAct(){ if(!online.enabled) return true; const user=currentUser(); return !!user && safeKey(user.name)===safeKey(online.myName); }
 function applyOnlinePermissions(){
@@ -1144,12 +1281,12 @@ function renderResults(){
   if(header) header.innerHTML=`<div class="finished-hero"><p class="eyebrow">${esc(state.challengeName||'Solo Challenge')}</p><h2>${isOnline?'Final results':'Your final score'}</h2><p class="muted">Ratings are revealed. ${isOnline?'Teams are ranked below.':'Here is your completed 5-a-side score.'}</p><div class="winner-badge-large"><span>${isOnline?'Winner score:':'Score:'}</span><span class="score-number">${top}</span></div><div class="finished-actions"><button id="submitLeaderboardFinal" class="btn btn-primary">Submit to leaderboard</button><button id="shareSummaryBtn" class="btn btn-deep">Share summary</button><button id="saveSummaryBtn" class="btn btn-deep">Save picture</button><button id="resetBtnResults" class="btn btn-deep">Restart</button></div></div>`;
   if(els.resultsContainer){
     els.resultsContainer.className='finished-results-grid';
-    els.resultsContainer.innerHTML=scored.map((row,idx)=>`<article class="finished-team-card ${idx===0?'winner':''} ${isOnline&&idx===0?'result-gold-winner':''}">${isOnline?`<div class="result-rank-badge ${idx===0?'gold':''}">${ordinal(idx+1)}</div>`:''}<div class="finished-team-top pro-score-header"><div><p class="eyebrow">Final score</p><h3>${esc(row.user.name)}</h3></div><div class="finished-score-card"><span>Score</span><strong>${row.total}</strong></div></div>${renderPitch(buildSlots(row.user))}<div class="finished-player-list">${(row.user.team||[]).map(p=>`<div class="finished-player-row"><span class="finished-pos">${roleLabel(p.selectedRole||p.mainPosition)}</span><span><span class="finished-player-name">${esc(p.player)}</span><span class="finished-player-meta">${esc(shortClub(p.club))}${p.year?' - '+p.year:''}</span></span><span class="finished-player-rating">${p.rating}</span></div>`).join('')}</div></article>`).join('');
+    els.resultsContainer.innerHTML=scored.map((row,idx)=>`<article class="finished-team-card ${state.challengePreset==='legendslockin'?'lock-in-result-card':''} ${idx===0?'winner':''} ${isOnline&&idx===0?'result-gold-winner':''}">${isOnline?`<div class="result-rank-badge ${idx===0?'gold':''}">${ordinal(idx+1)}</div>`:''}<div class="finished-team-top pro-score-header"><div><p class="eyebrow">Final score</p><h3>${esc(row.user.name)}</h3></div><div class="finished-score-card"><span>Score</span><strong>${row.total}</strong></div></div>${renderPitch(buildSlots(row.user))}<div class="finished-player-list">${(row.user.team||[]).map(p=>`<div class="finished-player-row"><span class="finished-pos">${roleLabel(p.selectedRole||p.mainPosition)}</span><span><span class="finished-player-name">${esc(p.player)}</span><span class="finished-player-meta">${esc(shortClub(p.club))}${p.year?' - '+p.year:''}</span></span><span class="finished-player-rating">${p.rating}</span></div>`).join('')}</div></article>`).join('');
   }
   $('submitLeaderboardFinal')?.addEventListener('click', safe(submitCurrentScore)); $('shareSummaryBtn')?.addEventListener('click', safe(shareSummaryImage)); $('saveSummaryBtn')?.addEventListener('click', safe(saveSummaryImage)); $('resetBtnResults')?.addEventListener('click', safe(restartToModeLobby));
 }
 
-function leaderboardMode(){ if(state?.challengePreset==='ballondor') return MODE_LABELS.ballondor; if(state?.challengePreset==='leaguelegends') return MODE_LABELS.leaguelegends; if(state?.challengePreset==='worldcup') return MODE_LABELS.worldcup; if(state?.challengePreset==='easy') return MODE_LABELS.easy; if(state?.challengePreset==='ultimate') return MODE_LABELS.ultimate; if(state?.challengePreset==='league') return MODE_LABELS.league; if(state?.isOnlineGame&&state.gameMode==='draft') return MODE_LABELS.onlineDraft; if(state?.isOnlineGame&&state.gameMode==='bid') return state.onlineBidMode==='live'?MODE_LABELS.onlineLive:MODE_LABELS.onlineBlind; return MODE_LABELS.solo; }
+function leaderboardMode(){ if(state?.challengePreset==='ballondor') return MODE_LABELS.ballondor; if(state?.challengePreset==='legendslockin') return MODE_LABELS.legendslockin; if(state?.challengePreset==='leaguelegends') return MODE_LABELS.leaguelegends; if(state?.challengePreset==='worldcup') return MODE_LABELS.worldcup; if(state?.challengePreset==='easy') return MODE_LABELS.easy; if(state?.challengePreset==='ultimate') return MODE_LABELS.ultimate; if(state?.challengePreset==='league') return MODE_LABELS.league; if(state?.isOnlineGame&&state.gameMode==='draft') return MODE_LABELS.onlineDraft; if(state?.isOnlineGame&&state.gameMode==='bid') return state.onlineBidMode==='live'?MODE_LABELS.onlineLive:MODE_LABELS.onlineBlind; return MODE_LABELS.solo; }
 function statsModeKey(label){ return String(label || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
 function statsAlreadyRecordedKey(modeKey){ return 'statsRecorded_' + modeKey; }
 const HOME_VISIT_COUNTER_PATH = 'stats/totals/pageViews/home';
@@ -1418,7 +1555,7 @@ async function submitCurrentScore(){
         rating: p.rating
       }))
     };
-    if (state.challengePreset === 'leaguelegends') {
+    if (['leaguelegends','legendslockin'].includes(state.challengePreset)) {
       leaderboardPayload.leagueSelection = {
         label: state.selectedLegendLeague || state.legendLeague || state.leagueName || state.leagueLabel || '',
         labels: [state.selectedLegendLeague || state.legendLeague || state.leagueName || state.leagueLabel || ''].filter(Boolean)
@@ -1426,7 +1563,9 @@ async function submitCurrentScore(){
     } else if (state.leagueSelection) {
       leaderboardPayload.leagueSelection = state.leagueSelection;
     }
-    await firebase.database().ref('leaderboard').push(leaderboardPayload);
+    const leaderboardRef = firebase.database().ref('leaderboard');
+    const newEntryRef = leaderboardRef.push();
+    await newEntryRef.set(leaderboardPayload);
     state.leaderboardSubmitted=true;
     if(btn){btn.disabled=true;btn.textContent='Submitted';}
   }catch(error){
@@ -1712,7 +1851,7 @@ async function psSharePicture(score, payload){ const button = $('psSharePicture'
 const LB_TABS = [
   {key:'solo', label:'Solo Mode', modes:[MODE_LABELS.solo,MODE_LABELS.ultimate,MODE_LABELS.easy,MODE_LABELS.league,MODE_LABELS.worldcup], subs:[['all','All'],[MODE_LABELS.solo,'Standard Solo'],[MODE_LABELS.ultimate,'Ultimate Solo'],[MODE_LABELS.easy,'Easy Solo'],[MODE_LABELS.league,'League Challenge'],[MODE_LABELS.worldcup,'World Cup 2026']]},
   {key:'online', label:'Online Battles', modes:[MODE_LABELS.onlineDraft,MODE_LABELS.onlineBlind,MODE_LABELS.onlineLive], subs:[['all','All'],[MODE_LABELS.onlineDraft,'Online Ultimate Draft'],[MODE_LABELS.onlineBlind,'Online Blind Bidding'],[MODE_LABELS.onlineLive,'Online Live Auction']]},
-  {key:'legends', label:'League Legends', modes:[MODE_LABELS.leaguelegends], subs:[['all','All']]},
+  {key:'legends', label:'League Legends', modes:[MODE_LABELS.leaguelegends,MODE_LABELS.legendslockin], subs:[['all','All'],[MODE_LABELS.leaguelegends,'Original'],[MODE_LABELS.legendslockin,'Legends Lock-In']]},
   {key:'playerSim', label:'Player Simulation', modes:[MODE_LABELS.playerSim], subs:[['all','All'],['GK','GK'],['DEF','DEF'],['MID','MID'],['ST','ST']]},
   {key:'monthly', label:'Monthly Challenges', modes:[MODE_LABELS.worldcup,MODE_LABELS.ballondor], subs:[[MODE_LABELS.worldcup,'World Cup 2026'],[MODE_LABELS.ballondor,"Ballon d'Or Winners"]]}
 ];
@@ -1796,7 +1935,7 @@ function getLeagueFromSubmittedTeam(entry){
   return ranked[0][1] >= 2 || ranked.length === 1 || ranked[0][1] > (ranked[1]?.[1] || 0) ? ranked[0][0] : '';
 }
 function getLeagueLegendLeaderboardLeague(entry){
-  if (entry?.gameMode !== MODE_LABELS.leaguelegends) return '';
+  if (![MODE_LABELS.leaguelegends,MODE_LABELS.legendslockin].includes(entry?.gameMode)) return '';
   const fields = [
     entry?.leagueSelection?.labels,
     entry?.leagueSelection?.label,
@@ -2117,7 +2256,7 @@ async function recordPlayerSimulationStats(score, payload){
   });
 }
 
-async function psSubmitScore(sc,pl){ if(playerSimSubmitted)return; try{ await recordPlayerSimulationStats(sc,pl); await ensureFirebase(); await firebase.database().ref('leaderboard').push({username:safeGeneratedLeaderboardName(playerSim.name,'Player'),score:sc,gameMode:MODE_LABELS.playerSim,careerStats:pl,timestamp:Date.now()}); playerSimSubmitted=true; $('psSubmitStatus').textContent='Player Simulation score submitted to leaderboard.'; $('psSubmit').disabled=true; }catch(e){ $('psSubmitStatus').textContent='Could not submit score. '+(e.message||e); } }
+async function psSubmitScore(sc,pl){ if(playerSimSubmitted)return; try{ await recordPlayerSimulationStats(sc,pl); await ensureFirebase(); const leaderboardRef=firebase.database().ref('leaderboard'); const newEntryRef=leaderboardRef.push(); await newEntryRef.set({username:safeGeneratedLeaderboardName(playerSim.name,'Player'),score:sc,gameMode:MODE_LABELS.playerSim,careerStats:pl,timestamp:Date.now()}); playerSimSubmitted=true; $('psSubmitStatus').textContent='Player Simulation score submitted to leaderboard.'; $('psSubmit').disabled=true; }catch(e){ $('psSubmitStatus').textContent='Could not submit score. '+(e.message||e); } }
 
 
 
@@ -2132,7 +2271,7 @@ async function handleDirectModeRequest(){
   const requested = getRequestedModeFromQuery();
   if (!requested) return false;
   if (new URLSearchParams(location.search).get('room')) return false;
-  const aliases = { 'leaderboard':'leaderboard','leaderboards':'leaderboard','solo':'solo','standard':'solo','standard-solo':'solo','ultimate':'ultimate','ultimate-solo':'ultimate','easy':'easy','easy-solo':'easy','league':'league','league-challenge':'league','monthly':'monthly','worldcup':'worldcup','world-cup':'worldcup','ballondor':'ballondor','ballon-dor':'ballondor','leaguelegends':'leaguelegends','league-legends':'leaguelegends','player-simulation':'playerSim','playersimulation':'playerSim','player-sim':'playerSim','online':'online','online-create':'onlineCreate','online-room':'onlineCreate','online-battles':'onlineCreate' };
+  const aliases = { 'leaderboard':'leaderboard','leaderboards':'leaderboard','solo':'solo','standard':'solo','standard-solo':'solo','ultimate':'ultimate','ultimate-solo':'ultimate','easy':'easy','easy-solo':'easy','league':'league','league-challenge':'league','monthly':'monthly','worldcup':'worldcup','world-cup':'worldcup','ballondor':'ballondor','ballon-dor':'ballondor','leaguelegends':'leaguelegends','league-legends':'leaguelegends','legendslockin':'legendslockin','legends-lock-in':'legendslockin','player-simulation':'playerSim','playersimulation':'playerSim','player-sim':'playerSim','online':'online','online-create':'onlineCreate','online-room':'onlineCreate','online-battles':'onlineCreate' };
   const mode = aliases[requested] || requested;
   try {
     if (mode === 'leaderboard') { window.location.href = 'leaderboard.html'; return true; }
@@ -2141,7 +2280,7 @@ async function handleDirectModeRequest(){
     if (mode === 'online') { focusOnlineRoomEntry(); return true; }
     if (mode === 'playerSim') { openPlayerSimulation(); return true; }
     if (mode === 'monthly') { showMonthlyMenu(); return true; }
-    if (['solo','ultimate','easy','league','worldcup','ballondor','leaguelegends'].includes(mode)) { await openSetup(mode); return true; }
+    if (['solo','ultimate','easy','league','worldcup','ballondor','leaguelegends','legendslockin'].includes(mode)) { await openSetup(mode); return true; }
   } catch (error) { console.error(error); setMessage(error.message || String(error)); }
   return false;
 }

@@ -1,0 +1,63 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "leaderboard": {
+      ".read": true,
+      ".indexOn": [
+        "score",
+        "gameMode",
+        "timestamp"
+      ],
+      "$entryId": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['username','score','gameMode','timestamp']) && newData.child('username').isString() && newData.child('username').val().length >= 3 && newData.child('username').val().length <= 18 && newData.child('score').isNumber() && newData.child('score').val() >= 1 && newData.child('score').val() <= 600 && newData.child('gameMode').isString() && newData.child('gameMode').val().length >= 3 && newData.child('gameMode').val().length <= 50 && newData.child('timestamp').isNumber() && newData.child('timestamp').val() > 1704067200000 && newData.child('timestamp').val() <= now + 300000",
+        "username": {
+          ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 18"
+        },
+        "score": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 600"
+        },
+        "gameMode": {
+          ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 50"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber() && newData.val() > 1704067200000 && newData.val() <= now + 300000"
+        },
+        "yearRange": {
+          ".validate": "newData.val() == null || (newData.hasChildren(['start','end']) && newData.child('start').isNumber() && newData.child('end').isNumber() && newData.child('start').val() >= 2000 && newData.child('end').val() <= 2100 && newData.child('start').val() <= newData.child('end').val())"
+        },
+        "team": {
+          ".validate": "newData.val() == null || (newData.hasChildren() && newData.numChildren() <= 6)"
+        },
+        "careerStats": {
+          ".validate": "newData.val() == null || newData.hasChildren(['position'])"
+        }
+      }
+    },
+    "rooms": {
+      ".read": true,
+      ".write": true
+    },
+    "stats": {
+      ".read": false,
+      ".write": true,
+      "totals": {
+        "pageViews": {
+          "home": {
+            ".read": true
+          }
+        },
+        "starts": {
+          "total": {
+            ".read": true
+          }
+        }
+      }
+    },
+    "publicCounters": {
+      ".read": true,
+      ".write": false
+    }
+  }
+}
