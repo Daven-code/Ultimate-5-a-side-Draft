@@ -45,7 +45,8 @@ const MODE_LABELS = {
   onlineDraft: 'Online Ultimate Draft',
   onlineBlind: 'Online Blind Bidding',
   onlineLive: 'Online Live Auction',
-  playerSim: 'Player Simulation'
+  playerSim: 'Player Simulation',
+  leagueSimulation: 'League Simulation'
 };
 
 const LEAGUE_OPTIONS = [
@@ -97,6 +98,8 @@ let selectedYearRange = null;
 let selectedLeagueKeys = new Set(['premier_league']);
 let selectedLegendLeague = 'Premier League';
 let selectedLockInFormation = 'balanced';
+let selectedLeagueSimFormation = 'balanced';
+let selectedLeagueSimPool = 'normal';
 let state = null;
 let currentCandidate = null;
 let ratingsRevealed = false;
@@ -105,6 +108,7 @@ let playerSim = null;
 let playerSimSubmitted = false;
 let playerSimNameWasTyped = false;
 let playerSimSavedManualName = '';
+let leagueSimulationTimer = null;
 let playerSimUseSavedManualName = false;
 
 const online = { enabled:false, isHost:false, roomId:null, ref:null, myName:'', loaded:false, subscribed:false, bidMode:'blind' };
@@ -362,7 +366,7 @@ function injectStyles(){
     .leaderboard-main-tabs-v55,.leaderboard-subtabs-v55{display:flex;gap:10px;flex-wrap:wrap}.leaderboard-row-v55{grid-template-columns:58px minmax(0,1fr) 170px 80px!important}.leaderboard-team-v78,.ps-lb-meta{grid-column:2 / span 3;display:flex;gap:6px;flex-wrap:wrap}.leaderboard-player-chip-v78,.ps-lb-chip{padding:4px 8px;border-radius:999px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:.74rem;font-weight:900}.leaderboard-tab.active{background:linear-gradient(135deg,#2563eb,#1d4ed8)!important;color:#fff!important;border-color:transparent!important}
     .ps-panel{max-width:1180px;margin:28px auto 56px;color:#0f172a}.ps-hidden{display:none!important}body.ps-active #setupPanel,body.ps-active #gamePanel,body.ps-active #resultsPanel,body.ps-active #leaderboardPanel,body.ps-active #onlineLobbyPanel,body.ps-active #gameEntryPanel{display:none!important}.ps-card{background:rgba(255,255,255,.97);border-radius:30px;padding:clamp(20px,3vw,30px);box-shadow:0 24px 80px rgba(0,0,0,.28)}.ps-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.ps-box{border-radius:24px;padding:22px;background:linear-gradient(135deg,#eff6ff,#ecfdf5);border:1px solid #bfdbfe}.ps-box h2{font-size:clamp(2rem,4vw,3.2rem);line-height:.98;letter-spacing:-.055em}.ps-dark{background:linear-gradient(135deg,#0f172a,#1e3a8a)!important;color:#fff!important}.ps-dark p{color:#edf5ff!important}.ps-form{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.ps-pos{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.ps-pos button{border:2px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:16px;padding:13px 10px;font-weight:1000;cursor:pointer}.ps-pos button.sel{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-color:transparent}.ps-actions{display:flex;gap:10px;flex-wrap:wrap}.ps-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}.ps-choice{border:2px solid #93c5fd;background:linear-gradient(135deg,#eef6ff,#dbeafe);border-radius:22px;padding:18px;text-align:left;cursor:pointer}.ps-choice.retire{background:linear-gradient(135deg,#fef3c7,#fed7aa);border-color:#f59e0b}.ps-choice.disabled{cursor:default;opacity:.75}.ps-pill{display:inline-flex;margin-top:12px;padding:7px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000}.ps-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.ps-stat,.ps-year{opacity:0;transform:translateY(8px);transition:.35s ease}.ps-stat.show,.ps-year.show{opacity:1;transform:none}.ps-stat{padding:13px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0}.ps-stat span{display:block;color:#64748b;font-size:.72rem;text-transform:uppercase;font-weight:900}.ps-stat strong{font-size:1.35rem}.ps-score{min-height:230px;border-radius:28px;background:linear-gradient(135deg,#052e16,#1e3a8a);color:#fff;display:grid;place-items:center;text-align:center}.ps-score strong{font-size:4.4rem}.ps-timeline{display:grid;gap:8px;margin-top:14px;max-height:420px;overflow:auto}.ps-year{display:grid;grid-template-columns:58px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0}.ps-clubs{display:flex;flex-wrap:wrap;gap:8px}.ps-clubs span{padding:7px 10px;border-radius:999px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-weight:900}
 
-    .leaderboard-name{font-weight:900!important;display:block;line-height:1.15}.leaderboard-name-main{display:block;font-weight:1000!important;color:#0f172a;font-size:1.02rem}.leaderboard-year-line,.leaderboard-meta-v55{display:block;margin-top:3px;color:#64748b!important;font-size:.78rem;font-weight:800!important}.leaderboard-player-chip-v78{display:inline-flex!important;align-items:center;gap:5px}.lb-chip-pos{color:#1d4ed8;font-weight:1000}.lb-chip-name{color:#0f172a;font-weight:750}.finished-hero{max-width:820px;margin-left:auto!important;margin-right:auto!important;text-align:center!important}.winner-badge-large{font-size:1.15rem;gap:10px}.winner-badge-large .score-number{display:inline-block;font-size:2.4rem;line-height:1;color:#1d4ed8}.finished-score{font-size:3.2rem!important;line-height:1!important;color:#0f172a!important;font-weight:1000!important}.finished-team-top{align-items:flex-start}.pro-score-header{display:flex;align-items:center!important;justify-content:space-between;gap:16px;margin-bottom:16px}.pro-score-header h3{font-size:1.45rem;margin:0}.finished-score-card{min-width:150px;text-align:center;border-radius:22px;padding:12px 18px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;box-shadow:0 12px 28px rgba(37,99,235,.16)}.finished-score-card span{display:block;text-transform:uppercase;letter-spacing:.12em;font-size:.72rem;font-weight:1000;color:#64748b}.finished-score-card strong{display:block;font-size:3rem;line-height:1;color:#1d4ed8;font-weight:1000}.finished-team-top{align-items:flex-start}.lb-team-label{font-weight:500!important;color:#334155}.year-slicer-locked{opacity:.58;filter:grayscale(.55)}.year-slicer-locked input[disabled]{pointer-events:none}.year-slicer-locked .year-fill{background:#cbd5e1!important}.year-slicer-locked .year-range::-webkit-slider-thumb{border-color:#94a3b8!important;background:#f8fafc!important}.year-slicer-locked .year-range::-moz-range-thumb{border-color:#94a3b8!important;background:#f8fafc!important}.monthly-menu-card{color:#0f172a!important;background:linear-gradient(135deg,#ffffff,#eff6ff)!important;border-color:#bfdbfe!important}.monthly-menu-card p{color:#334155!important}.monthly-menu-card .challenge-action{color:#2563eb!important}.monthly-menu-card.{border:2px solid #f59e0b!important;background:linear-gradient(145deg,#fff7ed,#eff6ff)!important;box-shadow:0 18px 44px rgba(245,158,11,.20)!important}.monthly-menu-card.:hover{border-color:#d97706!important;box-shadow:0 22px 52px rgba(245,158,11,.28)!important}.monthly-menu-layout{position:relative}.monthly-menu-back{position:absolute;right:24px;top:24px;float:none!important}
+    .leaderboard-name{font-weight:900!important;display:block;line-height:1.15}.leaderboard-name-main{display:block;font-weight:1000!important;color:#0f172a;font-size:1.02rem}.leaderboard-year-line,.leaderboard-meta-v55{display:block;margin-top:3px;color:#64748b!important;font-size:.78rem;font-weight:800!important}.leaderboard-player-chip-v78{display:inline-flex!important;align-items:center;gap:5px}.lb-chip-pos{color:#1d4ed8;font-weight:1000}.lb-chip-name{color:#0f172a;font-weight:750}.lb-chip-year{color:#64748b;font-size:.68rem;font-weight:900}.finished-hero{max-width:820px;margin-left:auto!important;margin-right:auto!important;text-align:center!important}.winner-badge-large{font-size:1.15rem;gap:10px}.winner-badge-large .score-number{display:inline-block;font-size:2.4rem;line-height:1;color:#1d4ed8}.finished-score{font-size:3.2rem!important;line-height:1!important;color:#0f172a!important;font-weight:1000!important}.finished-team-top{align-items:flex-start}.pro-score-header{display:flex;align-items:center!important;justify-content:space-between;gap:16px;margin-bottom:16px}.pro-score-header h3{font-size:1.45rem;margin:0}.finished-score-card{min-width:150px;text-align:center;border-radius:22px;padding:12px 18px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;box-shadow:0 12px 28px rgba(37,99,235,.16)}.finished-score-card span{display:block;text-transform:uppercase;letter-spacing:.12em;font-size:.72rem;font-weight:1000;color:#64748b}.finished-score-card strong{display:block;font-size:3rem;line-height:1;color:#1d4ed8;font-weight:1000}.finished-team-top{align-items:flex-start}.lb-team-label{font-weight:500!important;color:#334155}.year-slicer-locked{opacity:.58;filter:grayscale(.55)}.year-slicer-locked input[disabled]{pointer-events:none}.year-slicer-locked .year-fill{background:#cbd5e1!important}.year-slicer-locked .year-range::-webkit-slider-thumb{border-color:#94a3b8!important;background:#f8fafc!important}.year-slicer-locked .year-range::-moz-range-thumb{border-color:#94a3b8!important;background:#f8fafc!important}.monthly-menu-card{color:#0f172a!important;background:linear-gradient(135deg,#ffffff,#eff6ff)!important;border-color:#bfdbfe!important}.monthly-menu-card p{color:#334155!important}.monthly-menu-card .challenge-action{color:#2563eb!important}.monthly-menu-card.{border:2px solid #f59e0b!important;background:linear-gradient(145deg,#fff7ed,#eff6ff)!important;box-shadow:0 18px 44px rgba(245,158,11,.20)!important}.monthly-menu-card.:hover{border-color:#d97706!important;box-shadow:0 22px 52px rgba(245,158,11,.28)!important}.monthly-menu-layout{position:relative}.monthly-menu-back{position:absolute;right:24px;top:24px;float:none!important}
     .u5-popular-badge{display:inline-flex;border-radius:999px;padding:5px 10px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.45);color:#bbf7d0;font-weight:1000;font-size:.72rem;letter-spacing:.04em}.leaderboard-subtabs-v55{padding:8px 10px!important;background:#eef2ff!important;border:1px solid #c7d2fe!important;border-radius:16px!important}.leaderboard-subtabs-v55 .leaderboard-tab{font-size:.78rem!important;padding:7px 10px!important;min-height:34px!important;border-radius:12px!important;background:#f1f5f9!important;border-color:#cbd5e1!important;color:#334155!important;box-shadow:none!important}.leaderboard-subtabs-v55 .leaderboard-tab.active{background:linear-gradient(135deg,#0f172a,#334155)!important;color:#fff!important}.pitch-player.selected-role{background:#dcfce7!important;color:#166534!important;border:3px solid #22c55e!important;box-shadow:0 0 0 4px rgba(34,197,94,.18),0 14px 30px rgba(22,163,74,.26)!important}.pitch-player.selection-muted{opacity:.45!important;filter:grayscale(.65);box-shadow:none!important}.in-game-restart-btn{margin-left:auto;min-width:112px}.draft-card .turn-row{align-items:flex-start}.finished-team-card .pitch{height:560px;width:100%;max-width:760px;margin:0 auto}.finished-team-card .pitch-player{width:min(142px,30%)}.finished-team-card .pitch-player.fwd{top:12%}.finished-team-card .pitch-player.mid1{left:25%;top:48%}.finished-team-card .pitch-player.mid2{left:75%;top:48%}.finished-team-card .pitch-player.def{top:70%}.finished-team-card .pitch-player.gk{top:88%}.finished-team-card .pitch-player .name{font-size:.70rem;line-height:1.02}.finished-team-card .pitch-player .club{font-size:.58rem}.finished-team-card .pitch-player .year,.finished-team-card .pitch-player .rating{font-size:.58rem}.finished-actions .btn{min-width:150px}
     .finished-team-card .pitch-player{width:min(154px,32%);min-height:82px;padding:7px 8px}.finished-team-card .pitch-player .name{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:break-word;font-size:.68rem;line-height:1.03;display:block}.finished-team-card .pitch-player .club,.finished-team-card .pitch-player .year{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:.56rem;line-height:1.04}.finished-team-card .pitch-player .rating{font-size:.56rem;line-height:1.04}.ps-restart-btn{min-width:112px}
     .finished-team-card .ballondor-pitch{height:500px;max-width:700px;border-radius:24px;padding:0}.finished-team-card .ballondor-pitch .pitch-player{width:min(138px,27%);min-height:72px;padding:8px 9px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center}.finished-team-card .ballondor-pitch .pitch-player.fwd{left:25%;top:18%}.finished-team-card .ballondor-pitch .pitch-player.fwd2{left:75%;top:18%}.finished-team-card .ballondor-pitch .pitch-player.mid1{left:25%;top:46%}.finished-team-card .ballondor-pitch .pitch-player.mid2{left:75%;top:46%}.finished-team-card .ballondor-pitch .pitch-player.def{left:50%;top:68%}.finished-team-card .ballondor-pitch .pitch-player.gk{left:50%;top:87%}.finished-team-card .ballondor-pitch .pitch-player .name{font-size:.72rem;line-height:1.08;text-align:center}.finished-team-card .ballondor-pitch .pitch-player .year{font-size:.60rem;line-height:1.05;margin-top:4px}.finished-team-card .ballondor-pitch .pitch-player.yashin-ghost{min-height:58px;width:min(126px,25%)}
@@ -379,7 +383,8 @@ function injectStyles(){
 
     @media(max-width:620px){.home-visit-counter{margin:30px auto 6px}.visit-counter-card{display:flex;gap:8px;padding:13px 14px}.visit-counter-icon{margin:0;font-size:.82rem}.visit-counter-copy strong{font-size:.78rem;letter-spacing:.06em}.visit-counter-subtitle{font-size:.78rem;margin-top:9px}}
 
-    /* Legends Lock-In result pitch: preserve the selected formation. */
+
+        /* Legends Lock-In result pitch: preserve the selected formation. */
     .lock-in-result-card .pitch{height:560px!important;overflow:hidden!important}
     .lock-in-result-card .pitch-player{width:min(154px,32%)!important;min-width:112px!important;max-width:154px!important}
     .lock-in-result-card .pitch-player.gk{left:50%!important;top:88%!important}
@@ -403,7 +408,7 @@ function injectStyles(){
 
 // ---------- Home / routing ----------
 function hideAllPanels(){
-  ['gameEntryPanel','onlineLobbyPanel','playerSimulationPanel','monthlyMenuPanel'].forEach(id => show($(id), false));
+  ['gameEntryPanel','onlineLobbyPanel','playerSimulationPanel','monthlyMenuPanel','leagueSimulationPanel'].forEach(id => show($(id), false));
   show(els.setupPanel, false); show(els.gamePanel, false); show(els.resultsPanel, false); show(els.leaderboardPanel, false);
 }
 function ensureEntryPanel(){
@@ -415,7 +420,7 @@ function ensureEntryPanel(){
   return panel;
 }
 function renderHome(){
-  injectStyles(); document.body.classList.remove('ps-active'); if(els.draftControls) els.draftControls.style.removeProperty('display'); setMessage(''); const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove();
+  injectStyles(); document.body.classList.remove('ps-active','league-sim-active'); if(els.draftControls) els.draftControls.style.removeProperty('display'); setMessage(''); const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove();
   state = null; currentCandidate = null; ratingsRevealed = false; selectedPreset = 'solo'; selectedGameMode = 'draft';
   hideAllPanels(); if (els.resetBtn) els.resetBtn.style.display = 'none';
   const panel = ensureEntryPanel(); show(panel, true);
@@ -425,8 +430,8 @@ function renderHome(){
       <article class="entry-card online-card"><h3>Online Game</h3><p>Create a room and share the link, or join using a room code.</p><div class="online-room-box"><div class="online-room-actions"><input id="onlineRoomName" type="text" placeholder="Your name"><button id="createOnlineRoomBtn" type="button" class="btn btn-secondary">Create online room</button></div><div class="online-room-actions"><input id="joinRoomCode" type="text" placeholder="Room code"><button id="joinOnlineRoomBtn" type="button" class="btn btn-secondary">Join room</button></div><p id="onlineRoomStatus" class="online-room-status">Online games use joined player names automatically.</p><p id="onlineRoomLink" class="online-room-link hidden"></p></div></article>
       <article class="entry-card local-card"><h3>Solo Challenge</h3><p>Play a quick single-player draft on this device. Pick, accept or decline players and build your best 5-a-side team.</p><button id="startLocalGameBtn" type="button" class="btn btn-primary btn-wide">Set up Solo Challenge</button></article>
     </div>
-    <section class="u5-hero-card u5-hero-blue league-legends-home-card" id="leagueLegendsHome"><div class="league-legends-home-content"><div class="u5-line"><span class="u5-new green">LIVE</span><span class="u5-popular-badge">Most popular game mode</span><p class="eyebrow">Two game modes</p></div><h3>League Legends</h3><p>Choose one of five leagues, then select which League Legends format you want to play.</p><div class="league-legends-home-options"><article class="league-legends-home-option"><span class="league-legends-option-kicker">ORIGINAL</span><h4>League Legends</h4><p>Randomise legends, use up to three declines and place each player into your chosen five-a-side role.</p><button type="button" class="btn btn-primary" data-open-preset="leaguelegends">Play original mode</button></article><article class="league-legends-home-option league-legends-home-option-new"><span class="u5-new">NEW</span><h4>Legends Lock-In</h4><p>Randomise a complete in-position team on the pitch, then lock in one legend while all remaining cards reroll.</p><button type="button" class="btn btn-primary" data-open-preset="legendslockin">Play Legends Lock-In</button></article></div></div></section>
-    <section class="u5-hero-card u5-hero-green" id="playerSimulationHome"><div><div class="u5-line"><p class="eyebrow">Game mode</p></div><h3>Player Simulation</h3><p>Create a player, choose a position, pick your career path each season and see how your legacy ranks out of 100.</p></div><button type="button" class="btn btn-primary" data-player-sim-open>Play Player Simulation</button></section>
+    <section class="u5-hero-card u5-hero-blue league-legends-home-card" id="leagueLegendsHome"><div class="league-legends-home-content"><div class="u5-line"><span class="u5-new green">LIVE</span><span class="u5-popular-badge">Most popular game mode</span><p class="eyebrow">Two game modes</p></div><h3>League Legends</h3><p>Choose one of five leagues, then select which League Legends format you want to play.</p><div class="league-legends-home-options"><article class="league-legends-home-option"><span class="league-legends-option-kicker">ORIGINAL</span><h4>League Legends</h4><p>Randomise legends, use up to three declines and place each player into your chosen five-a-side role.</p><button type="button" class="btn btn-primary" data-open-preset="leaguelegends">Play original mode</button></article><article class="league-legends-home-option"><span class="league-legends-option-kicker">LOCK-IN</span><h4>Legends Lock-In</h4><p>Randomise a complete in-position team on the pitch, then lock in one legend while all remaining cards reroll.</p><button type="button" class="btn btn-primary" data-open-preset="legendslockin">Play Legends Lock-In</button></article></div></div></section>
+    <section class="u5-hero-card u5-hero-green" id="simulationHome"><div class="league-legends-home-content"><div class="u5-line"><p class="eyebrow">Simulation</p><span class="u5-new">NEW MODE</span></div><h3>Football Simulations</h3><p>Choose a full career simulation or draft a five-a-side team and test it across a 20-team league.</p><div class="simulation-home-options"><article class="simulation-home-option"><span class="league-legends-option-kicker">CAREER</span><h4>Player Simulation</h4><p>Create a player, choose a position and guide a complete career season by season.</p><button type="button" class="btn btn-primary" data-player-sim-open>Play Player Simulation</button></article><article class="simulation-home-option simulation-home-option-new"><span class="u5-new">NEW</span><h4>League Simulation</h4><p>Draft five players, name your team and play 19 high-scoring five-a-side league matches.</p><button type="button" class="btn btn-primary" data-open-preset="leagueSimulation">Play League Simulation</button></article></div></div></section>
     <section class="home-latest-video" aria-labelledby="latestGuessVideoHeading"><h3 id="latestGuessVideoHeading">Latest 'Guess the Player' Video</h3><div class="home-video-frame"><video controls playsinline preload="metadata" aria-label="Latest 'Guess the Player' video"><source src="GuessThePlayer.mp4" type="video/mp4">Your browser does not support embedded video.</video></div><a class="home-video-library-link" href="guess-the-player.html">View all 'Guess the Player' videos</a></section>
     <div class="popular-challenges-v2"><h3>🔥 Popular Challenges</h3><div class="challenge-grid-v2">
       <button class="challenge-card-v2" data-open-preset="ultimate"><span class="challenge-badge">LIVE</span><h4>⭐ Ultimate Solo Mode</h4><p>Full player database. No year filters. No league filters.</p><span class="challenge-action">Play Now →</span></button>
@@ -453,6 +458,12 @@ function miniPitch(preset='solo'){
   if(preset==='ballondor') return `<div class="mini-pitch-clean ballon-mini-pitch"><span class="mini-pos fwd ballon-fwd1">FWD</span><span class="mini-pos fwd ballon-fwd2">FWD</span><span class="mini-pos mid1">MID</span><span class="mini-pos mid2">MID</span><span class="mini-pos def">DEF</span><span class="mini-pos gk">GK</span></div>`;
   return `<div class="mini-pitch-clean"><span class="mini-pos fwd">FWD</span><span class="mini-pos mid1">MID</span><span class="mini-pos mid2">MID</span><span class="mini-pos def">DEF</span><span class="mini-pos gk">GK</span></div>`;
 }
+function leagueSimReadyPitch(shape=TEAM_SHAPE){
+  const positions={GK:[[50,88]],DEF:[[50,68],[34,68],[66,68]],MID:[[50,48],[32,48],[68,48]],FWD:[[50,17],[34,17],[66,17]]};
+  const totals=shape.reduce((out,role)=>(out[role]=(out[role]||0)+1,out),{}),seen={};
+  const chips=shape.map(role=>{seen[role]=(seen[role]||0)+1;const list=positions[role]||positions.MID;const coords=totals[role]===1?list[0]:list[seen[role]]||list[0];return `<span class="mini-pos" style="left:${coords[0]}%;top:${coords[1]}%">${roleLabel(role)}</span>`;}).join('');
+  return `<div class="mini-pitch-clean league-sim-ready-pitch">${chips}</div>`;
+}
 function modeHero(preset){
   const map = {
     solo:['Solo Challenge','Choose your 5-a-side challenge','Pick a game mode, add your players, then build the strongest five-a-side team from the top-rated players across the years.'],
@@ -462,17 +473,19 @@ function modeHero(preset){
     worldcup:['July Monthly Challenge','World Cup 2026 Challenge','Solo Challenge rules with a dedicated World Cup 2026 player pool. The usual year filter is disabled for this challenge.'],
     ballondor:["August Monthly Challenge","Ballon d'Or Winners Challenge","Draft five Ballon d'Or winners, choose their outfield positions and build the strongest team. Position multipliers apply."],
     leaguelegends:['League Legends Challenge','Draft your legends','Choose a league, then draft from its legends. Choose their positions, but be careful - the ratings will be affected if they are out of position.'],
-    legendslockin:['New League Legends Mode','Legends Lock-In','Five position-specific legends appear directly on the pitch. Lock in one player each round while the other positions are randomised again.']
+    legendslockin:['League Legends Mode','Legends Lock-In','Five position-specific legends appear directly on the pitch. Lock in one player each round while the other positions are randomised again.'],
+    leagueSimulation:['League Simulation','Build a team, then chase the title','Draft GK, DEF, MID, MID and FWD from the standard player pool. You have only three declines, then your team enters a 20-team league for 19 matches.']
   }[preset];
-  const shape = preset === 'ballondor' ? '⚽ Yashin (visual) • DEF • MID • MID • ST • ST' : '⚽ GK • DEF • MID • MID • FWD';
+  const shape = preset === 'leagueSimulation' ? '⚽ Draft 5 players • 19 league matches • Max 57 pts' : preset === 'ballondor' ? '⚽ Yashin (visual) • DEF • MID • MID • ST • ST' : '⚽ GK • DEF • MID • MID • FWD';
   return `<section class="mode-hero"><div><p class="eyebrow">${esc(map[0])}</p><h2>${esc(map[1])}</h2><p>${esc(map[2])}</p><div class="mode-pills"><span>${shape}</span><span>🏆 Reveal scores at the end</span></div></div>${miniPitch(preset)}</section>`;
 }
 async function openSetup(preset){
-  injectStyles(); await ensurePlayersReady(); if (preset === 'worldcup') await loadWorldCupPlayers(); if (['leaguelegends','legendslockin'].includes(preset)) await loadLegends(); if (preset === 'ballondor') await loadBallonDorPlayers();
+  injectStyles(); await ensurePlayersReady(); if (preset === 'worldcup') await loadWorldCupPlayers(); if (['leaguelegends','legendslockin'].includes(preset) || preset === 'leagueSimulation') await loadLegends(); if (preset === 'ballondor') await loadBallonDorPlayers();
   selectedPreset = preset; selectedGameMode = 'draft'; online.enabled = false; online.isHost=false; online.roomId=null; online.myName=''; playerSim = null; state = null; currentCandidate = null; const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove(); setMessage('');
   selectedYearRange = null;
   if (preset === 'league') selectedLeagueKeys = new Set(['premier_league']);
   if (preset === 'legendslockin') selectedLockInFormation = 'balanced';
+  if (preset === 'leagueSimulation') { selectedLeagueSimFormation='balanced'; selectedLeagueSimPool='normal'; }
   hideAllPanels(); show(els.setupPanel,true); if (els.resetBtn) els.resetBtn.style.display = '';
   const setup = els.setupPanel; setup.className = 'setup-card-home';
   setup.innerHTML = modeHero(preset) + `<div class="setup-panel-card u5-card" id="cleanSetupCard"></div>`;
@@ -524,6 +537,25 @@ function updateYearLabels(scope=document){
   if(fill) { fill.style.left = ((r.start-r.min)/total*100)+'%'; fill.style.right = (100-(r.end-r.min)/total*100)+'%'; }
 }
 
+function leagueSimFormationCard(key,formation){
+  const counts={};
+  const chips=formation.shape.map(role=>{counts[role]=(counts[role]||0)+1;return `<span class="formation-player formation-${role.toLowerCase()}-${counts[role]}">${roleLabel(role)}</span>`;}).join('');
+  return `<button type="button" class="league-sim-formation-card ${selectedLeagueSimFormation===key?'selected':''}" data-league-sim-formation="${key}" aria-pressed="${selectedLeagueSimFormation===key}"><span class="formation-option-title">${esc(formation.label)}</span><span class="formation-option-shape">${formation.shape.map(roleLabel).join(' • ')}</span><span class="formation-mini-pitch" aria-hidden="true">${chips}</span></button>`;
+}
+function leagueSimLegendLeagueHtml(){
+  if(selectedLeagueSimPool!=='legends') return '';
+  return `<div class="league-sim-legend-leagues"><h3>3. Choose your League Legends league</h3><p>Only legends from the selected competition will appear in your draft and opposition squads.</p><div class="legend-league-grid">${LEAGUE_LEGENDS.map(league=>`<button type="button" class="legend-league-btn ${selectedLegendLeague===league?'selected':''}" data-league-sim-legend-league="${esc(league)}">${esc(league)}</button>`).join('')}</div></div>`;
+}
+function leagueSimSetupOptionsHtml(){
+  const formations=Object.entries(LOCK_IN_FORMATIONS).map(([key,item])=>leagueSimFormationCard(key,item)).join('');
+  return `<section class="league-sim-setup-options"><div class="league-sim-option-block"><h3>1. Choose your formation</h3><p>The selected shape stays fixed throughout your draft and league season.</p><div class="league-sim-formation-grid">${formations}</div></div><div class="league-sim-option-block"><h3>2. Choose the player pool</h3><div class="league-sim-choice-grid"><button type="button" class="league-sim-choice ${selectedLeagueSimPool==='normal'?'selected':''}" data-league-sim-pool="normal"><strong>Normal player pool</strong><span>Use the existing player database and choose a year range.</span></button><button type="button" class="league-sim-choice legends ${selectedLeagueSimPool==='legends'?'selected':''}" data-league-sim-pool="legends"><strong>League Legends pool</strong><span>Choose one of the five leagues. Out-of-position ratings are reduced.</span></button></div>${leagueSimLegendLeagueHtml()}</div></section>`;
+}
+function wireLeagueSimSetupOptions(){
+ document.querySelectorAll('[data-league-sim-formation]').forEach(btn=>btn.addEventListener('click',()=>{selectedLeagueSimFormation=btn.dataset.leagueSimFormation;renderSetupControls();}));
+ document.querySelectorAll('[data-league-sim-pool]').forEach(btn=>btn.addEventListener('click',()=>{selectedLeagueSimPool=btn.dataset.leagueSimPool;selectedYearRange=selectedLeagueSimPool==='normal'?(selectedYearRange||getDefaultRange()):null;renderSetupControls();}));
+ document.querySelectorAll('[data-league-sim-legend-league]').forEach(btn=>btn.addEventListener('click',()=>{selectedLegendLeague=btn.dataset.leagueSimLegendLeague;renderSetupControls();}));
+}
+function leagueSimulationShape(){return [...(LOCK_IN_FORMATIONS[selectedLeagueSimFormation]?.shape||LOCK_IN_FORMATIONS.balanced.shape)];}
 function renderSetupControls(){
   const card = $('cleanSetupCard'); if(!card) return;
   selectedYearRange = selectedYearRange || getDefaultRange();
@@ -534,17 +566,19 @@ function renderSetupControls(){
   if (selectedPreset === 'worldcup') intro = 'July monthly challenge. Draft from the World Cup 2026 player pool only. No year filter.';
   if (selectedPreset === 'ballondor') intro = "August monthly challenge. Draft five unique Ballon d'Or winners and place them into DEF, MID, MID, ST and ST.";
   if (selectedPreset === 'league') intro = 'Single-player draft mode. Select eligible leagues and draft from that filtered all-years pool.';
+  if (selectedPreset === 'leagueSimulation') intro = 'Draft five players with three declines, then name your club and play one match against each of 19 randomly generated opponents.';
   const leagueSelector = selectedPreset === 'league' ? leagueSelectorHtml() : '';
+  const leagueSimOptions = selectedPreset === 'leagueSimulation' ? leagueSimSetupOptionsHtml() : '';
   const legendsSelector = ['leaguelegends','legendslockin'].includes(selectedPreset) ? legendsSelectorHtml() : selectedPreset === 'ballondor' ? ballonDorRulesHtml() : '';
-  const showYear = !['ultimate','worldcup','ballondor','leaguelegends','legendslockin','league'].includes(selectedPreset);
+  const showYear = !['ultimate','worldcup','ballondor','leaguelegends','legendslockin','league'].includes(selectedPreset) && !(selectedPreset==='leagueSimulation'&&selectedLeagueSimPool==='legends');
   const disabledYear = selectedPreset === 'ultimate';
   const yearHtml = showYear ? yearSlicerHtml(false) : (disabledYear ? yearSlicerHtml(true) : '');
   const introHtml = selectedPreset === 'leaguelegends' ? '' : `<div class="setup-info"><strong>${esc(introTitle)}</strong><br>${esc(intro)}</div>`;
   const statsHtml = ['leaguelegends','legendslockin','ballondor'].includes(selectedPreset) ? '' : '<div id="setupStats" class="summary-lines"></div>';
-  card.innerHTML = `${introHtml}${leagueSelector}${legendsSelector}${yearHtml}${statsHtml}${selectedPreset==='worldcup'?'<div class="setup-info good">World Cup 2026 Challenge: solo draft using only the dedicated World Cup 2026 player pool.</div>':''}<label class="checkbox-row"><input id="setupExcludeDeclines" type="checkbox" checked> Exclude declined players</label><button id="cleanStartBtn" class="btn btn-primary btn-wide">Start ${esc(introTitle)}</button>`;
+  card.innerHTML = `${introHtml}${leagueSelector}${legendsSelector}${leagueSimOptions}${yearHtml}${statsHtml}${selectedPreset==='worldcup'?'<div class="setup-info good">World Cup 2026 Challenge: solo draft using only the dedicated World Cup 2026 player pool.</div>':''}<label class="checkbox-row"><input id="setupExcludeDeclines" type="checkbox" checked> Exclude declined players</label><button id="cleanStartBtn" class="btn btn-primary btn-wide">Start ${esc(introTitle)}</button>`;
   if (showYear) wireYearSlicer();
   if (disabledYear) selectedYearRange = null;
-  wireLeagueSelectors(); renderSetupStats(); $('cleanStartBtn')?.addEventListener('click', safe(startSoloGame));
+  wireLeagueSelectors(); wireLeagueSimSetupOptions(); renderSetupStats(); $('cleanStartBtn')?.addEventListener('click', safe(startSoloGame));
 }
 function leagueSelectorHtml(){
   return `<div class="league-selector"><h3>Choose leagues</h3><div class="league-grid">${LEAGUE_OPTIONS.map(o => `<button type="button" class="league-btn ${selectedLeagueKeys.has(o.key)?'selected':''}" data-league-key="${o.key}">${esc(o.label)}</button>`).join('')}</div><p class="setup-info good" id="leagueSummary"></p></div>`;
@@ -604,11 +638,12 @@ function clubGuessLeague(club){
   const found = PLAYER_SIM_CLUBS.find(c => c.name === club); return found?.league || '';
 }
 function setupEligiblePool(){
+  if(selectedPreset==='leagueSimulation'&&selectedLeagueSimPool==='legends') return legends.filter(p=>p.league===selectedLegendLeague);
   if (['leaguelegends','legendslockin'].includes(selectedPreset)) return legends.filter(p => p.league === selectedLegendLeague);
   return filterByRange(currentSetupPool());
 }
 function renderSetupStats(){
-  if (['leaguelegends','legendslockin','ballondor'].includes(selectedPreset)) return;
+  if(['leaguelegends','legendslockin','ballondor'].includes(selectedPreset)||(selectedPreset==='leagueSimulation'&&selectedLeagueSimPool==='legends')) return;
   const pool = setupEligiblePool(); const stats = estimatePoolStats(pool); const box=$('setupStats');
   if (box) box.innerHTML = `<div class="summary-line"><span>Average 5-a-side score for this setup</span><span class="summary-badge">${stats.average}</span></div><div class="summary-line"><span>Maximum 5-a-side score for this setup</span><span class="summary-badge">${stats.maximum}</span></div>`;
   if ($('leagueSummary')) { const names=[...selectedLeagueKeys].map(k => LEAGUE_OPTIONS.find(o=>o.key===k)?.label).filter(Boolean).join(', '); $('leagueSummary').textContent = 'Selected: ' + names + ' • Active pool: ' + pool.length + ' players'; }
@@ -678,7 +713,7 @@ async function startSoloGame(){
   await ensurePlayersReady(); if(selectedPreset === 'worldcup') await loadWorldCupPlayers();
   const pool = setupEligiblePool(); if(!pool.length) throw new Error('No players available for this setup.');
   const name = selectedPreset === 'worldcup' ? 'World Cup 2026' : 'You';
-  state = baseState('draft', [name], false); state.challengePreset = selectedPreset; state.challengeName = MODE_LABELS[selectedPreset]; state.poolSnapshot = pool.map(p=>p.id); state.yearRange = selectedYearRange ? {start:selectedYearRange.start,end:selectedYearRange.end} : null; state.excludeDeclines = !!$('setupExcludeDeclines')?.checked; state.leagueSelection = leagueSnapshot(pool);
+  state = baseState('draft', [name], false); state.challengePreset = selectedPreset; state.challengeName = MODE_LABELS[selectedPreset]; state.leagueSimFormation=selectedPreset==='leagueSimulation'?selectedLeagueSimFormation:null; state.leagueSimShape=selectedPreset==='leagueSimulation'?leagueSimulationShape():null; state.leagueSimPool=selectedPreset==='leagueSimulation'?selectedLeagueSimPool:null; state.leagueSimUsesLegends=selectedPreset==='leagueSimulation'&&selectedLeagueSimPool==='legends'; state.selectedLegendLeague=state.leagueSimUsesLegends?selectedLegendLeague:null; state.legendLeague=state.selectedLegendLeague; state.poolSnapshot = pool.map(p=>p.id); state.yearRange = (selectedPreset==='leagueSimulation'&&selectedLeagueSimPool==='legends')?null:selectedYearRange ? {start:selectedYearRange.start,end:selectedYearRange.end} : null; state.excludeDeclines = !!$('setupExcludeDeclines')?.checked; state.leagueSelection = leagueSnapshot(pool);
   recordStatsEvent('game_start', state.challengeName, { source:'solo_start', playerCount:1 });
   selectedGameMode = 'draft'; ratingsRevealed = false; currentCandidate = null; hideAllPanels(); show(els.gamePanel,true); if(els.resetBtn) els.resetBtn.style.display='';
   prepareGamePanel(); clearCandidate('Click Pick player to begin.'); renderGame();
@@ -759,6 +794,7 @@ function prepareGamePanel(){
   els.gamePanel?.classList.toggle('league-legends-active', ['leaguelegends','legendslockin'].includes(state?.challengePreset));
   els.gamePanel?.classList.toggle('ballondor-active', state?.challengePreset==='ballondor');
   els.gamePanel?.classList.toggle('legends-lock-in-active', state?.challengePreset==='legendslockin');
+  els.gamePanel?.classList.toggle('league-simulation-draft-active', state?.challengePreset==='leagueSimulation');
   if(els.pickBtn) els.pickBtn.textContent = ['leaguelegends','ballondor'].includes(state?.challengePreset) ? 'Randomise player' : 'Pick player';
   const isBid = state?.gameMode === 'bid';
   show(els.draftControls, !isBid);
@@ -778,6 +814,7 @@ function prepareGamePanel(){
 }
 
 function activePool(){
+  if(state?.challengePreset==='leagueSimulation'&&state.leagueSimUsesLegends) return legends.filter(p=>p.league===state.selectedLegendLeague);
   if (state?.challengePreset === 'ballondor') return ballonDorPlayers.filter(p=>p.naturalMainPosition!=='GK');
   if (['leaguelegends','legendslockin'].includes(state?.challengePreset)) return legends.filter(p=>p.league===state.selectedLegendLeague);
   let pool = state?.challengePreset === 'worldcup' ? worldCupPlayers : players;
@@ -792,14 +829,14 @@ function activePool(){
 function currentUser(){ if(!state?.users?.length) return null; const idx=clamp(Number(state.currentUserIndex||0),0,state.users.length-1); state.currentUserIndex=idx; return state.users[idx]; }
 function getNeededPositions(user=currentUser()){
   const counts={GK:0,DEF:0,MID:0,FWD:0}; (user?.team||[]).forEach(p=>{ const r=p.selectedRole||p.mainPosition; if(counts[r]!==undefined) counts[r]++; });
-  const shape=state?.challengePreset==='ballondor'?['DEF','MID','MID','FWD','FWD']:state?.challengePreset==='legendslockin'?(state.lockInShape || LOCK_IN_FORMATIONS.balanced.shape):TEAM_SHAPE;
+  const shape=state?.challengePreset==='ballondor'?['DEF','MID','MID','FWD','FWD']:state?.challengePreset==='legendslockin'?(state.lockInShape || LOCK_IN_FORMATIONS.balanced.shape):state?.challengePreset==='leagueSimulation'?(state.leagueSimShape||TEAM_SHAPE):TEAM_SHAPE;
   const needed=[]; shape.forEach(pos=>{ if(counts[pos]>0) counts[pos]--; else needed.push(pos); }); return needed;
 }
 function isGameComplete(){ return !!state && state.users.every(u=>getNeededPositions(u).length===0); }
 function moveToNextUser(){ for(let i=1;i<=state.userCount;i++){ const next=(state.currentUserIndex+i)%state.userCount; if(getNeededPositions(state.users[next]).length){ state.currentUserIndex=next; return; } } }
 function candidatePoolForUser(user=currentUser()){
   const needs=getNeededPositions(user), accepted=asSet(state.acceptedPlayerNames), declined=asSet(user?.declinedNames);
-  if(['leaguelegends','ballondor'].includes(state.challengePreset)){
+  if(['leaguelegends','ballondor'].includes(state.challengePreset)||(state.challengePreset==='leagueSimulation'&&state.leagueSimUsesLegends)){
     if(state.challengePreset==='ballondor') return activePool().filter(p=>!accepted.has(playerKey(p))&&!declined.has(playerKey(p))&&p.naturalMainPosition!=='GK');
     const onlyGk = needs.length===1 && needs[0]==='GK'; const gkDone=!needs.includes('GK');
     return activePool().filter(p=>!accepted.has(playerKey(p)) && !declined.has(playerKey(p)) && (onlyGk ? p.naturalMainPosition==='GK' : gkDone ? p.naturalMainPosition!=='GK' : true));
@@ -816,7 +853,7 @@ async function pickRandomPlayer(){
 }
 function renderCandidate(p){
   if(!els.candidateCard) return; els.candidateCard.classList.remove('blank');
-  const legend = ['leaguelegends','ballondor'].includes(state?.challengePreset);
+  const legend=['leaguelegends','ballondor'].includes(state?.challengePreset)||(state?.challengePreset==='leagueSimulation'&&state?.leagueSimUsesLegends);
   const naturalLabel = legend ? (p.naturalPosition || p.position || roleLabel(p.naturalMainPosition)) : '';
   if(state?.challengePreset==='ballondor'){
     const selected = p.legendRole ? `Selected: ${roleLabel(p.legendRole)}` : 'Choose a position on the pitch';
@@ -836,12 +873,12 @@ async function acceptPlayer(){
   if(!Array.isArray(user.team)) user.team=[];
   if(!(state.acceptedPlayerNames instanceof Set)) state.acceptedPlayerNames=asSet(state.acceptedPlayerNames);
   let picked={...currentCandidate};
-  if(['leaguelegends','ballondor'].includes(state.challengePreset)){
+  if(['leaguelegends','ballondor'].includes(state.challengePreset)||(state.challengePreset==='leagueSimulation'&&state.leagueSimUsesLegends)){
     if(!picked.legendRole){ setMessage('Choose an empty pitch slot first.'); return; }
     picked = adjustLegend(picked, picked.legendRole);
   }
   user.team.push(picked);
-  state.acceptedPlayerNames.add(['leaguelegends','ballondor'].includes(state.challengePreset)?playerKey(picked):picked.player);
+  state.acceptedPlayerNames.add((['leaguelegends','ballondor'].includes(state.challengePreset)||(state.challengePreset==='leagueSimulation'&&state.leagueSimUsesLegends))?playerKey(picked):picked.player);
   state.history = Array.isArray(state.history) ? state.history : [];
   state.history.push({user:user.name,decision:'ACCEPT',player:picked});
   currentCandidate=null;
@@ -874,15 +911,16 @@ async function declinePlayer(){
 
 function multiplierForLegend(p, role){ if(p.naturalMainPosition==='GK') return role==='GK'?1:0; if(role==='GK') return 0; return Number(p.multipliers?.[role] ?? (role==='FWD'?p.multipliers?.ST:undefined) ?? 0.75); }
 function adjustLegend(p, role){ const base=Number(p.baseRating || p.rating || 0), mult=multiplierForLegend(p, role), rating=Math.round(base*mult); return {...p, selectedRole:role, selectedRoleLabel:roleLabel(role), naturalPosition:(p.naturalPosition || p.position || roleLabel(p.naturalMainPosition)), mainPosition:role, rating, adjustedRating:rating, positionMultiplier:mult}; }
-function completeGame(){ currentCandidate=null; clearCandidate('Game complete. Reveal ratings to see the winner.'); if(els.revealBtn){ els.revealBtn.classList.remove('hidden'); els.revealBtn.disabled=false; } updateButtons(); }
+function completeGame(){ if(state?.challengePreset==='leagueSimulation'){ currentCandidate=null; clearCandidate('Draft complete. Continue to the League Simulation.'); renderLeagueSimulationReady(); return; } currentCandidate=null; clearCandidate('Game complete. Reveal ratings to see the winner.'); if(els.revealBtn){ els.revealBtn.classList.remove('hidden'); els.revealBtn.disabled=false; } updateButtons(); }
 function updateButtons(){
   if(!state) return; const complete=isGameComplete(); const canAct=!online.enabled || currentPlayerCanAct();
   if(els.pickBtn) els.pickBtn.disabled = !canAct || !!currentCandidate || complete;
-  if(els.acceptBtn) els.acceptBtn.disabled = !canAct || !currentCandidate || (['leaguelegends','ballondor'].includes(state.challengePreset) && !currentCandidate.legendRole);
+  if(els.acceptBtn) els.acceptBtn.disabled = !canAct || !currentCandidate || ((['leaguelegends','ballondor'].includes(state.challengePreset)||(state.challengePreset==='leagueSimulation'&&state.leagueSimUsesLegends))&&!currentCandidate.legendRole);
   if(els.declineBtn) els.declineBtn.disabled = !canAct || !currentCandidate || (currentUser()?.declines||0)>=DECLINES_ALLOWED;
-  if(els.revealBtn){ els.revealBtn.classList.toggle('hidden', !complete || ratingsRevealed); els.revealBtn.disabled = !complete || ratingsRevealed; }
+  if(els.revealBtn){ els.revealBtn.classList.toggle('hidden', state?.challengePreset==='leagueSimulation' || !complete || ratingsRevealed); els.revealBtn.disabled = !complete || ratingsRevealed; }
 }
 function buildSlots(user){
+  if(state?.challengePreset==='leagueSimulation'){const shape=state.leagueSimShape||TEAM_SHAPE,used=new Set();return shape.map(role=>{const ix=(user.team||[]).findIndex((p,i)=>!used.has(i)&&(p.selectedRole||p.mainPosition)===role);if(ix>=0)used.add(ix);return {label:roleLabel(role),player:ix>=0?user.team[ix]:null,role};});}
   if(state?.challengePreset==='legendslockin'){
     const shape=state.lockInShape || LOCK_IN_FORMATIONS.balanced.shape;
     const lockedBySlot=new Map((user.team||[]).map(player=>[Number(player.lockSlot),player]));
@@ -902,6 +940,7 @@ function formationSlotClasses(shape){
 }
 function slotClass(i){
   if(state?.challengePreset==='ballondor') return ['gk','def','mid1','mid2','fwd','fwd2'][i];
+  if(state?.challengePreset==='leagueSimulation') return formationSlotClasses(state.leagueSimShape||TEAM_SHAPE)[i];
   if(state?.challengePreset==='legendslockin') return formationSlotClasses(state.lockInShape || LOCK_IN_FORMATIONS.balanced.shape)[i];
   return ['gk','def','mid1','mid2','fwd'][i];
 }
@@ -967,13 +1006,14 @@ function renderPoolNote(){
   else if(state.challengePreset==='league') note.textContent='Active player pool: ' + (state.leagueSelection?.labels||[]).join(', ');
   else if(state.challengePreset==='worldcup') note.textContent='Active player pool: World Cup 2026';
   else if(state.challengePreset==='ballondor') note.textContent="Active player pool: Ballon d'Or winners";
+  else if(state.challengePreset==='leagueSimulation') note.textContent='Active player pool: Standard players for ' + (state.yearRange ? state.yearRange.start + ' - ' + state.yearRange.end : 'all years');
   else if(state.yearRange) note.textContent='Active player pool: ' + state.yearRange.start + ' - ' + state.yearRange.end;
   else note.textContent='Active player pool: All eligible players';
 }
 function renderTeams(){
   if(!els.teamsContainer || !state) return;
   if(state.challengePreset==='legendslockin') return renderLockInTeam(); if(online.enabled) els.teamsContainer.classList.add('teams-scroll'); else els.teamsContainer.classList.remove('teams-scroll');
-  els.teamsContainer.innerHTML = state.users.map((u,ix)=>{ const total=(u.team||[]).reduce((sum,p)=>sum+Number(p.rating||0),0), needs=getNeededPositions(u).map(roleLabel).join(', '), displayName=(u.name==='You'?'':u.name); return `<article class="team-card"><div class="team-top-row"><div>${displayName?`<h3>${esc(displayName)}</h3>`:''}<div class="team-meta">${needs?'Positions Remaining: '+needs:'Complete'}</div></div><div class="score">${ratingsRevealed?total:'Score Hidden'}</div></div>${renderPitch(buildSlots(u), ['leaguelegends','ballondor'].includes(state.challengePreset) && ix===0)}<div class="score">${state.gameMode==='draft'?'Declines used: '+(u.declines||0)+'/'+DECLINES_ALLOWED:'Skips used: '+(u.bidSkips||0)+'/'+BID_SKIPS_ALLOWED}</div></article>`; }).join('');
+  els.teamsContainer.innerHTML = state.users.map((u,ix)=>{ const total=(u.team||[]).reduce((sum,p)=>sum+Number(p.rating||0),0), needs=getNeededPositions(u).map(roleLabel).join(', '), displayName=(u.name==='You'?'':u.name); return `<article class="team-card"><div class="team-top-row"><div>${displayName?`<h3>${esc(displayName)}</h3>`:''}<div class="team-meta">${needs?'Positions Remaining: '+needs:'Complete'}</div></div><div class="score">${ratingsRevealed?total:'Score Hidden'}</div></div>${renderPitch(buildSlots(u),(['leaguelegends','ballondor'].includes(state.challengePreset)||(state.challengePreset==='leagueSimulation'&&state.leagueSimUsesLegends))&&ix===0)}<div class="score">${state.gameMode==='draft'?'Declines used: '+(u.declines||0)+'/'+DECLINES_ALLOWED:'Skips used: '+(u.bidSkips||0)+'/'+BID_SKIPS_ALLOWED}</div></article>`; }).join('');
   els.teamsContainer.querySelectorAll('[data-place-role]').forEach(btn=>btn.addEventListener('click',()=>{ if(currentCandidate){ currentCandidate.legendRole=btn.dataset.placeRole; renderCandidate(currentCandidate); renderGame(); } }));
 }
 function renderLockInTeam(){
@@ -1852,13 +1892,14 @@ const LB_TABS = [
   {key:'solo', label:'Solo Mode', modes:[MODE_LABELS.solo,MODE_LABELS.ultimate,MODE_LABELS.easy,MODE_LABELS.league,MODE_LABELS.worldcup], subs:[['all','All'],[MODE_LABELS.solo,'Standard Solo'],[MODE_LABELS.ultimate,'Ultimate Solo'],[MODE_LABELS.easy,'Easy Solo'],[MODE_LABELS.league,'League Challenge'],[MODE_LABELS.worldcup,'World Cup 2026']]},
   {key:'online', label:'Online Battles', modes:[MODE_LABELS.onlineDraft,MODE_LABELS.onlineBlind,MODE_LABELS.onlineLive], subs:[['all','All'],[MODE_LABELS.onlineDraft,'Online Ultimate Draft'],[MODE_LABELS.onlineBlind,'Online Blind Bidding'],[MODE_LABELS.onlineLive,'Online Live Auction']]},
   {key:'legends', label:'League Legends', modes:[MODE_LABELS.leaguelegends,MODE_LABELS.legendslockin], subs:[['all','All'],[MODE_LABELS.leaguelegends,'Original'],[MODE_LABELS.legendslockin,'Legends Lock-In']]},
+  {key:'leagueSimulation', label:'League Simulation', modes:[MODE_LABELS.leagueSimulation], subs:[['normal','Normal Player Pool'],['legends','League Legends Player Pool']]},
   {key:'playerSim', label:'Player Simulation', modes:[MODE_LABELS.playerSim], subs:[['all','All'],['GK','GK'],['DEF','DEF'],['MID','MID'],['ST','ST']]},
   {key:'monthly', label:'Monthly Challenges', modes:[MODE_LABELS.worldcup,MODE_LABELS.ballondor], subs:[[MODE_LABELS.worldcup,'World Cup 2026'],[MODE_LABELS.ballondor,"Ballon d'Or Winners"]]}
 ];
 let lbMain='solo', lbSub='all';
-async function showLeaderboard(){ injectStyles(); document.body.classList.remove('ps-active'); if(els.draftControls) els.draftControls.style.removeProperty('display'); setMessage(''); const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove(); hideAllPanels(); show(els.leaderboardPanel,true); if(els.resetBtn) els.resetBtn.style.display=''; renderLeaderboardShell(); await renderLeaderboard(); }
+async function showLeaderboard(){ injectStyles(); document.body.classList.remove('ps-active','league-sim-active'); if(els.draftControls) els.draftControls.style.removeProperty('display'); setMessage(''); const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove(); hideAllPanels(); show(els.leaderboardPanel,true); if(els.resetBtn) els.resetBtn.style.display=''; renderLeaderboardShell(); await renderLeaderboard(); }
 function renderLeaderboardShell(){
-  const tabs=document.querySelector('#leaderboardPanel .leaderboard-tabs'); if(tabs){ tabs.classList.add('leaderboard-main-tabs-v55'); tabs.innerHTML=LB_TABS.map(t=>`<button type="button" class="leaderboard-tab ${lbMain===t.key?'active':''}" data-lb-main="${t.key}">${esc(t.label)}</button>`).join(''); tabs.querySelectorAll('[data-lb-main]').forEach(b=>b.addEventListener('click',async()=>{lbMain=b.dataset.lbMain; lbSub='all'; renderLeaderboardShell(); await renderLeaderboard();})); }
+  const tabs=document.querySelector('#leaderboardPanel .leaderboard-tabs'); if(tabs){ tabs.classList.add('leaderboard-main-tabs-v55'); tabs.innerHTML=LB_TABS.map(t=>`<button type="button" class="leaderboard-tab ${lbMain===t.key?'active':''}" data-lb-main="${t.key}">${esc(t.label)}</button>`).join(''); tabs.querySelectorAll('[data-lb-main]').forEach(b=>b.addEventListener('click',async()=>{lbMain=b.dataset.lbMain; lbSub=lbMain==='leagueSimulation'?'normal':'all'; renderLeaderboardShell(); await renderLeaderboard();})); }
   const sub=$('soloLeaderboardSubTabs'); if(sub){ const tab=LB_TABS.find(t=>t.key===lbMain); sub.className='leaderboard-tabs leaderboard-subtabs-v55'; sub.innerHTML=tab.subs.map(s=>`<button type="button" class="leaderboard-tab ${lbSub===s[0]?'active':''}" data-lb-sub="${esc(s[0])}">${esc(s[1])}</button>`).join(''); sub.querySelectorAll('[data-lb-sub]').forEach(b=>b.addEventListener('click',async()=>{lbSub=b.dataset.lbSub; renderLeaderboardShell(); await renderLeaderboard();})); }
 }
 async function renderLeaderboard(){
@@ -1872,11 +1913,12 @@ async function renderLeaderboard(){
     entries=entries.filter(e=>tab.modes.includes(e.gameMode));
     if(lbSub!=='all'){
       if(lbMain==='playerSim') entries=entries.filter(e=>(e.careerStats?.position||'')===lbSub);
+      else if(lbMain==='leagueSimulation') entries=entries.filter(e=>(e.leagueSimPool||'normal')===lbSub);
       else entries=entries.filter(e=>e.gameMode===lbSub);
     }
     entries=entries.sort((a,b)=>b.score-a.score || Number(b.timestamp||0)-Number(a.timestamp||0)).slice(0,50);
     if(!entries.length){ list.innerHTML='<div class="leaderboard-empty">No scores submitted yet.</div>'; return; }
-    list.innerHTML=entries.map((e,i)=>lbMain==='playerSim'?playerSimLeaderboardRow(e,i):normalLeaderboardRow(e,i)).join('');
+    list.innerHTML=entries.map((e,i)=>lbMain==='playerSim'?playerSimLeaderboardRow(e,i):lbMain==='leagueSimulation'?leagueSimulationLeaderboardRow(e,i):normalLeaderboardRow(e,i)).join('');
   }catch(e){ list.innerHTML='<div class="leaderboard-error">Could not load leaderboard. '+esc(e.message||e)+'</div>'; }
 }
 
@@ -1964,6 +2006,17 @@ function normalLeaderboardRow(e,i){
   const details = [parsed.years, leagueLine].filter(Boolean).map(line=>`<small class="leaderboard-year-line leaderboard-league-line">${esc(line)}</small>`).join('');
   const team = (e.team||[]).map(p=>`<span class="leaderboard-player-chip-v78"><span class="lb-chip-pos">${esc(p.position||'')}</span><span class="lb-chip-name">${esc(p.name||p.player||'')}</span></span>`).join('');
   return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${i+1}</span><span class="leaderboard-name"><span class="leaderboard-name-main">${esc(parsed.name)}</span>${details}</span><span class="leaderboard-mode">${esc(e.gameMode||'')}</span><span class="leaderboard-score">${e.score}</span>${team?`<span class="leaderboard-team-v78"><span class="lb-team-label">Team:</span> ${team}</span>`:''}</div>`;
+}
+
+
+function leagueSimulationLeaderboardRow(e,i){
+  const s=e.leagueStats||{};
+  const isLegendsPool=(e.leagueSimPool||'normal')==='legends';
+  const team=(e.team||[]).map(player=>{
+    const year=!isLegendsPool&&player.year?`<span class="lb-chip-year">${esc(player.year)}</span>`:'';
+    return `<span class="leaderboard-player-chip-v78"><span class="lb-chip-pos">${esc(player.position||'')}</span><span class="lb-chip-name">${esc(player.name||'')}</span>${year}</span>`;
+  }).join('');
+  return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${i+1}</span><span class="leaderboard-name"><span class="leaderboard-name-main">${esc(e.username||'Player')}</span><small class="leaderboard-year-line">${esc(e.teamName||'Unnamed team')} • ${s.position||'-'}/20 • ${s.wins||0}W ${s.draws||0}D ${s.losses||0}L • GD ${Number(s.gd||0)>=0?'+':''}${s.gd||0}</small></span><span class="leaderboard-mode">League Simulation</span><span class="leaderboard-score">${e.score}</span>${team?`<span class="leaderboard-team-v78"><span class="lb-team-label">Team:</span> ${team}</span>`:''}</div>`;
 }
 
 function splitLeaderboardNameAndYears(entry){
@@ -2262,6 +2315,410 @@ async function psSubmitScore(sc,pl){ if(playerSimSubmitted)return; try{ await re
 
 
 
+
+// ---------- League Simulation ----------
+const LEAGUE_SIM_TEAM_NAMES = ['Atlas Athletic','Blue City','Capital Rovers','Crown United','Dockside FC','Emerald Town','Forge Athletic','Harbour City','Kingsport','Lions United','Metro Stars','Northbridge','Olympic Borough','Phoenix FC','Racing Vale','Rivergate','Royal Albion','Sporting Union','Titan City','Victoria Five','Westfield','Wolves Athletic','Zenith FC'];
+function leagueSimPanel(){ let p=$('leagueSimulationPanel'); if(!p){p=document.createElement('section');p.id='leagueSimulationPanel';p.className='league-sim-panel';(document.querySelector('.app-shell')||document.body).appendChild(p);} show(p,true); return p; }
+function leagueSimStrength(team){
+  const by={GK:[],DEF:[],MID:[],FWD:[]}; team.forEach(p=>(by[p.selectedRole||p.mainPosition]||by.MID).push(Number(p.rating||70)));
+  const avg=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:68;
+  const gk=avg(by.GK),def=avg(by.DEF),mid=avg(by.MID),fwd=avg(by.FWD);
+  return {gk,def,mid,fwd,attack:fwd*.47+mid*.39+def*.08+gk*.06,defence:gk*.45+def*.38+mid*.13+fwd*.04,overall:(gk+def+mid*2+fwd)/5};
+}
+function leagueSimPositionPool(pool, role){
+  const bestByName=new Map();
+  pool.filter(player=>player.mainPosition===role).forEach(player=>{
+    const key=playerKey(player);
+    if(!key) return;
+    const existing=bestByName.get(key);
+    if(!existing || Number(player.rating||0)>Number(existing.rating||0)) bestByName.set(key,player);
+  });
+  return shuffle([...bestByName.values()]);
+}
+function createLeagueSimPicker(pool, userPlayers){
+  const blocked=new Set(userPlayers.map(playerKey));
+  const queues={};
+  ['GK','DEF','MID','FWD'].forEach(role=>{
+    const unique=leagueSimPositionPool(pool,role);
+    const unused=unique.filter(player=>!blocked.has(playerKey(player)));
+    const fallback=unique.filter(player=>blocked.has(playerKey(player)));
+    queues[role]={unique:unused,all:unique.length?unique:fallback,cursor:0};
+  });
+  return role=>{
+    const queue=queues[role];
+    if(!queue || !queue.all.length) throw new Error('No '+roleLabel(role)+' players are available in the selected year range. Please widen the year range.');
+    let chosen;
+    if(queue.cursor<queue.unique.length){
+      chosen=queue.unique[queue.cursor];
+    }else{
+      // Only recycle after every unique player in this position has been used once.
+      const repeatIndex=(queue.cursor-queue.unique.length)%queue.all.length;
+      chosen=queue.all[repeatIndex];
+    }
+    queue.cursor++;
+    return {...chosen,selectedRole:role};
+  };
+}
+function leagueSimTeamFromPool(pickPlayer,shape=TEAM_SHAPE){return shape.map(role=>pickPlayer(role));}
+function randomLeagueSimFormation(){
+  // Every opposition club independently receives Defensive, Balanced or Attacking.
+  // This applies to both the normal database and League Legends pools.
+  return pick(Object.values(LOCK_IN_FORMATIONS)).shape.slice();
+}
+function poisson(lambda){ let limit=Math.exp(-lambda),prod=1,count=0; do{count++;prod*=Math.random();}while(prod>limit&&count<18);return count-1; }
+function leagueSimScore(a,b){
+  const A=leagueSimStrength(a.players),B=leagueSimStrength(b.players);
+  const baseA=3.45+(A.attack-B.defence)*.105+(A.overall-B.overall)*.035;
+  const baseB=3.45+(B.attack-A.defence)*.105+(B.overall-A.overall)*.035;
+  return [clamp(poisson(clamp(baseA,1.3,7.8)),0,12),clamp(poisson(clamp(baseB,1.3,7.8)),0,12)];
+}
+function leagueSimSchedule(teams){
+  const fixed=teams[0], rotating=teams.slice(1), rounds=[];
+  for(let r=0;r<teams.length-1;r++){const arrangement=[fixed,...rotating];const fixtures=[];for(let i=0;i<teams.length/2;i++){let home=arrangement[i],away=arrangement[teams.length-1-i];if((r+i)%2) [home,away]=[away,home];fixtures.push({home,away});}rounds.push(fixtures);rotating.unshift(rotating.pop());}
+  return rounds;
+}
+function renderLeagueSimulationReady(){
+  if(!state) return; hideAllPanels(); document.body.classList.add('league-sim-active'); const p=leagueSimPanel();
+  const user=currentUser(); p.innerHTML=`<div class="league-sim-card league-sim-ready"><div class="league-sim-ready-copy"><p class="eyebrow">Draft complete</p><h2>Your league campaign starts here</h2><p>Your five drafted players will face 19 randomly generated teams. Every opponent is built from the same selected year pool, and match results reflect attacking, midfield, defensive and goalkeeper strength.</p><div class="league-sim-name-row"><div><label for="leagueSimTeamName">Choose your team name</label><input id="leagueSimTeamName" type="text" maxlength="24" value="Ultimate Five"></div><button id="startLeagueSimulationBtn" class="btn btn-primary">Start League Simulation</button></div><p id="leagueSimStartMessage" class="message"></p></div>${leagueSimReadyPitch(state.leagueSimShape||TEAM_SHAPE)}</div>`;
+  $('startLeagueSimulationBtn')?.addEventListener('click',async()=>{try{await startLeagueSimulation();}catch(error){const message=$('leagueSimStartMessage');if(message)message.textContent=error.message||String(error);else setMessage(error.message||String(error));}});
+}
+async function startLeagueSimulation(){
+  if(leagueSimulationTimer) clearTimeout(leagueSimulationTimer);
+
+  const teamName = String($('leagueSimTeamName')?.value || 'Ultimate Five').trim().slice(0,24) || 'Ultimate Five';
+  const selectedPool = activePool();
+  const opponentNames = shuffle(LEAGUE_SIM_TEAM_NAMES.filter(name => name.toLowerCase() !== teamName.toLowerCase())).slice(0,19);
+  const userPlayers = currentUser().team.map((player,index) => ({ ...player, leagueSimOrder:index }));
+  const pickLeaguePlayer=createLeagueSimPicker(selectedPool,userPlayers);
+  const userShape=(state.leagueSimShape||TEAM_SHAPE).slice();
+
+  const teams = [
+    { id:'user', name:teamName, players:userPlayers, isUser:true },
+    ...opponentNames.map((name,index) => ({
+      id:'opponent-' + index,
+      name,
+      formation:randomLeagueSimFormation(), players:[],
+      isUser:false
+    }))
+  ];
+
+  teams.filter(team=>!team.isUser).forEach(team=>{team.players=leagueSimTeamFromPool(pickLeaguePlayer,team.formation).map((player,i)=>({...player,leagueSimOrder:i}));}); teams[0].formation=userShape.slice();
+  teams.forEach(team => Object.assign(team, { p:0, w:0, d:0, l:0, gf:0, ga:0, gd:0, pts:0 }));
+
+  state.leagueSimulation = {
+    teamName,
+    teams,
+    rounds:leagueSimSchedule(teams),
+    roundIndex:0,
+    results:[],
+    expandedTeamId:'',
+    selectedPoolLabel:state.leagueSimUsesLegends?`${state.selectedLegendLeague} League Legends`:state.yearRange?`${state.yearRange.start} - ${state.yearRange.end}`:'all available years', formation:userShape,poolType:state.leagueSimUsesLegends?'legends':'normal',
+    playerStats:userPlayers.map((player,index) => ({
+      name:player.player,
+      position:roleLabel(player.selectedRole || player.mainPosition),
+      club:player.club || '',
+      year:player.year || '',
+      rating:Number(player.rating || 0),
+      order:index,
+      goals:0,
+      assists:0,
+      cleanSheets:0,
+      yellow:0,
+      red:0,
+      apps:0
+    }))
+  };
+
+  recordStatsEvent('game_start', MODE_LABELS.leagueSimulation, { source:'league_simulation_start', playerCount:1 });
+  renderLeagueSimulationProgress();
+  leagueSimulationTimer = setTimeout(playNextLeagueRound, 900);
+}
+
+function leagueSimPickAttacker(team, excludedIndex=-1){
+  const weights = team.players.map((player,index) => {
+    if(index === excludedIndex) return 0;
+    const role = player.selectedRole || player.mainPosition;
+    return role === 'FWD' ? 5 : role === 'MID' ? 3.2 : role === 'DEF' ? 1.1 : 0.15;
+  });
+  let cursor = Math.random() * weights.reduce((sum,value) => sum + value, 0);
+  let index = 0;
+  while(index < weights.length - 1 && cursor > weights[index]) cursor -= weights[index++];
+  return { player:team.players[index], index };
+}
+
+function createLeagueSimMatchEvents(fixture){
+  const events = [];
+  [[fixture.home,fixture.hg],[fixture.away,fixture.ag]].forEach(([team,goalCount]) => {
+    for(let goal=0; goal<goalCount; goal++){
+      const scorer = leagueSimPickAttacker(team);
+      const assister = Math.random() < 0.72 ? leagueSimPickAttacker(team, scorer.index) : null;
+      events.push({
+        minute:rnd(1,90),
+        teamId:team.id,
+        teamName:team.name,
+        scorer:scorer.player?.player || 'Unknown scorer',
+        assist:assister?.player?.player || ''
+      });
+    }
+  });
+  return events.sort((a,b) => a.minute - b.minute);
+}
+
+function updateUserLeagueSimPlayerStats(oppositionGoals, events){
+  const stats = state.leagueSimulation.playerStats;
+  const userTeam = currentUser().team;
+
+  stats.forEach(player => player.apps++);
+  events.filter(event => event.teamId === 'user').forEach(event => {
+    const scorer = stats.find(player => player.name === event.scorer);
+    const assister = stats.find(player => player.name === event.assist);
+    if(scorer) scorer.goals++;
+    if(assister) assister.assists++;
+  });
+
+  if(oppositionGoals === 0){
+    stats.forEach((player,index) => {
+      const role = userTeam[index]?.selectedRole || userTeam[index]?.mainPosition;
+      if(role === 'GK' || role === 'DEF') player.cleanSheets++;
+    });
+  }
+
+  stats.forEach(player => {
+    if(Math.random() < 0.13) player.yellow++;
+    if(Math.random() < 0.012) player.red++;
+  });
+}
+
+function applyLeagueSimFixture(fixture){
+  const [homeGoals,awayGoals] = leagueSimScore(fixture.home, fixture.away);
+  fixture.hg = homeGoals;
+  fixture.ag = awayGoals;
+  fixture.homeLineup = fixture.home.players.map(player => ({ ...player }));
+  fixture.awayLineup = fixture.away.players.map(player => ({ ...player }));
+  fixture.events = createLeagueSimMatchEvents(fixture);
+
+  const home = fixture.home;
+  const away = fixture.away;
+  home.p++; away.p++;
+  home.gf += homeGoals; home.ga += awayGoals;
+  away.gf += awayGoals; away.ga += homeGoals;
+  home.gd = home.gf - home.ga;
+  away.gd = away.gf - away.ga;
+
+  if(homeGoals > awayGoals){ home.w++; away.l++; home.pts += 3; }
+  else if(homeGoals < awayGoals){ away.w++; home.l++; away.pts += 3; }
+  else { home.d++; away.d++; home.pts++; away.pts++; }
+
+  if(home.isUser) updateUserLeagueSimPlayerStats(awayGoals, fixture.events);
+  if(away.isUser) updateUserLeagueSimPlayerStats(homeGoals, fixture.events);
+  return fixture;
+}
+
+function renderLeagueSimulationProgress(){
+  const panel = leagueSimPanel();
+  panel.className = 'league-sim-panel';
+  panel.innerHTML = `<div class="league-sim-card league-sim-progress-card">
+    <div class="league-sim-progress-head">
+      <div>
+        <p class="eyebrow">League Simulation</p>
+        <h2 id="leagueSimRoundTitle">Match 1 of 19</h2>
+        <p class="muted">Opposition squads use the same ${esc(state.leagueSimulation.selectedPoolLabel)} player pool as your draft.</p>
+      </div>
+      <button id="skipLeagueSimulationBtn" class="btn btn-secondary">Simulate remaining matches</button>
+    </div>
+    <div id="leagueSimScoreboard" class="league-sim-scoreboard">
+      <div class="league-sim-fixture user-fixture league-sim-ready-fixture"><span class="home">${esc(state.leagueSimulation.teamName)}</span><span class="score">Ready</span><span>First opponent</span></div>
+    </div>
+  </div>`;
+  $('skipLeagueSimulationBtn')?.addEventListener('click', finishLeagueSimulationImmediately);
+}
+
+function playNextLeagueRound(){
+  const simulation = state.leagueSimulation;
+  if(!simulation || simulation.roundIndex >= simulation.rounds.length) return finishLeagueSimulation();
+
+  const roundNumber = simulation.roundIndex + 1;
+  const round = simulation.rounds[simulation.roundIndex].map(applyLeagueSimFixture);
+  simulation.results.push(round);
+  const userFixture = round.find(fixture => fixture.home.isUser || fixture.away.isUser);
+
+  if($('leagueSimRoundTitle')) $('leagueSimRoundTitle').textContent = `Match ${roundNumber} of 19`;
+  if($('leagueSimScoreboard') && userFixture){
+    $('leagueSimScoreboard').innerHTML = `<div class="league-sim-fixture user-fixture"><span class="home">${esc(userFixture.home.name)}</span><span class="score">${userFixture.hg} - ${userFixture.ag}</span><span>${esc(userFixture.away.name)}</span></div>`;
+  }
+
+  simulation.roundIndex++;
+  leagueSimulationTimer = setTimeout(playNextLeagueRound, 1100);
+}
+
+function finishLeagueSimulationImmediately(){
+  if(leagueSimulationTimer) clearTimeout(leagueSimulationTimer);
+  const simulation = state.leagueSimulation;
+  while(simulation.roundIndex < simulation.rounds.length){
+    simulation.results.push(simulation.rounds[simulation.roundIndex].map(applyLeagueSimFixture));
+    simulation.roundIndex++;
+  }
+  finishLeagueSimulation();
+}
+
+function leagueSimSorted(){
+  return state.leagueSimulation.teams.slice().sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf || a.name.localeCompare(b.name));
+}
+
+async function finishLeagueSimulation(){
+  if(leagueSimulationTimer) clearTimeout(leagueSimulationTimer);
+  leagueSimulationTimer = null;
+  const simulation = state.leagueSimulation;
+  const table = leagueSimSorted();
+  const userTeam = table.find(team => team.isUser);
+  simulation.position = table.indexOf(userTeam) + 1;
+  simulation.score = userTeam.pts;
+  ratingsRevealed = true;
+  renderLeagueSimulationResults();
+  await recordCompletedModeStats(MODE_LABELS.leagueSimulation, { source:'league_simulation_result', points:userTeam.pts, position:simulation.position, wins:userTeam.w });
+}
+
+function leagueSimRoleRank(value){
+  const role = value.position || roleLabel(value.selectedRole || value.mainPosition);
+  return ({ GK:0, DEF:1, MID:2, ST:3, FWD:3 })[role] ?? 9;
+}
+
+function orderedLeagueSimPlayers(players){
+  return players.slice().sort((a,b) => leagueSimRoleRank(a)-leagueSimRoleRank(b) || Number(a.order ?? a.leagueSimOrder ?? 0)-Number(b.order ?? b.leagueSimOrder ?? 0));
+}
+
+function leagueSimSquadHtml(team){
+  return `<div class="league-sim-squad-grid">${orderedLeagueSimPlayers(team.players).map(player => `<article class="league-sim-squad-player"><strong>${esc(roleLabel(player.selectedRole || player.mainPosition))} ${esc(player.player)}</strong><span>${esc(player.club || 'Club not listed')}</span><span>${esc(player.year || 'Year not listed')} • Rating ${Number(player.rating || 0)}</span></article>`).join('')}</div>`;
+}
+
+function leagueSimTableRows(table){
+  const expandedId = state.leagueSimulation.expandedTeamId;
+  return table.map((team,index) => `<tr class="${team.isUser ? 'user-row' : ''}">
+    <td>${index+1}</td>
+    <td><button type="button" class="league-sim-team-button" data-team-id="${esc(team.id)}" aria-expanded="${expandedId===team.id}">${esc(team.name)}<small>${expandedId===team.id ? 'Hide players' : 'View players'}</small></button></td>
+    <td>${team.p}</td><td>${team.w}</td><td>${team.d}</td><td>${team.l}</td><td>${team.gf}</td><td>${team.ga}</td><td>${team.gd}</td><td>${team.pts}</td>
+  </tr>${expandedId===team.id ? `<tr class="league-sim-squad-row"><td colspan="10">${leagueSimSquadHtml(team)}</td></tr>` : ''}`).join('');
+}
+
+function leagueSimLineupHtml(teamName, players){
+  return `<section class="league-sim-lineup"><h4>${esc(teamName)}</h4>${orderedLeagueSimPlayers(players).map(player => `<div class="league-sim-lineup-player"><strong>${esc(roleLabel(player.selectedRole || player.mainPosition))} ${esc(player.player)}</strong><span>${esc(player.club || 'Club not listed')} • ${esc(player.year || 'Year not listed')} • Rating ${Number(player.rating || 0)}</span></div>`).join('')}</section>`;
+}
+
+function leagueSimMatchHistoryHtml(){
+  const fixtures = state.leagueSimulation.results.flat().filter(fixture => fixture.home.isUser || fixture.away.isUser);
+  return `<section class="league-sim-match-history">
+    <div class="league-sim-section-heading"><div><p class="eyebrow">Full season</p><h3>Results, line-ups and scorers</h3></div><span>${fixtures.length} matches</span></div>
+    <div class="league-sim-match-list">${fixtures.map((fixture,index) => `<details class="league-sim-match-card">
+      <summary><span class="league-sim-match-number">${index+1}</span><span>${esc(fixture.home.name)}</span><span class="league-sim-match-score">${fixture.hg} - ${fixture.ag}</span><span>${esc(fixture.away.name)}</span></summary>
+      <div class="league-sim-match-body">
+        ${leagueSimLineupHtml(fixture.home.name, fixture.homeLineup)}
+        ${leagueSimLineupHtml(fixture.away.name, fixture.awayLineup)}
+        <div class="league-sim-goals"><strong>Goalscorers</strong>${fixture.events.length ? fixture.events.map(event => `<div><b>${event.minute}'</b><span><strong>${esc(event.scorer)}</strong> (${esc(event.teamName)})${event.assist ? ` • Assist: ${esc(event.assist)}` : ''}</span></div>`).join('') : '<div><span>No goals</span></div>'}</div>
+      </div>
+    </details>`).join('')}</div>
+  </section>`;
+}
+
+function renderLeagueSimulationResults(){
+  const panel = leagueSimPanel();
+  const simulation = state.leagueSimulation;
+  const table = leagueSimSorted();
+  const userTeam = table.find(team => team.isUser);
+  const playerStats = orderedLeagueSimPlayers(simulation.playerStats);
+
+  panel.innerHTML = `<div class="league-sim-card league-sim-results-card">
+    <div class="league-sim-result-hero">
+      <p class="eyebrow">Season complete</p>
+      <h2>${esc(simulation.teamName)} finish ${ordinalLeaguePosition(simulation.position)}</h2>
+      <span class="league-sim-position">${userTeam.pts} points from 19 matches</span>
+      <div class="league-sim-actions"><button id="leagueSimSubmit" class="btn btn-primary">Submit to leaderboard</button><button id="leagueSimShare" class="btn btn-secondary">Share picture</button><button id="leagueSimSave" class="btn btn-secondary">Save picture</button><button id="leagueSimRestart" class="btn btn-secondary">Restart</button></div>
+    </div>
+
+    <div class="league-sim-table-wrap"><table class="league-sim-table"><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>${leagueSimTableRows(table)}</tbody></table></div>
+
+    <div class="league-sim-stats-grid">
+      <section class="league-sim-stat-card league-sim-team-summary"><h3>Team stats</h3><div class="summary-lines"><div class="summary-line"><span>League position</span><strong>${simulation.position}/20</strong></div><div class="summary-line"><span>Record</span><strong>${userTeam.w}W ${userTeam.d}D ${userTeam.l}L</strong></div><div class="summary-line"><span>Goals</span><strong>${userTeam.gf} scored • ${userTeam.ga} conceded</strong></div><div class="summary-line"><span>Goal difference</span><strong>${userTeam.gd>=0?'+':''}${userTeam.gd}</strong></div></div></section>
+      <section class="league-sim-stat-card league-sim-player-summary"><h3>Player stats</h3><table class="league-sim-player-table"><thead><tr><th>Player</th><th>G</th><th>A</th><th>CS</th><th>YC</th><th>RC</th></tr></thead><tbody>${playerStats.map(player => `<tr><td><strong>${esc(player.position)} ${esc(player.name)}</strong><small>${esc(player.club || 'Club not listed')} • ${esc(player.year || 'Year not listed')} • Rating ${player.rating}</small></td><td>${player.goals}</td><td>${player.assists}</td><td>${player.cleanSheets}</td><td>${player.yellow}</td><td>${player.red}</td></tr>`).join('')}</tbody></table></section>
+    </div>
+
+    ${leagueSimMatchHistoryHtml()}
+  </div>`;
+
+  $('leagueSimSubmit')?.addEventListener('click', safe(submitLeagueSimulationScore));
+  $('leagueSimShare')?.addEventListener('click', safe(() => leagueSimPicture(true)));
+  $('leagueSimSave')?.addEventListener('click', safe(() => leagueSimPicture(false)));
+  $('leagueSimRestart')?.addEventListener('click', restartLeagueSimulationLobby);
+  panel.querySelectorAll('[data-team-id]').forEach(button => button.addEventListener('click', () => {
+    simulation.expandedTeamId = simulation.expandedTeamId === button.dataset.teamId ? '' : button.dataset.teamId;
+    renderLeagueSimulationResults();
+  }));
+}
+
+function restartLeagueSimulationLobby(){
+  if(leagueSimulationTimer) clearTimeout(leagueSimulationTimer);
+  leagueSimulationTimer = null;
+  state = null;
+  currentCandidate = null;
+  ratingsRevealed = false;
+  show($('leagueSimulationPanel'), false);
+  document.body.classList.remove('league-sim-active');
+  openSetup('leagueSimulation');
+}
+
+function ordinalLeaguePosition(number){
+  const mod = number % 100;
+  return number + (mod>=11 && mod<=13 ? 'th' : number%10===1 ? 'st' : number%10===2 ? 'nd' : number%10===3 ? 'rd' : 'th');
+}
+
+async function submitLeagueSimulationScore(){
+  const simulation = state.leagueSimulation;
+  if(simulation.submitted) return;
+  const username = getLeaderboardNameFromUser('');
+  if(username === null) return;
+  await ensureFirebase();
+  const userTeam = simulation.teams.find(team => team.isUser);
+  await firebase.database().ref('leaderboard').push().set({
+    username,
+    score:userTeam.pts,
+    gameMode:MODE_LABELS.leagueSimulation,
+    leagueSimPool:simulation.poolType||state.leagueSimPool||'normal',
+    legendLeague:(simulation.poolType==='legends'||state.leagueSimUsesLegends)?(state.selectedLegendLeague||state.legendLeague||''):'',
+    timestamp:Date.now(),
+    teamName:simulation.teamName,
+    leagueStats:{ position:simulation.position, wins:userTeam.w, draws:userTeam.d, losses:userTeam.l, gf:userTeam.gf, ga:userTeam.ga, gd:userTeam.gd },
+    team:currentUser().team.map(player => ({ name:player.player, position:roleLabel(player.selectedRole || player.mainPosition), club:player.club, year:player.year, rating:player.rating })),
+    playerStats:simulation.playerStats
+  });
+  simulation.submitted = true;
+  $('leagueSimSubmit').textContent = 'Submitted';
+  $('leagueSimSubmit').disabled = true;
+}
+
+async function createLeagueSimulationSvg(){
+  const simulation=state.leagueSimulation;
+  const logoData=await loadSummaryLogoDataUri();
+  const logo=logoData?`<image href="${logoData}" x="55" y="24" width="64" height="64" preserveAspectRatio="xMidYMid meet"/>`:fallbackLogoSvg(55,24,64);
+  const userTeam=simulation.teams.find(team=>team.isUser);
+  const stats=orderedLeagueSimPlayers(simulation.playerStats);
+  const x=58,y=390,w=1084,rowH=66;
+  const headers=[['POS',78,'start'],['PLAYER',155,'start'],['CLUB / YEAR / RATING',455,'start'],['G',795,'middle'],['A',860,'middle'],['CS',925,'middle'],['YC',995,'middle'],['RC',1070,'middle']].map(([label,hx,anchor])=>`<text x="${hx}" y="${y+28}" text-anchor="${anchor}" font-family="Arial" font-size="13" font-weight="900" fill="#fff">${label}</text>`).join('');
+  const rows=stats.map((player,index)=>{const ry=y+42+index*rowH;return `<g><rect x="${x}" y="${ry}" width="${w}" height="62" fill="${index%2?'#fff':'#f0fdf4'}" stroke="#bbf7d0"/><rect x="72" y="${ry+17}" width="60" height="28" rx="14" fill="#166534"/><text x="102" y="${ry+36}" text-anchor="middle" font-family="Arial" font-size="12" font-weight="900" fill="#fff">${svgText(player.position)}</text><text x="155" y="${ry+27}" font-family="Arial" font-size="17" font-weight="900" fill="#0f172a">${svgText(svgFit(player.name,27))}</text><text x="155" y="${ry+48}" font-family="Arial" font-size="12" fill="#64748b">Season totals</text><text x="455" y="${ry+27}" font-family="Arial" font-size="15" font-weight="800" fill="#0f172a">${svgText(svgFit(player.club||'Club not listed',25))}</text><text x="455" y="${ry+48}" font-family="Arial" font-size="12" fill="#64748b">${svgText(player.year||'Year not listed')} • Rating ${player.rating}</text><text x="795" y="${ry+38}" text-anchor="middle" font-family="Arial" font-size="16" font-weight="900">${player.goals}</text><text x="860" y="${ry+38}" text-anchor="middle" font-family="Arial" font-size="16" font-weight="900">${player.assists}</text><text x="925" y="${ry+38}" text-anchor="middle" font-family="Arial" font-size="16" font-weight="900">${player.cleanSheets}</text><text x="995" y="${ry+38}" text-anchor="middle" font-family="Arial" font-size="16" font-weight="900">${player.yellow}</text><text x="1070" y="${ry+38}" text-anchor="middle" font-family="Arial" font-size="16" font-weight="900">${player.red}</text></g>`;}).join('');
+  return `<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900"><defs><linearGradient id="bg" x1="0" x2="1"><stop stop-color="#071a33"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="1200" height="900" fill="url(#bg)"/>${logo}<text x="138" y="68" fill="#fff" font-family="Arial" font-size="40" font-weight="900">Ultimate 5-a-side Draft</text><rect x="138" y="82" width="310" height="34" rx="17" fill="#071426"/><text x="156" y="106" fill="#bfdbfe" font-family="Arial" font-size="19" font-weight="900">League Simulation</text><text x="1140" y="69" text-anchor="end" fill="#fbbf24" font-family="Arial" font-size="24" font-weight="900">${svgText(simulation.teamName)} • ${ordinalLeaguePosition(simulation.position)}</text><rect x="40" y="148" width="1120" height="710" rx="30" fill="#f8fafc"/><rect x="58" y="178" width="1084" height="150" rx="22" fill="#dbeafe" stroke="#60a5fa" stroke-width="3"/><text x="84" y="216" font-family="Arial" font-size="15" font-weight="900" fill="#1d4ed8">TEAM STATS</text><text x="84" y="259" font-family="Arial" font-size="27" font-weight="900" fill="#0f172a">Position ${simulation.position}/20 • ${userTeam.pts} points • ${userTeam.w}W ${userTeam.d}D ${userTeam.l}L</text><text x="84" y="297" font-family="Arial" font-size="19" fill="#334155">${userTeam.gf} scored • ${userTeam.ga} conceded • Goal difference ${userTeam.gd>=0?'+':''}${userTeam.gd}</text><text x="58" y="368" font-family="Arial" font-size="20" font-weight="900" fill="#166534">PLAYER STATS</text><rect x="${x}" y="${y}" width="${w}" height="42" rx="12" fill="#0f172a"/>${headers}${rows}<text x="40" y="886" fill="#dbeafe" font-family="Arial" font-size="17">Generated from Ultimate 5-a-side Draft</text></svg>`;
+}
+
+async function leagueSimPicture(share){
+  const svg = summarySvgBlob(await createLeagueSimulationSvg());
+  let file;
+  try{
+    const png = await svgBlobToPngBlob(svg);
+    file = new File([png], 'league-simulation-results.png', { type:'image/png' });
+  }catch(error){
+    file = new File([svg], 'league-simulation-results.svg', { type:'image/svg+xml' });
+  }
+  if(share && navigator.canShare && navigator.canShare({ files:[file] })) await navigator.share({ files:[file], title:'League Simulation result' });
+  else downloadBlob(file, file.name);
+}
+
 // ---------- Direct game-mode links from content pages ----------
 function getRequestedModeFromQuery(){ try { const params = new URLSearchParams(location.search); return String(params.get('mode') || params.get('play') || '').trim().toLowerCase(); } catch (error) { return ''; } }
 function focusOnlineRoomEntry(){ renderHome(); setTimeout(() => { const field = $('onlineRoomName'); const panel = $('gameEntryPanel'); if (panel) panel.scrollIntoView({ behavior:'smooth', block:'start' }); if (field) field.focus(); }, 120); }
@@ -2271,7 +2728,7 @@ async function handleDirectModeRequest(){
   const requested = getRequestedModeFromQuery();
   if (!requested) return false;
   if (new URLSearchParams(location.search).get('room')) return false;
-  const aliases = { 'leaderboard':'leaderboard','leaderboards':'leaderboard','solo':'solo','standard':'solo','standard-solo':'solo','ultimate':'ultimate','ultimate-solo':'ultimate','easy':'easy','easy-solo':'easy','league':'league','league-challenge':'league','monthly':'monthly','worldcup':'worldcup','world-cup':'worldcup','ballondor':'ballondor','ballon-dor':'ballondor','leaguelegends':'leaguelegends','league-legends':'leaguelegends','legendslockin':'legendslockin','legends-lock-in':'legendslockin','player-simulation':'playerSim','playersimulation':'playerSim','player-sim':'playerSim','online':'online','online-create':'onlineCreate','online-room':'onlineCreate','online-battles':'onlineCreate' };
+  const aliases = { 'leaderboard':'leaderboard','leaderboards':'leaderboard','solo':'solo','standard':'solo','standard-solo':'solo','ultimate':'ultimate','ultimate-solo':'ultimate','easy':'easy','easy-solo':'easy','league':'league','league-challenge':'league','monthly':'monthly','worldcup':'worldcup','world-cup':'worldcup','ballondor':'ballondor','ballon-dor':'ballondor','leaguelegends':'leaguelegends','league-legends':'leaguelegends','legendslockin':'legendslockin','legends-lock-in':'legendslockin','player-simulation':'playerSim','playersimulation':'playerSim','player-sim':'playerSim','league-simulation':'leagueSimulation','leaguesimulation':'leagueSimulation','league-sim':'leagueSimulation','online':'online','online-create':'onlineCreate','online-room':'onlineCreate','online-battles':'onlineCreate' };
   const mode = aliases[requested] || requested;
   try {
     if (mode === 'leaderboard') { window.location.href = 'leaderboard.html'; return true; }
@@ -2280,7 +2737,7 @@ async function handleDirectModeRequest(){
     if (mode === 'online') { focusOnlineRoomEntry(); return true; }
     if (mode === 'playerSim') { openPlayerSimulation(); return true; }
     if (mode === 'monthly') { showMonthlyMenu(); return true; }
-    if (['solo','ultimate','easy','league','worldcup','ballondor','leaguelegends','legendslockin'].includes(mode)) { await openSetup(mode); return true; }
+    if (['solo','ultimate','easy','league','worldcup','ballondor','leaguelegends','legendslockin','leagueSimulation'].includes(mode)) { await openSetup(mode); return true; }
   } catch (error) { console.error(error); setMessage(error.message || String(error)); }
   return false;
 }
@@ -2307,7 +2764,7 @@ async function restartToModeLobby(){
   return openSetup(selectedPreset || 'solo');
 }
 
-function resetGame(){ if(modeBackTarget){ const target = modeBackTarget; modeBackTarget = ''; window.location.href = target; return; } try{ if(online.ref&&online.subscribed&&typeof online.ref.off==='function') online.ref.off(); }catch(e){console.warn(e)} online.enabled=false; online.isHost=false; online.roomId=null; online.ref=null; online.myName=''; online.subscribed=false; document.body.classList.remove('ps-active'); if(els.draftControls) els.draftControls.style.removeProperty('display'); setMessage(''); const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove(); if(location.search){ try{history.replaceState({},document.title,location.origin+location.pathname)}catch(e){} } if(els.resetBtn) els.resetBtn.textContent='Back'; renderHome(); }
+function resetGame(){ if(modeBackTarget){ const target = modeBackTarget; modeBackTarget = ''; window.location.href = target; return; } try{ if(online.ref&&online.subscribed&&typeof online.ref.off==='function') online.ref.off(); }catch(e){console.warn(e)} online.enabled=false; online.isHost=false; online.roomId=null; online.ref=null; online.myName=''; online.subscribed=false; document.body.classList.remove('ps-active','league-sim-active'); if(els.draftControls) els.draftControls.style.removeProperty('display'); setMessage(''); const oldTurn=$('turnLockNote'); if(oldTurn) oldTurn.remove(); if(location.search){ try{history.replaceState({},document.title,location.origin+location.pathname)}catch(e){} } if(els.resetBtn) els.resetBtn.textContent='Back'; renderHome(); }
 function wireEvents(){
   els.resetBtn?.addEventListener('click', resetGame); els.pickBtn?.addEventListener('click', safe(pickRandomPlayer)); els.acceptBtn?.addEventListener('click', safe(acceptPlayer)); els.declineBtn?.addEventListener('click', safe(declinePlayer)); els.revealBtn?.addEventListener('click', safe(revealScores)); els.bidPickBtn?.addEventListener('click', safe(bidRandomPlayer)); els.awardBidBtn?.addEventListener('click', safe(awardHighestBid)); els.skipBidBtn?.addEventListener('click', safe(skipBidPlayer)); els.leaderboardBtn?.addEventListener('click', () => { window.location.href = 'leaderboard.html'; }); els.leaderboardBackBtn?.addEventListener('click', () => { if(state){ hideAllPanels(); show(ratingsRevealed?els.resultsPanel:els.gamePanel,true); } else renderHome(); });
 }

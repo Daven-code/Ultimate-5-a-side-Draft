@@ -7,7 +7,8 @@
   <meta name="google-adsense-account" content="ca-pub-8554748241132095">
   <meta name="description" content="View the Ultimate 5-a-side leaderboards across Solo Mode, Online Battles, League Legends, Player Simulation and Monthly Challenges.">
   <title>Leaderboards | Ultimate 5-a-side</title>
-  <link rel="stylesheet" href="styles.css?v=legends-lock-in-refine-v171-20260902" />
+  <link rel="stylesheet" href="styles.css?v=league-simulation-v11-20260921" />
+  <style>.lb-chip-year{color:#64748b;font-size:.68rem;font-weight:900;margin-left:2px}</style>
 </head>
 <body>
   <div class="background-glow glow-one"></div>
@@ -66,11 +67,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
   <script>
     const FIREBASE_CONFIG = { apiKey:'AIzaSyAcqef5WtEuICYihdza6l_gcad7UUjIjS0', authDomain:'ultimate-5-a-side-draft.firebaseapp.com', databaseURL:'https://ultimate-5-a-side-draft-default-rtdb.europe-west1.firebasedatabase.app', projectId:'ultimate-5-a-side-draft', storageBucket:'ultimate-5-a-side-draft.firebasestorage.app', messagingSenderId:'947937131392', appId:'1:947937131392:web:c2a228b6697cf397439f65', measurementId:'G-22516PSZD7' };
-    const MODE_LABELS = { solo:'Solo Challenge', ultimate:'Ultimate Solo Mode', easy:'Easy Solo Challenge', league:'League Challenge', worldcup:'World Cup 2026 Challenge', ballondor:"Ballon d'Or Winners Challenge", leaguelegends:'League Legends Challenge', legendslockin:'Legends Lock-In', onlineDraft:'Online Ultimate Draft', onlineBlind:'Online Blind Bidding', onlineLive:'Online Live Auction', playerSim:'Player Simulation' };
+    const MODE_LABELS = { solo:'Solo Challenge', ultimate:'Ultimate Solo Mode', easy:'Easy Solo Challenge', league:'League Challenge', worldcup:'World Cup 2026 Challenge', ballondor:"Ballon d'Or Winners Challenge", leaguelegends:'League Legends Challenge', legendslockin:'Legends Lock-In', onlineDraft:'Online Ultimate Draft', onlineBlind:'Online Blind Bidding', onlineLive:'Online Live Auction', playerSim:'Player Simulation', leagueSimulation:'League Simulation' };
     const TABS = [
       {key:'solo', label:'Solo Mode', modes:[MODE_LABELS.solo,MODE_LABELS.ultimate,MODE_LABELS.easy,MODE_LABELS.league,MODE_LABELS.worldcup], subs:[['all','All'],[MODE_LABELS.solo,'Standard Solo'],[MODE_LABELS.ultimate,'Ultimate Solo'],[MODE_LABELS.easy,'Easy Solo'],[MODE_LABELS.league,'League Challenge'],[MODE_LABELS.worldcup,'World Cup 2026']]},
       {key:'online', label:'Online Battles', modes:[MODE_LABELS.onlineDraft,MODE_LABELS.onlineBlind,MODE_LABELS.onlineLive], subs:[['all','All'],[MODE_LABELS.onlineDraft,'Online Ultimate Draft'],[MODE_LABELS.onlineBlind,'Online Blind Bidding'],[MODE_LABELS.onlineLive,'Online Live Auction']]},
       {key:'legends', label:'League Legends', modes:[MODE_LABELS.leaguelegends,MODE_LABELS.legendslockin], subs:[['all','All'],[MODE_LABELS.leaguelegends,'Original'],[MODE_LABELS.legendslockin,'Legends Lock-In']]},
+      {key:'leagueSimulation', label:'League Simulation', modes:[MODE_LABELS.leagueSimulation], subs:[['normal','Normal Player Pool'],['legends','League Legends Player Pool']]},
       {key:'playerSim', label:'Player Simulation', modes:[MODE_LABELS.playerSim], subs:[['all','All'],['GK','GK'],['DEF','DEF'],['MID','MID'],['ST','ST']]},
       {key:'monthly', label:'Monthly Challenges', modes:[MODE_LABELS.worldcup,MODE_LABELS.ballondor], subs:[[MODE_LABELS.worldcup,'World Cup 2026'],[MODE_LABELS.ballondor,"Ballon d'Or Winners"]]}
     ];
@@ -136,6 +138,18 @@
       const team = (Array.isArray(entry.team) ? entry.team : []).map(p => `<span class="leaderboard-player-chip-v78"><span class="lb-chip-pos">${esc(p.position || '')}</span><span class="lb-chip-name">${esc(p.name || p.player || '')}</span></span>`).join('');
       return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${index + 1}</span><span class="leaderboard-name"><span class="leaderboard-name-main">${esc(parsed.name)}</span>${details}</span><span class="leaderboard-mode">${esc(entry.gameMode || '')}</span><span class="leaderboard-score">${entry.score}</span>${team ? `<span class="leaderboard-team-v78"><span class="lb-team-label">Team:</span> ${team}</span>` : ''}</div>`;
     }
+
+    function leagueSimulationRow(entry,index){
+      const s=entry.leagueStats||{};
+      const isLegendsPool=(entry.leagueSimPool||'normal')==='legends';
+      const team=(Array.isArray(entry.team)?entry.team:[]).map(player=>{
+        const year=!isLegendsPool&&player.year?`<span class="lb-chip-year">${esc(player.year)}</span>`:'';
+        return `<span class="leaderboard-player-chip-v78"><span class="lb-chip-pos">${esc(player.position||'')}</span><span class="lb-chip-name">${esc(player.name||'')}</span>${year}</span>`;
+      }).join('');
+      const meta=`${entry.teamName||'Unnamed team'} • ${s.position||'-'}/20 • ${s.wins||0}W ${s.draws||0}D ${s.losses||0}L • GD ${Number(s.gd||0)>=0?'+':''}${s.gd||0}`;
+      return `<div class="leaderboard-row leaderboard-row-v55"><span class="leaderboard-rank">#${index+1}</span><span class="leaderboard-name"><span class="leaderboard-name-main">${esc(entry.username||'Player')}</span><small class="leaderboard-year-line">${esc(meta)}</small></span><span class="leaderboard-mode">League Simulation</span><span class="leaderboard-score">${entry.score}</span>${team?`<span class="leaderboard-team-v78"><span class="lb-team-label">Team:</span> ${team}</span>`:''}</div>`;
+    }
+
     function playerSimRow(entry, index){
       const c = entry.careerStats || {};
       const entryTime = Number(entry.timestamp || 0);
@@ -153,7 +167,7 @@
       const tab = TABS.find(t => t.key === main) || TABS[0];
       mainBox.innerHTML = TABS.map(t => `<button type="button" class="leaderboard-tab ${main === t.key ? 'active' : ''}" data-main="${esc(t.key)}">${esc(t.label)}</button>`).join('');
       subBox.innerHTML = tab.subs.map(s => `<button type="button" class="leaderboard-tab ${sub === s[0] ? 'active' : ''}" data-sub="${esc(s[0])}">${esc(s[1])}</button>`).join('');
-      mainBox.querySelectorAll('[data-main]').forEach(btn => btn.addEventListener('click', () => { main = btn.dataset.main; sub = 'all'; renderTabs(); renderLeaderboard(); }));
+      mainBox.querySelectorAll('[data-main]').forEach(btn => btn.addEventListener('click', () => { main = btn.dataset.main; sub = main === 'leagueSimulation' ? 'normal' : 'all'; renderTabs(); renderLeaderboard(); }));
       subBox.querySelectorAll('[data-sub]').forEach(btn => btn.addEventListener('click', () => { sub = btn.dataset.sub; renderTabs(); renderLeaderboard(); }));
     }
     async function renderLeaderboard(){
@@ -168,10 +182,11 @@
         entries = entries.filter(e => tab.modes.includes(e.gameMode));
         if(sub !== 'all'){
           if(main === 'playerSim') entries = entries.filter(e => (e.careerStats && e.careerStats.position) === sub);
+          else if(main === 'leagueSimulation') entries = entries.filter(e => (e.leagueSimPool || 'normal') === sub);
           else entries = entries.filter(e => e.gameMode === sub);
         }
         entries = entries.sort((a,b) => b.score - a.score || Number(b.timestamp || 0) - Number(a.timestamp || 0)).slice(0,50);
-        list.innerHTML = entries.length ? entries.map((entry,index) => main === 'playerSim' ? playerSimRow(entry,index) : normalRow(entry,index)).join('') : '<div class="leaderboard-empty">No scores submitted yet.</div>';
+        list.innerHTML = entries.length ? entries.map((entry,index) => main === 'playerSim' ? playerSimRow(entry,index) : main === 'leagueSimulation' ? leagueSimulationRow(entry,index) : normalRow(entry,index)).join('') : '<div class="leaderboard-empty">No scores submitted yet.</div>';
       }catch(error){
         list.innerHTML = '<div class="leaderboard-error">Could not load leaderboard. ' + esc(error.message || error) + '</div>';
       }
